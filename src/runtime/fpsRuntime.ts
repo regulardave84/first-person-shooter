@@ -130,18 +130,22 @@ export function setMovementKeyState(
 	}
 }
 
-export function createJumpSoundPlayer(
-	logger?: RuntimeLogger,
-): { play: () => void } {
+export function createJumpSoundPlayer(logger?: RuntimeLogger): {
+	play: () => void;
+} {
 	const AudioCtor =
-		(globalThis as typeof globalThis & {
-			AudioContext?: typeof AudioContext;
-			webkitAudioContext?: typeof AudioContext;
-		}).AudioContext ??
-		(globalThis as typeof globalThis & {
-			AudioContext?: typeof AudioContext;
-			webkitAudioContext?: typeof AudioContext;
-		}).webkitAudioContext;
+		(
+			globalThis as typeof globalThis & {
+				AudioContext?: typeof AudioContext;
+				webkitAudioContext?: typeof AudioContext;
+			}
+		).AudioContext ??
+		(
+			globalThis as typeof globalThis & {
+				AudioContext?: typeof AudioContext;
+				webkitAudioContext?: typeof AudioContext;
+			}
+		).webkitAudioContext;
 
 	if (!AudioCtor) {
 		logger?.debug('audio.unavailable');
@@ -161,7 +165,10 @@ export function createJumpSoundPlayer(
 
 				oscillator.type = 'square';
 				oscillator.frequency.setValueAtTime(420, startTime);
-				oscillator.frequency.exponentialRampToValueAtTime(180, startTime + 0.12);
+				oscillator.frequency.exponentialRampToValueAtTime(
+					180,
+					startTime + 0.12,
+				);
 
 				gain.gain.setValueAtTime(0.0001, startTime);
 				gain.gain.exponentialRampToValueAtTime(0.18, startTime + 0.01);
@@ -251,10 +258,7 @@ export function createInitialJumpState(): JumpState {
 	return createJumpState();
 }
 
-export function handleJumpInput(
-	jumpState: JumpState,
-	code: string,
-): JumpState {
+export function handleJumpInput(jumpState: JumpState, code: string): JumpState {
 	if (code !== 'Space' || !jumpState.isGrounded) {
 		return jumpState;
 	}
@@ -273,7 +277,8 @@ function resolveJumpFrame(
 	}
 
 	const nextVelocity = jumpState.verticalVelocity - GRAVITY * dt;
-	const nextY = currentY + jumpState.verticalVelocity * dt - 0.5 * GRAVITY * dt * dt;
+	const nextY =
+		currentY + jumpState.verticalVelocity * dt - 0.5 * GRAVITY * dt * dt;
 
 	if (nextY <= groundY) {
 		return {
@@ -288,10 +293,7 @@ function resolveJumpFrame(
 	};
 }
 
-function normalizeDeltaTime(
-	dt: number,
-	logger?: RuntimeLogger,
-): number {
+function normalizeDeltaTime(dt: number, logger?: RuntimeLogger): number {
 	if (!Number.isFinite(dt) || dt < 0) {
 		logger?.error('frame.invalidDeltaTime', { dt });
 		return 0;
