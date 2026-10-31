@@ -92,12 +92,16 @@ export function validateImplementerLayerMappings(
 
 		const modulePath = mapping.modulePath.trim();
 		const responsibility = mapping.responsibility.trim().toLowerCase();
-		const bucket = responsibilitiesByModule.get(modulePath) ?? new Set<string>();
+		const bucket =
+			responsibilitiesByModule.get(modulePath) ?? new Set<string>();
 		bucket.add(responsibility);
 		responsibilitiesByModule.set(modulePath, bucket);
 	}
 
-	for (const [modulePath, responsibilities] of responsibilitiesByModule.entries()) {
+	for (const [
+		modulePath,
+		responsibilities,
+	] of responsibilitiesByModule.entries()) {
 		if (responsibilities.size > 1) {
 			violations.push(
 				`Module ${modulePath} has multiple responsibilities: ${[...responsibilities].sort((a, b) => a.localeCompare(b)).join(', ')}`,

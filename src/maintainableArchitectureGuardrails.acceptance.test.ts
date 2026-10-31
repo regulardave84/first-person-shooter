@@ -44,7 +44,8 @@ describe('Acceptance: Enforce maintainable architecture guardrails for feature d
 				responsibility: 'implementation workflow contract',
 			},
 			{
-				scenario: 'CI layer blocks monolithic file growth and architecture drift',
+				scenario:
+					'CI layer blocks monolithic file growth and architecture drift',
 				modulePath: 'scripts/architecture-guardrails.mjs',
 				responsibility: 'ci maintainability enforcement',
 			},

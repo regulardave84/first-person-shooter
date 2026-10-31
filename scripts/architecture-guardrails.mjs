@@ -10,7 +10,10 @@ import process from 'node:process';
 
 const projectRoot = process.cwd();
 const sourceRoot = path.join(projectRoot, 'src');
-const policyPath = path.join(projectRoot, 'architecture-guardrails.policy.json');
+const policyPath = path.join(
+	projectRoot,
+	'architecture-guardrails.policy.json',
+);
 const reportDir = path.join(projectRoot, 'reports', 'cleaner');
 const reportPath = path.join(reportDir, 'ARCHITECTURE_GUARDRAILS_REPORT.md');
 const validExtensions = new Set(['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs']);
