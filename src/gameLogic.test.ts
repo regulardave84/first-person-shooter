@@ -3,7 +3,9 @@ import {
   DEFAULT_MOVE_SPEED,
   MAX_PITCH,
   clampPitch,
+  createJumpState,
   getMovementDelta,
+  triggerJump,
   updateLookAngles,
   type MovementKeys,
 } from './gameLogic';
@@ -104,5 +106,18 @@ describe('getMovementDelta()', () => {
   it('returns no movement when opposite directions cancel out', () => {
     const move = getMovementDelta(makeKeys({ KeyW: true, KeyS: true }), 0, dt, speed);
     expect(move).toEqual({ x: 0, z: 0 });
+  });
+});
+
+describe('triggerJump()', () => {
+  it('starts a jump only while grounded', () => {
+    const grounded = createJumpState();
+    expect(triggerJump(grounded)).toEqual({
+      isGrounded: false,
+      verticalVelocity: 5.2,
+    });
+
+    const airborne = { isGrounded: false, verticalVelocity: 1 };
+    expect(triggerJump(airborne)).toEqual(airborne);
   });
 });
