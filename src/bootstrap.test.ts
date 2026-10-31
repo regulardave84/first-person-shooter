@@ -19,6 +19,16 @@ const runtimeMocks = vi.hoisted(() => ({
 		KeyS: false,
 		KeyD: false,
 	})),
+	createInitialJumpState: vi.fn(() => ({
+		isGrounded: true,
+		verticalVelocity: 0,
+	})),
+	handleJumpInput: vi.fn((state, code) => {
+		if (code !== 'Space' || !state.isGrounded) {
+			return state;
+		}
+		return { isGrounded: false, verticalVelocity: 5.2 };
+	}),
 	setMovementKeyState: vi.fn(),
 	requestPointerLock: vi.fn(),
 	handlePointerLockChange: vi.fn(() => ({ isLocked: true })),
@@ -64,6 +74,8 @@ const threeState = vi.hoisted(() => ({
 vi.mock('./runtime/fpsRuntime', () => ({
 	WORLD_WALLS: runtimeMocks.WORLD_WALLS,
 	createInitialMovementKeys: runtimeMocks.createInitialMovementKeys,
+	createInitialJumpState: runtimeMocks.createInitialJumpState,
+	handleJumpInput: runtimeMocks.handleJumpInput,
 	setMovementKeyState: runtimeMocks.setMovementKeyState,
 	requestPointerLock: runtimeMocks.requestPointerLock,
 	handlePointerLockChange: runtimeMocks.handlePointerLockChange,

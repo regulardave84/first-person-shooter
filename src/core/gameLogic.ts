@@ -2,6 +2,8 @@ export const LOOK_SENSITIVITY = 0.002;
 export const MAX_PITCH = Math.PI / 2 - 0.01;
 export const PLAYER_HEIGHT = 1.6;
 export const DEFAULT_MOVE_SPEED = 5;
+export const GRAVITY = 14;
+export const JUMP_VELOCITY = 5.2;
 
 export type MovementKeys = {
 	KeyW: boolean;
@@ -9,6 +11,29 @@ export type MovementKeys = {
 	KeyS: boolean;
 	KeyD: boolean;
 };
+
+export type JumpState = {
+	isGrounded: boolean;
+	verticalVelocity: number;
+};
+
+export function createJumpState(): JumpState {
+	return {
+		isGrounded: true,
+		verticalVelocity: 0,
+	};
+}
+
+export function triggerJump(state: JumpState): JumpState {
+	if (!state.isGrounded) {
+		return state;
+	}
+
+	return {
+		isGrounded: false,
+		verticalVelocity: JUMP_VELOCITY,
+	};
+}
 
 export function clampPitch(pitch: number, maxPitch = MAX_PITCH): number {
 	return Math.max(-maxPitch, Math.min(maxPitch, pitch));

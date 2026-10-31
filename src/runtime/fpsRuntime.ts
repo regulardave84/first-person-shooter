@@ -1,8 +1,12 @@
 import {
 	DEFAULT_MOVE_SPEED,
+	GRAVITY,
 	PLAYER_HEIGHT,
+	createJumpState,
 	getMovementDelta,
+	triggerJump,
 	updateLookAngles,
+	type JumpState,
 	type MovementKeys,
 } from '../core/gameLogic';
 
@@ -191,6 +195,69 @@ export function handleMouseMoveForLook(params: {
 
 export type Position3D = { x: number; y: number; z: number };
 
+export function createInitialJumpState(): JumpState {
+	return createJumpState();
+}
+
+export function handleJumpInput(
+	jumpState: JumpState,
+	code: string,
+): JumpState {
+	if (code !== 'Space' || !jumpState.isGrounded) {
+		return jumpState;
+	}
+
+	return triggerJump(jumpState);
+}
+
+function resolveJumpFrame(
+	jumpState: JumpState,
+	dt: number,
+	groundY: number,
+	currentY: number,
+): { y: number; jumpState: JumpState } {
+	if (jumpState.isGrounded) {
+		return { y: groundY, jumpState: { ...jumpState } };
+	}
+
+	const nextVelocity = jumpState.verticalVelocity - GRAVITY * dt;
+	const nextY = currentY + jumpState.verticalVelocity * dt - 0.5 * GRAVITY * dt * dt;
+
+	if (nextY <= groundY) {
+		return {
+			y: groundY,
+			jumpState: { isGrounded: true, verticalVelocity: 0 },
+		};
+	}
+
+	return {
+		y: nextY,
+		jumpState: { isGrounded: false, verticalVelocity: nextVelocity },
+	};
+}
+
+function normalizeDeltaTime(
+	dt: number,
+	logger?: RuntimeLogger,
+): number {
+	if (!Number.isFinite(dt) || dt < 0) {
+		logger?.error('frame.invalidDeltaTime', { dt });
+		return 0;
+	}
+	return dt;
+}
+
+function syncJumpState(
+	destination: JumpState | undefined,
+	source: JumpState,
+): void {
+	if (!destination) {
+		return;
+	}
+	destination.isGrounded = source.isGrounded;
+	destination.verticalVelocity = source.verticalVelocity;
+}
+
 export function applyFrameMovement(params: {
 	position: Position3D;
 	keys: MovementKeys;
@@ -199,13 +266,10 @@ export function applyFrameMovement(params: {
 	moveSpeed?: number;
 	playerHeight?: number;
 	logger?: RuntimeLogger;
+	jumpState?: JumpState;
+	groundY?: number;
 }): Position3D {
-	let safeDeltaTime = params.dt;
-	if (!Number.isFinite(params.dt) || params.dt < 0) {
-		params.logger?.error('frame.invalidDeltaTime', { dt: params.dt });
-		safeDeltaTime = 0;
-	}
-
+	const safeDeltaTime = normalizeDeltaTime(params.dt, params.logger);
 	const move = getMovementDelta(
 		params.keys,
 		params.yaw,
@@ -213,9 +277,20 @@ export function applyFrameMovement(params: {
 		params.moveSpeed ?? DEFAULT_MOVE_SPEED,
 	);
 
+	const groundY = params.groundY ?? params.playerHeight ?? PLAYER_HEIGHT;
+	const jumpState = params.jumpState ?? createJumpState();
+	const updatedJump = resolveJumpFrame(
+		jumpState,
+		safeDeltaTime,
+		groundY,
+		params.position.y,
+	);
+
+	syncJumpState(params.jumpState, updatedJump.jumpState);
+
 	const nextPosition = {
 		x: params.position.x + move.x,
-		y: params.playerHeight ?? PLAYER_HEIGHT,
+		y: updatedJump.y,
 		z: params.position.z + move.z,
 	};
 
@@ -223,6 +298,7 @@ export function applyFrameMovement(params: {
 		dt: safeDeltaTime,
 		nextPosition,
 		yaw: params.yaw,
+		jumpState: updatedJump.jumpState,
 	});
 
 	return nextPosition;

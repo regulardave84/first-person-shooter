@@ -5,8 +5,10 @@ import {
 	WORLD_WALLS,
 	applyFrameMovement,
 	applyViewportResize,
+	createInitialJumpState,
 	createRuntimeLogger,
 	createInitialMovementKeys,
+	handleJumpInput,
 	handlePointerLockChange,
 	handleMouseMoveForLook,
 	requestPointerLock,
@@ -67,6 +69,7 @@ for (const wall of WORLD_WALLS) {
 }
 
 const keys = createInitialMovementKeys();
+let jumpState = createInitialJumpState();
 const runtimeLogger = createRuntimeLogger({
 	enabled: isDebugLoggingEnabled(window.location.search),
 	sink: (entry) => {
@@ -83,10 +86,17 @@ let pitch = 0;
 const moveSpeed = DEFAULT_MOVE_SPEED;
 
 document.addEventListener('keydown', (event) => {
+	if (event.code === 'Space') {
+		jumpState = handleJumpInput(jumpState, event.code);
+		return;
+	}
 	setMovementKeyState(keys, event.code, true, runtimeLogger);
 });
 
 document.addEventListener('keyup', (event) => {
+	if (event.code === 'Space') {
+		return;
+	}
 	setMovementKeyState(keys, event.code, false, runtimeLogger);
 });
 
@@ -136,6 +146,8 @@ function animate() {
 		moveSpeed,
 		playerHeight: PLAYER_HEIGHT,
 		logger: runtimeLogger,
+		jumpState,
+		groundY: PLAYER_HEIGHT,
 	});
 	camera.position.x = nextPosition.x;
 	camera.position.y = nextPosition.y;
