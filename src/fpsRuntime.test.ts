@@ -272,7 +272,9 @@ describe('fpsRuntime helpers', () => {
 			isGrounded: false,
 			verticalVelocity: 5.2,
 		});
-		expect(handleJumpInput({ isGrounded: false, verticalVelocity: 1 }, 'Space')).toEqual({
+		expect(
+			handleJumpInput({ isGrounded: false, verticalVelocity: 1 }, 'Space'),
+		).toEqual({
 			isGrounded: false,
 			verticalVelocity: 1,
 		});
@@ -323,7 +325,11 @@ describe('fpsRuntime helpers', () => {
 		originalWebkitDescriptor?: PropertyDescriptor,
 	): void {
 		if (originalAudioDescriptor) {
-			Object.defineProperty(audioWindow, 'AudioContext', originalAudioDescriptor);
+			Object.defineProperty(
+				audioWindow,
+				'AudioContext',
+				originalAudioDescriptor,
+			);
 		} else if (originalAudio) {
 			audioWindow.AudioContext = originalAudio;
 		}
@@ -433,12 +439,16 @@ describe('fpsRuntime helpers', () => {
 	it('logs a warning when jump sound creation fails', () => {
 		const sink = vi.fn();
 		const logger = createRuntimeLogger({ enabled: true, sink });
-		const originalAudio = (globalThis as typeof globalThis & {
-			AudioContext?: typeof AudioContext;
-		}).AudioContext;
-		(globalThis as typeof globalThis & {
-			AudioContext?: typeof AudioContext;
-		}).AudioContext = class {
+		const originalAudio = (
+			globalThis as typeof globalThis & {
+				AudioContext?: typeof AudioContext;
+			}
+		).AudioContext;
+		(
+			globalThis as typeof globalThis & {
+				AudioContext?: typeof AudioContext;
+			}
+		).AudioContext = class {
 			constructor() {
 				throw new Error('No audio');
 			}
@@ -452,8 +462,10 @@ describe('fpsRuntime helpers', () => {
 			context: expect.objectContaining({ error: 'No audio' }),
 		});
 
-		(globalThis as typeof globalThis & {
-			AudioContext?: typeof AudioContext;
-		}).AudioContext = originalAudio;
+		(
+			globalThis as typeof globalThis & {
+				AudioContext?: typeof AudioContext;
+			}
+		).AudioContext = originalAudio;
 	});
 });
