@@ -98,12 +98,18 @@ describe('Acceptance: Player running with Shift hold', () => {
 		setRunKeyState(runKeys, 'ShiftLeft', true);
 		expect(isRunActive(runKeys)).toBe(true);
 
-		const runStep = applyStep({ movementKey: 'KeyW', runActive: isRunActive(runKeys) });
+		const runStep = applyStep({
+			movementKey: 'KeyW',
+			runActive: isRunActive(runKeys),
+		});
 
 		setRunKeyState(runKeys, 'ShiftLeft', false);
 		expect(isRunActive(runKeys)).toBe(false);
 
-		const walkStep = applyStep({ movementKey: 'KeyW', runActive: isRunActive(runKeys) });
+		const walkStep = applyStep({
+			movementKey: 'KeyW',
+			runActive: isRunActive(runKeys),
+		});
 		expect(Math.abs(runStep.z + 10)).toBeGreaterThan(Math.abs(walkStep.z + 10));
 	});
 
