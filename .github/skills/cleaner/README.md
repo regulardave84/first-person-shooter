@@ -10,10 +10,12 @@ The `cleaner` skill identifies Change Risk Anti-Patterns (CRAP) and drives safe 
 - Combines cyclomatic complexity with test coverage.
 - Computes CRAP score per function.
 - Flags high-risk hotspots.
+- Runs dependency policy validation after review and before cleanup refactors.
 - Performs targeted cleanup/refactoring.
 - Re-runs lint/tests/build for safety.
 
 ## Commands
 
 - `npm run analyze:crap` (analyze existing coverage + complexity)
-- `npm run cleaner` (run coverage first, then CRAP analysis)
+- `npm run deps:check` (scan source dependencies against allowed/disallowed policy)
+- `npm run cleaner` (run coverage, CRAP analysis, then dependency check pre-cleanup gate)

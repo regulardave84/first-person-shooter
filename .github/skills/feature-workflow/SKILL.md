@@ -36,6 +36,7 @@ Run these skills in this exact order:
 ### Step 3: cleanup gate
 
 - Run `cleaner` to review and reduce change risk.
+- Run dependency checker during cleaner after review and before cleanup refactors.
 - Apply safe refactors only (no behavior change).
 - Re-run lint/tests/build after cleanup changes.
 

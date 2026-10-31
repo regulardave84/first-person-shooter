@@ -70,9 +70,9 @@ Persistent execution log for the `implementer` skill.
 
 ### Verification status
 
-- Lint: pending
-- Build: pending
-- Tests: pending
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
 
 ### Risks / blockers
 
@@ -276,3 +276,116 @@ Persistent execution log for the `implementer` skill.
 ### User review status
 
 - Requested
+
+---
+
+## 2026-10-31 — Dependency checker policy enforcement
+
+- Timestamp: 2026-10-31
+- Feature file: src/dependencyChecker.acceptance.feature
+- Complexity: standard
+- Current phase: P4
+- Checkpoint status: COMPLETE (`P0_COMPLETE` -> `P4_COMPLETE`)
+
+### Completed work
+
+- Added dependency checker domain module to scan code text for imports/requires and normalize external dependency names.
+- Added policy classification and validation logic for `allowed`, `disallowed`, and `unlisted` dependency outcomes.
+- Added guarded policy update flow that blocks policy list modifications unless explicit permission is granted.
+- Added unit tests and acceptance tests mapped to all approved scenarios.
+- Added repository policy file and an npm command to run dependency scans against current source files.
+- Executed lint, full test suite, build, cleaner, and mutation run.
+
+### Files changed so far
+
+- src/dependencyChecker.acceptance.feature
+- src/tools/dependencyChecker.ts
+- src/dependencyChecker.test.ts
+- src/dependencyChecker.acceptance.test.ts
+- scripts/dependency-checker.mjs
+- dependency-policy.json
+- package.json
+- reports/cleaner/CRAP_REPORT.md (regenerated)
+- reports/cleaner/CRAP_REPORT.json (regenerated)
+
+### Scenario -> test mapping
+
+- Scan source files to discover used dependencies -> `src/dependencyChecker.acceptance.test.ts` + `scanDependenciesInFiles()` unit coverage in `src/dependencyChecker.test.ts`
+- Compare discovered dependencies against policy lists -> `src/dependencyChecker.acceptance.test.ts` + `classifyDependencies()` unit coverage in `src/dependencyChecker.test.ts`
+- Reject disallowed dependencies -> `src/dependencyChecker.acceptance.test.ts` + `validateDependenciesAgainstPolicy()` unit coverage in `src/dependencyChecker.test.ts`
+- Flag unlisted dependencies for review -> `src/dependencyChecker.acceptance.test.ts` + `validateDependenciesAgainstPolicy()` unit coverage in `src/dependencyChecker.test.ts`
+- Protect policy list changes behind explicit permission -> `src/dependencyChecker.acceptance.test.ts` + `updateDependencyPolicy()` unit coverage in `src/dependencyChecker.test.ts`
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+
+### Risks / blockers
+
+- Mutation quality gate is BLOCKED by existing Stryker target configuration (`src/gameLogic.ts` barrel), resulting in `0 mutant(s)` and no computable mutation score.
+
+### Next action
+
+- Optional: retarget Stryker `mutate` configuration to concrete implementation files and rerun hardener loop for meaningful mutation score.
+
+### User review status
+
+- Confirmed
+
+---
+
+## 2026-10-31 — Cleaner dependency-check gate ordering
+
+- Timestamp: 2026-10-31
+- Feature file: src/cleaner.dependencyChecker.acceptance.feature
+- Complexity: standard
+- Current phase: P4
+- Checkpoint status: COMPLETE (`P0_COMPLETE` -> `P4_COMPLETE`)
+
+### Completed work
+
+- Added cleaner workflow orchestration module that enforces stage order: review -> dependency-check -> cleanup.
+- Added acceptance and unit tests covering dependency-check gate behavior and reporting.
+- Integrated dependency check command into cleaner command pipeline after CRAP review and before cleanup.
+- Updated cleaner and feature-workflow skill docs to codify ordering and failure behavior.
+- Added dependency check markdown report output for cleaner reporting.
+
+### Files changed so far
+
+- src/cleaner.dependencyChecker.acceptance.feature
+- src/tools/cleanerWorkflow.ts
+- src/cleanerWorkflow.test.ts
+- src/cleaner.dependencyChecker.acceptance.test.ts
+- scripts/dependency-checker.mjs
+- package.json
+- .github/skills/cleaner/SKILL.md
+- .github/skills/cleaner/README.md
+- .github/skills/feature-workflow/SKILL.md
+- .github/skills/feature-workflow/README.md
+
+### Scenario -> test mapping
+
+- Execute dependency checker after code review and before cleanup refactors -> `src/cleaner.dependencyChecker.acceptance.test.ts` + `getCleanerWorkflowOrder()` unit check in `src/cleanerWorkflow.test.ts`
+- Fail cleaner workflow when dependency checker finds policy violations -> `src/cleaner.dependencyChecker.acceptance.test.ts` + `runCleanerWorkflow()` unit check in `src/cleanerWorkflow.test.ts`
+- Continue cleaner workflow when dependency checker passes -> `src/cleaner.dependencyChecker.acceptance.test.ts` + `runCleanerWorkflow()` unit check in `src/cleanerWorkflow.test.ts`
+- Include dependency checker outcome in cleaner reporting -> `src/cleaner.dependencyChecker.acceptance.test.ts` + `runCleanerWorkflow()` unit report assertion in `src/cleanerWorkflow.test.ts`
+
+### Verification status
+
+- Lint: pending
+- Build: pending
+- Tests: pending
+
+### Risks / blockers
+
+- Mutation quality gate remains BLOCKED by existing Stryker mutate target yielding `0 mutant(s)` and no computable score.
+
+### Next action
+
+- Optional: retarget Stryker mutate configuration to implementation files and rerun hardener loop.
+
+### User review status
+
+- Confirmed

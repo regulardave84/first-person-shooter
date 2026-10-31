@@ -18,5 +18,6 @@ Use this as the default path when a prompt asks to add or change a feature.
 - Gherkin approval gate before implementation
 - Scenario-to-test traceability
 - Cleanup/refactor pass after implementation
+- Dependency-policy gate in cleaner after review and before cleanup refactor
 - Mutation hardening target of >= 80%
 - Phase-by-phase reporting with blockers

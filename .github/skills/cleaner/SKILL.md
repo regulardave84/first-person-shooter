@@ -47,14 +47,20 @@ Where:
 
 Prioritize production files (`src/**/*.ts`) and exclude test files.
 
-### 4) Refactor policy
+### 4) Pre-cleanup dependency validation
+
+- Run dependency checker (`npm run deps:check`) after code review and before any cleanup refactor.
+- If dependency checker reports disallowed dependencies, mark cleaner run as failed.
+- Do not perform cleanup refactor work until dependency check passes.
+
+### 5) Refactor policy
 
 - Start with highest CRAP items.
 - Prefer extraction, guard clauses, and simplification.
 - Keep behavior unchanged.
 - Add/update tests when needed.
 
-### 5) Verification gate
+### 6) Verification gate
 
 After each refactor wave, run:
 
@@ -66,5 +72,6 @@ After each refactor wave, run:
 
 - CRAP report generated.
 - Highest-risk hotspots reviewed.
+- Dependency checker executed between review and cleanup.
 - At least one targeted refactor completed when risk is high.
 - Lint/tests/build pass.
