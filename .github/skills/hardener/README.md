@@ -10,7 +10,7 @@ The `hardener` skill is designed to:
 
 - Analyze branch changes
 - Run relevant tests first and stop on failures
-- Run mutation tests after tests pass
+- Run mutation tests after tests pass, scoped to implementation files changed on branch
 - Improve/add tests when mutation score is below `80%`
 - Repeat until mutation score is `>= 80%`
 
@@ -29,13 +29,19 @@ git diff --name-only
 npm run test
 
 # 3) Run mutation testing
-npm run test:mutation
+npm run test:mutation:branch
 
 # 4) If score < 80%, improve tests and repeat steps 2-3
 
 # 5) Final sanity checks
 npm run lint
 npm run build
+```
+
+Optional: set a specific diff base branch for scope detection.
+
+```bash
+HARDENER_BASE_BRANCH=origin/main npm run test:mutation:branch
 ```
 
 Tip: if mutation artifacts cause noisy test/lint results, remove generated folders before rerunning:

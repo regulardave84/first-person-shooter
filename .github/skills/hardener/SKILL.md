@@ -30,7 +30,7 @@ For the current branch:
 
 ### 0) Preflight checks (before test execution)
 
-- Verify required scripts exist in `package.json`: `test` and `test:mutation`.
+- Verify required scripts exist in `package.json`: `test`, `test:mutation`, and `test:mutation:branch`.
 - Verify mutation config exists (`stryker.conf.json` or equivalent).
 - Verify lint/test ignore generated mutation directories:
   - `.stryker-tmp/**`
@@ -68,7 +68,9 @@ If any relevant tests fail:
 
 When relevant tests pass:
 
-- Run mutation tests (`npm run test:mutation`).
+- Build mutation scope from current-branch changed implementation files (`src/**/*.ts`, excluding test files).
+- Run mutation tests using branch-scoped mutate targets (`npm run test:mutation:branch`).
+- If no implementation files are changed, report `BLOCKED` with mutation scope details and stop.
 - Capture the overall mutation score for all files.
 - Use threshold: **80% minimum**.
 - Capture survivor list grouped by mutation type and source location.
@@ -93,6 +95,14 @@ If score is below 80%:
 - Maximum loop attempts: **5** mutation iterations.
 - If score does not improve across **2 consecutive iterations**, report `BLOCKED` with likely causes and the top surviving mutants.
 - If equivalent mutants are suspected, document evidence; still keep status `BLOCKED` unless score reaches threshold or project policy allows exclusions.
+
+### 7) Mutation scope traceability (required)
+
+- Every mutation iteration report must include:
+  - base branch used for diff
+  - changed files considered
+  - final mutate target list used by Stryker
+- Persist and/or surface this scope before the mutation run so reviewers can verify branch alignment.
 
 ## Test Authoring Guidance
 

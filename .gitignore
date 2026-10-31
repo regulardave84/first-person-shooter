@@ -6,6 +6,7 @@ dist/
 coverage/
 reports/
 .stryker-tmp/
+.stryker-branch.conf.json
 
 # logs
 npm-debug.log*

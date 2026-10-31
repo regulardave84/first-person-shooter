@@ -34,6 +34,55 @@ export const WORLD_WALLS: ReadonlyArray<WallSpec> = [
 	{ x: -8, y: 2, z: 8, w: 1, h: 4, d: 10, kind: 'inner' },
 ];
 
+export type RuntimeLogLevel = 'debug' | 'info' | 'warn' | 'error';
+
+export type RuntimeLogEntry = {
+	level: RuntimeLogLevel;
+	event: string;
+	context?: Record<string, unknown>;
+};
+
+export type RuntimeLogSink = (entry: RuntimeLogEntry) => void;
+
+export type RuntimeLogger = {
+	isEnabled: boolean;
+	debug: (event: string, context?: Record<string, unknown>) => void;
+	info: (event: string, context?: Record<string, unknown>) => void;
+	warn: (event: string, context?: Record<string, unknown>) => void;
+	error: (event: string, context?: Record<string, unknown>) => void;
+};
+
+const NOOP_LOG_SINK: RuntimeLogSink = () => {
+	// Intentionally empty. Logging is opt-in.
+};
+
+export function createRuntimeLogger(config?: {
+	enabled?: boolean;
+	sink?: RuntimeLogSink;
+}): RuntimeLogger {
+	const isEnabled = config?.enabled ?? false;
+	const sink = config?.sink ?? NOOP_LOG_SINK;
+
+	const emit = (
+		level: RuntimeLogLevel,
+		event: string,
+		context?: Record<string, unknown>,
+	) => {
+		if (!isEnabled) {
+			return;
+		}
+		sink({ level, event, context });
+	};
+
+	return {
+		isEnabled,
+		debug: (event, context) => emit('debug', event, context),
+		info: (event, context) => emit('info', event, context),
+		warn: (event, context) => emit('warn', event, context),
+		error: (event, context) => emit('error', event, context),
+	};
+}
+
 export function getWorldLayoutSummary(): {
 	floorCount: number;
 	outerWallCount: number;
@@ -69,16 +118,29 @@ export function setMovementKeyState(
 	keys: MovementKeys,
 	code: string,
 	isPressed: boolean,
+	logger?: RuntimeLogger,
 ): void {
 	if (isMovementKey(code)) {
 		keys[code] = isPressed;
+		logger?.debug('input.key.changed', { code, isPressed });
 	}
 }
 
 export function requestPointerLock(element: {
 	requestPointerLock: () => void;
-}): void {
+}, logger?: RuntimeLogger): void {
+	logger?.debug('pointerLock.requested');
 	element.requestPointerLock();
+}
+
+export function handlePointerLockChange(params: {
+	pointerLockElement: unknown;
+	rendererElement: unknown;
+	logger?: RuntimeLogger;
+}): { isLocked: boolean } {
+	const isLocked = params.pointerLockElement === params.rendererElement;
+	params.logger?.debug(isLocked ? 'pointerLock.acquired' : 'pointerLock.released');
+	return { isLocked };
 }
 
 export type LookState = {
@@ -98,8 +160,10 @@ export function handleMouseMoveForLook(params: {
 	movementX: number;
 	movementY: number;
 	cameraRotation: RotationLike;
+	logger?: RuntimeLogger;
 }): LookState & { updated: boolean } {
 	if (params.pointerLockElement !== params.rendererElement) {
+		params.logger?.debug('look.ignored.pointerLockInactive');
 		return { yaw: params.yaw, pitch: params.pitch, updated: false };
 	}
 
@@ -111,6 +175,12 @@ export function handleMouseMoveForLook(params: {
 	);
 
 	params.cameraRotation.set(updatedLook.pitch, updatedLook.yaw, 0, 'YXZ');
+	params.logger?.debug('look.updated', {
+		movementX: params.movementX,
+		movementY: params.movementY,
+		yaw: updatedLook.yaw,
+		pitch: updatedLook.pitch,
+	});
 	return { ...updatedLook, updated: true };
 }
 
@@ -123,19 +193,34 @@ export function applyFrameMovement(params: {
 	dt: number;
 	moveSpeed?: number;
 	playerHeight?: number;
+	logger?: RuntimeLogger;
 }): Position3D {
+	let safeDeltaTime = params.dt;
+	if (!Number.isFinite(params.dt) || params.dt < 0) {
+		params.logger?.error('frame.invalidDeltaTime', { dt: params.dt });
+		safeDeltaTime = 0;
+	}
+
 	const move = getMovementDelta(
 		params.keys,
 		params.yaw,
-		params.dt,
+		safeDeltaTime,
 		params.moveSpeed ?? DEFAULT_MOVE_SPEED,
 	);
 
-	return {
+	const nextPosition = {
 		x: params.position.x + move.x,
 		y: params.playerHeight ?? PLAYER_HEIGHT,
 		z: params.position.z + move.z,
 	};
+
+	params.logger?.debug('frame.movementApplied', {
+		dt: safeDeltaTime,
+		nextPosition,
+		yaw: params.yaw,
+	});
+
+	return nextPosition;
 }
 
 type CameraLike = {

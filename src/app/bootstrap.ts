@@ -5,11 +5,18 @@ import {
 	WORLD_WALLS,
 	applyFrameMovement,
 	applyViewportResize,
+	createRuntimeLogger,
 	createInitialMovementKeys,
+	handlePointerLockChange,
 	handleMouseMoveForLook,
 	requestPointerLock,
 	setMovementKeyState,
 } from '../runtime/fpsRuntime';
+
+function isDebugLoggingEnabled(search: string): boolean {
+	const params = new URLSearchParams(search);
+	return params.get('debugLogging') === '1';
+}
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0b1020);
@@ -60,21 +67,39 @@ for (const wall of WORLD_WALLS) {
 }
 
 const keys = createInitialMovementKeys();
+const runtimeLogger = createRuntimeLogger({
+	enabled: isDebugLoggingEnabled(window.location.search),
+	sink: (entry) => {
+		if (entry.level === 'error') {
+			console.error(`[runtime] ${entry.event}`, entry.context);
+			return;
+		}
+		console.debug(`[runtime] ${entry.event}`, entry.context);
+	},
+});
 
 let yaw = 0;
 let pitch = 0;
 const moveSpeed = DEFAULT_MOVE_SPEED;
 
 document.addEventListener('keydown', (event) => {
-	setMovementKeyState(keys, event.code, true);
+	setMovementKeyState(keys, event.code, true, runtimeLogger);
 });
 
 document.addEventListener('keyup', (event) => {
-	setMovementKeyState(keys, event.code, false);
+	setMovementKeyState(keys, event.code, false, runtimeLogger);
 });
 
 renderer.domElement.addEventListener('click', () => {
-	requestPointerLock(renderer.domElement);
+	requestPointerLock(renderer.domElement, runtimeLogger);
+});
+
+document.addEventListener('pointerlockchange', () => {
+	handlePointerLockChange({
+		pointerLockElement: document.pointerLockElement,
+		rendererElement: renderer.domElement,
+		logger: runtimeLogger,
+	});
 });
 
 document.addEventListener('mousemove', (event) => {
@@ -86,6 +111,7 @@ document.addEventListener('mousemove', (event) => {
 		movementX: event.movementX,
 		movementY: event.movementY,
 		cameraRotation: camera.rotation,
+		logger: runtimeLogger,
 	});
 
 	if (!updatedLook.updated) {
@@ -109,6 +135,7 @@ function animate() {
 		dt,
 		moveSpeed,
 		playerHeight: PLAYER_HEIGHT,
+		logger: runtimeLogger,
 	});
 	camera.position.x = nextPosition.x;
 	camera.position.y = nextPosition.y;

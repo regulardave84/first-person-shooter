@@ -43,6 +43,7 @@ Run these skills in this exact order:
 ### Step 4: hardening gate
 
 - Run `hardener` mutation workflow.
+- Require branch-scoped mutation targeting based on current branch implementation changes.
 - If mutation score < 80%, improve tests and iterate.
 - Stop as `BLOCKED` only when loop/control rules are exhausted.
 
@@ -51,7 +52,7 @@ Run these skills in this exact order:
 - `npm run lint`
 - `npm run test:all`
 - `npm run build`
-- `npm run test:mutation` with score >= 80%
+- `npm run test:mutation:branch` with score >= 80%
 
 ## Final report format
 

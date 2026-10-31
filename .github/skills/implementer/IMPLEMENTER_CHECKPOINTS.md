@@ -88,6 +88,124 @@ Persistent execution log for the `implementer` skill.
 
 ---
 
+## 2026-10-31 — Hardener branch-scoped mutation targets
+
+- Timestamp: 2026-10-31
+- Feature file: src/hardener.branchMutationScope.acceptance.feature
+- Complexity: standard
+- Current phase: P4
+- Checkpoint status: COMPLETE (`P0_COMPLETE` -> `P4_COMPLETE`)
+
+### Completed work
+
+- Added approved acceptance criteria for branch-scoped mutation selection, execution, fallback behavior, and reporting.
+- Implemented mutation-scope utility for filtering changed implementation files and producing traceable scope summaries.
+- Added unit and acceptance tests mapped one-to-one to the approved scenarios.
+- Added hardener branch mutation runner script that:
+	- detects base branch,
+	- gathers changed files from branch diff plus local staged/unstaged changes,
+	- computes mutate targets,
+	- writes scoped Stryker config,
+	- writes mutation scope report,
+	- executes Stryker with scoped mutate targets.
+- Updated hardener and feature-workflow skill docs to require branch-scoped mutation execution.
+
+### Files changed so far
+
+- src/hardener.branchMutationScope.acceptance.feature
+- src/hardener.branchMutationScope.acceptance.test.ts
+- src/hardenerMutationScope.test.ts
+- src/tools/hardenerMutationScope.ts
+- scripts/hardener-branch-mutation.mjs
+- package.json
+- .github/skills/hardener/SKILL.md
+- .github/skills/hardener/README.md
+- .github/skills/feature-workflow/SKILL.md
+- .github/skills/feature-workflow/README.md
+
+### Scenario -> test mapping
+
+- Select changed implementation files as mutation targets -> `src/hardener.branchMutationScope.acceptance.test.ts` (`Select changed implementation files as mutation targets`) + `src/hardenerMutationScope.test.ts` (`builds a ready scope using only changed implementation files`)
+- Exclude non-implementation files from mutation target list -> `src/hardener.branchMutationScope.acceptance.test.ts` (`Exclude non-implementation files from mutation target list`) + `src/hardenerMutationScope.test.ts` (`identifies implementation source files under src`)
+- Fallback when no implementation files changed -> `src/hardener.branchMutationScope.acceptance.test.ts` (`Fallback when no implementation files changed`) + `src/hardenerMutationScope.test.ts` (`builds a blocked scope when no implementation files changed`)
+- Run mutation command with branch-scoped mutate configuration -> `src/hardener.branchMutationScope.acceptance.test.ts` (`Run mutation command with branch-scoped mutate configuration`) + `src/hardenerMutationScope.test.ts` (`applies sorted unique mutate targets to stryker config`)
+- Report mutation scope for traceability -> `src/hardener.branchMutationScope.acceptance.test.ts` (`Report mutation scope for traceability`) + `src/hardenerMutationScope.test.ts` (`creates traceable scope summary text`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+
+### Risks / blockers
+
+- Branch-scoped mutation run executes successfully but current mutation score is below threshold for this branch (`60.00%` with survivors concentrated in `src/app/bootstrap.ts`).
+- This is a test-hardening follow-up item, not a tooling blocker.
+
+### Next action
+
+- Add targeted tests for `src/app/bootstrap.ts` behavior to improve branch-scoped mutation score to >= 80% when hardener is run as a quality gate.
+
+### User review status
+
+- Confirmed
+
+---
+
+## 2026-10-31 — FPS runtime logging instrumentation
+
+- Timestamp: 2026-10-31
+- Feature file: src/fpsLogging.acceptance.feature
+- Complexity: standard
+- Current phase: P4
+- Checkpoint status: COMPLETE (`P0_COMPLETE` -> `P4_COMPLETE`)
+
+### Completed work
+
+- Added approved Gherkin acceptance contract for runtime logging behavior.
+- Added acceptance tests mapped one-to-one to the five logging scenarios.
+- Implemented structured, opt-in runtime logger with `debug/info/warn/error` levels.
+- Instrumented runtime helpers for movement-key input, pointer-lock request/transitions, look updates, and frame movement timing.
+- Added error-level logging for invalid frame delta-time states while preserving safe movement behavior.
+- Wired bootstrap runtime to enable logging via `?debugLogging=1` configuration.
+- Ran cleaner workflow (coverage + CRAP + dependency gate) and mutation testing.
+
+### Files changed so far
+
+- src/fpsLogging.acceptance.feature
+- src/fpsLogging.acceptance.test.ts
+- src/runtime/fpsRuntime.ts
+- src/fpsRuntime.test.ts
+- src/app/bootstrap.ts
+
+### Scenario -> test mapping
+
+- Logging is disabled by default -> `src/fpsLogging.acceptance.test.ts` (`Logging is disabled by default`) + `src/fpsRuntime.test.ts` (`creates a disabled logger by default`)
+- Logging can be enabled through configuration -> `src/fpsLogging.acceptance.test.ts` (`Logging can be enabled through configuration`) + `src/fpsRuntime.test.ts` (`emits structured entries when logger is enabled`)
+- Pointer lock transitions are logged -> `src/fpsLogging.acceptance.test.ts` (`Pointer lock transitions are logged`) + `src/fpsRuntime.test.ts` (`logs pointer lock transitions`)
+- Frame timing and movement application are logged -> `src/fpsLogging.acceptance.test.ts` (`Frame timing and movement application are logged`) + `src/fpsRuntime.test.ts` (`applies movement and locks height each frame`)
+- Error-level logging is available for exceptional runtime states -> `src/fpsLogging.acceptance.test.ts` (`Error-level logging is available for exceptional runtime states`) + `src/fpsRuntime.test.ts` (`logs an error and uses zero movement for invalid delta time`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+
+### Risks / blockers
+
+- Hardener target remains BLOCKED by existing Stryker mutate configuration producing `0 mutant(s)` and no computable mutation score (`npm run test:mutation`).
+
+### Next action
+
+- Optional: retarget Stryker `mutate` setting to concrete implementation files and rerun mutation testing.
+
+### User review status
+
+- Confirmed
+
+---
+
 ## 2026-10-31 — Specifier QA procedure generation
 
 - Timestamp: 2026-10-31

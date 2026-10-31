@@ -18,6 +18,7 @@
 		"test:coverage": "vitest run --coverage",
 		"test:coverage:cleaner": "vitest run --coverage --coverage.thresholds.lines=0 --coverage.thresholds.functions=0 --coverage.thresholds.statements=0 --coverage.thresholds.branches=0 --coverage.reporter=text --coverage.reporter=json-summary --coverage.reporter=json",
 		"test:mutation": "stryker run",
+		"test:mutation:branch": "node scripts/hardener-branch-mutation.mjs",
 		"deps:check": "node scripts/dependency-checker.mjs",
 		"analyze:crap": "node scripts/cleaner-crap.mjs",
 		"cleaner:dependency-gate": "npm run deps:check",
