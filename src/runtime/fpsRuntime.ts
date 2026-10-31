@@ -126,9 +126,12 @@ export function setMovementKeyState(
 	}
 }
 
-export function requestPointerLock(element: {
-	requestPointerLock: () => void;
-}, logger?: RuntimeLogger): void {
+export function requestPointerLock(
+	element: {
+		requestPointerLock: () => void;
+	},
+	logger?: RuntimeLogger,
+): void {
 	logger?.debug('pointerLock.requested');
 	element.requestPointerLock();
 }
@@ -139,7 +142,9 @@ export function handlePointerLockChange(params: {
 	logger?: RuntimeLogger;
 }): { isLocked: boolean } {
 	const isLocked = params.pointerLockElement === params.rendererElement;
-	params.logger?.debug(isLocked ? 'pointerLock.acquired' : 'pointerLock.released');
+	params.logger?.debug(
+		isLocked ? 'pointerLock.acquired' : 'pointerLock.released',
+	);
 	return { isLocked };
 }
 

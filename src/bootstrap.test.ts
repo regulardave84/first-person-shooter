@@ -39,7 +39,7 @@ const runtimeMocks = vi.hoisted(() => ({
 }));
 
 const threeState = vi.hoisted(() => ({
-	scenes: [] as Array<{ add: ReturnType<typeof vi.fn> }> ,
+	scenes: [] as Array<{ add: ReturnType<typeof vi.fn> }>,
 	renderers: [] as Array<{
 		options: unknown;
 		domElement: { addEventListener: ReturnType<typeof vi.fn> };
@@ -49,7 +49,12 @@ const threeState = vi.hoisted(() => ({
 	}>,
 	cameras: [] as Array<{
 		rotation: { set: ReturnType<typeof vi.fn> };
-		position: { x: number; y: number; z: number; set: (x: number, y: number, z: number) => void };
+		position: {
+			x: number;
+			y: number;
+			z: number;
+			set: (x: number, y: number, z: number) => void;
+		};
 		aspect: number;
 		updateProjectionMatrix: ReturnType<typeof vi.fn>;
 	}>,
@@ -98,12 +103,7 @@ vi.mock('three', () => {
 		};
 		updateProjectionMatrix = vi.fn();
 
-		constructor(
-			_fov: number,
-			aspect: number,
-			_near: number,
-			_far: number,
-		) {
+		constructor(_fov: number, aspect: number, _near: number, _far: number) {
 			void _near;
 			void _far;
 			this.aspect = aspect;
@@ -215,9 +215,11 @@ describe('bootstrap runtime wiring', () => {
 			body: {
 				appendChild: vi.fn(),
 			},
-			addEventListener: vi.fn((type: string, handler: (event?: InputEventLike) => void) => {
-				documentListeners.set(type, handler);
-			}),
+			addEventListener: vi.fn(
+				(type: string, handler: (event?: InputEventLike) => void) => {
+					documentListeners.set(type, handler);
+				},
+			),
 		};
 
 		const windowStub = {
@@ -225,9 +227,11 @@ describe('bootstrap runtime wiring', () => {
 			innerHeight: 1080,
 			devicePixelRatio: 3,
 			location: { search: '?debugLogging=1' },
-			addEventListener: vi.fn((type: string, handler: (event?: InputEventLike) => void) => {
-				windowListeners.set(type, handler);
-			}),
+			addEventListener: vi.fn(
+				(type: string, handler: (event?: InputEventLike) => void) => {
+					windowListeners.set(type, handler);
+				},
+			),
 		};
 
 		Object.assign(globalThis, {
@@ -247,12 +251,25 @@ describe('bootstrap runtime wiring', () => {
 			expect.objectContaining({ enabled: true, sink: expect.any(Function) }),
 		);
 
-		const loggerConfig = runtimeMocks.createRuntimeLogger.mock.calls[0]?.[0] as {
-			sink: (entry: { level: string; event: string; context?: unknown }) => void;
+		const loggerConfig = runtimeMocks.createRuntimeLogger.mock
+			.calls[0]?.[0] as {
+			sink: (entry: {
+				level: string;
+				event: string;
+				context?: unknown;
+			}) => void;
 		};
 
-		loggerConfig.sink({ level: 'debug', event: 'evt.debug', context: { a: 1 } });
-		loggerConfig.sink({ level: 'error', event: 'evt.error', context: { b: 2 } });
+		loggerConfig.sink({
+			level: 'debug',
+			event: 'evt.debug',
+			context: { a: 1 },
+		});
+		loggerConfig.sink({
+			level: 'error',
+			event: 'evt.error',
+			context: { b: 2 },
+		});
 
 		expect(debugSpy).toHaveBeenCalledWith('[runtime] evt.debug', { a: 1 });
 		expect(errorSpy).toHaveBeenCalledWith('[runtime] evt.error', { b: 2 });
@@ -294,17 +311,17 @@ describe('bootstrap runtime wiring', () => {
 		);
 
 		const renderer = threeState.renderers[0];
-		const clickHandler = renderer.domElement.addEventListener.mock.calls[0]?.[1] as
-			| (() => void)
-			| undefined;
+		const clickHandler = renderer.domElement.addEventListener.mock
+			.calls[0]?.[1] as (() => void) | undefined;
 		clickHandler?.();
 		expect(runtimeMocks.requestPointerLock).toHaveBeenCalledWith(
 			renderer.domElement,
 			expect.any(Object),
 		);
 
-		(globalThis.document as { pointerLockElement: unknown }).pointerLockElement =
-			renderer.domElement;
+		(
+			globalThis.document as { pointerLockElement: unknown }
+		).pointerLockElement = renderer.domElement;
 		documentListeners.get('pointerlockchange')?.();
 		expect(runtimeMocks.handlePointerLockChange).toHaveBeenCalledWith({
 			pointerLockElement: renderer.domElement,
@@ -317,11 +334,21 @@ describe('bootstrap runtime wiring', () => {
 
 		expect(runtimeMocks.handleMouseMoveForLook).toHaveBeenNthCalledWith(
 			1,
-			expect.objectContaining({ yaw: 0, pitch: 0, movementX: 10, movementY: -10 }),
+			expect.objectContaining({
+				yaw: 0,
+				pitch: 0,
+				movementX: 10,
+				movementY: -10,
+			}),
 		);
 		expect(runtimeMocks.handleMouseMoveForLook).toHaveBeenNthCalledWith(
 			2,
-			expect.objectContaining({ yaw: 1, pitch: 2, movementX: 1, movementY: -1 }),
+			expect.objectContaining({
+				yaw: 1,
+				pitch: 2,
+				movementX: 1,
+				movementY: -1,
+			}),
 		);
 	});
 
@@ -330,7 +357,9 @@ describe('bootstrap runtime wiring', () => {
 
 		await import('./app/bootstrap');
 
-		expect(globalThis.requestAnimationFrame).toHaveBeenCalledWith(expect.any(Function));
+		expect(globalThis.requestAnimationFrame).toHaveBeenCalledWith(
+			expect.any(Function),
+		);
 		expect(runtimeMocks.applyFrameMovement).toHaveBeenCalledWith(
 			expect.objectContaining({
 				dt: 0.016,

@@ -40,7 +40,9 @@ export function buildMutationScope(params: {
 	const changedFilesConsidered = uniqueSorted(
 		params.changedFiles.map(normalizePath),
 	);
-	const mutateTargets = changedFilesConsidered.filter(isImplementationSourceFile);
+	const mutateTargets = changedFilesConsidered.filter(
+		isImplementationSourceFile,
+	);
 
 	if (mutateTargets.length === 0) {
 		return {
@@ -71,7 +73,9 @@ export function applyMutationTargetsToConfig<T extends Record<string, unknown>>(
 	};
 }
 
-export function createMutationScopeSummary(report: MutationScopeReport): string {
+export function createMutationScopeSummary(
+	report: MutationScopeReport,
+): string {
 	const changed =
 		report.changedFilesConsidered.length > 0
 			? report.changedFilesConsidered.join(', ')
@@ -82,10 +86,12 @@ export function createMutationScopeSummary(report: MutationScopeReport): string 
 			: '(none)';
 
 	const reason = report.reason ? `\nReason: ${report.reason}` : '';
-	return [
-		`Mutation scope status: ${report.status}`,
-		`Base branch: ${report.baseBranch}`,
-		`Changed files considered: ${changed}`,
-		`Mutate targets: ${targets}`,
-	].join('\n') + reason;
+	return (
+		[
+			`Mutation scope status: ${report.status}`,
+			`Base branch: ${report.baseBranch}`,
+			`Changed files considered: ${changed}`,
+			`Mutate targets: ${targets}`,
+		].join('\n') + reason
+	);
 }

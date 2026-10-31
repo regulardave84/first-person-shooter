@@ -62,7 +62,9 @@ describe('hardenerMutationScope', () => {
 		});
 
 		expect(summary).toContain('Base branch: origin/main');
-		expect(summary).toContain('Changed files considered: src/a.ts, src/a.test.ts');
+		expect(summary).toContain(
+			'Changed files considered: src/a.ts, src/a.test.ts',
+		);
 		expect(summary).toContain('Mutate targets: src/a.ts');
 	});
 
@@ -72,7 +74,8 @@ describe('hardenerMutationScope', () => {
 			baseBranch: 'origin/main',
 			changedFilesConsidered: [],
 			mutateTargets: [],
-			reason: 'No changed implementation source files under src were found for mutation scope.',
+			reason:
+				'No changed implementation source files under src were found for mutation scope.',
 		});
 
 		expect(summary).toContain('Mutation scope status: blocked');

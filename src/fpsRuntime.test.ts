@@ -23,7 +23,12 @@ describe('fpsRuntime helpers', () => {
 
 	it('creates and updates movement key state', () => {
 		const keys = createInitialMovementKeys();
-		expect(keys).toEqual({ KeyW: false, KeyA: false, KeyS: false, KeyD: false });
+		expect(keys).toEqual({
+			KeyW: false,
+			KeyA: false,
+			KeyS: false,
+			KeyD: false,
+		});
 
 		setMovementKeyState(keys, 'KeyW', true);
 		setMovementKeyState(keys, 'KeyD', true);

@@ -87,7 +87,9 @@ function getChangedFiles(baseBranch) {
 
 function buildScope(baseBranch, changedFiles) {
 	const changedFilesConsidered = uniqueSorted(changedFiles);
-	const mutateTargets = changedFilesConsidered.filter(isImplementationSourceFile);
+	const mutateTargets = changedFilesConsidered.filter(
+		isImplementationSourceFile,
+	);
 
 	if (mutateTargets.length === 0) {
 		return {
@@ -148,7 +150,9 @@ function writeScopeReport(scope) {
 
 	mkdirSync(REPORT_DIR, { recursive: true });
 	writeFileSync(REPORT_PATH, `${lines.join('\n')}\n`, 'utf8');
-	console.log(`Mutation scope report written: ${path.relative(ROOT, REPORT_PATH)}`);
+	console.log(
+		`Mutation scope report written: ${path.relative(ROOT, REPORT_PATH)}`,
+	);
 }
 
 function main() {
@@ -170,7 +174,10 @@ function main() {
 		mutate: scope.mutateTargets,
 	};
 
-	writeFileSync(SCOPED_CONFIG_PATH, `${JSON.stringify(scopedConfig, null, 2)}\n`);
+	writeFileSync(
+		SCOPED_CONFIG_PATH,
+		`${JSON.stringify(scopedConfig, null, 2)}\n`,
+	);
 	console.log(
 		`Running mutation tests with scoped config: ${path.relative(ROOT, SCOPED_CONFIG_PATH)}`,
 	);
