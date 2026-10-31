@@ -17,7 +17,7 @@ Feature: Specifier generates a manual UI QA procedure from approved feature requ
     When the QA procedure document is generated
     Then each manual test references its source scenario name
 
-  Scenario: Keep the approval gate before implementation
-    Given acceptance criteria were generated from a human requirement
-    When the specifier run is complete
-    Then the user is asked for explicit approval before implementation changes begin
+  Scenario: Do not require additional approval for QA procedure output
+    Given acceptance tests have been approved by the user
+    When the QA procedure document is generated
+    Then implementation changes can proceed without separate QA procedure approval

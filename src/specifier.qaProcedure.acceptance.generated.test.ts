@@ -37,15 +37,10 @@ const stepDefinitions: StepDefinitions = {
 	'Then each manual test references its source scenario name': async (context) => {
 		void context;
 	},
-	'Given acceptance criteria were generated from a human requirement': async (
-		context,
-	) => {
+	'Given acceptance tests have been approved by the user': async (context) => {
 		void context;
 	},
-	'When the specifier run is complete': async (context) => {
-		void context;
-	},
-	'Then the user is asked for explicit approval before implementation changes begin':
+	'Then implementation changes can proceed without separate QA procedure approval':
 		async (context) => {
 			void context;
 		},
@@ -124,24 +119,24 @@ describe(
 			);
 		});
 
-		const Keep_the_approval_gate_before_implementation_steps = [
+		const Do_not_require_additional_approval_for_QA_procedure_output_steps = [
 			{
 				keyword: 'Given',
-				text: 'acceptance criteria were generated from a human requirement',
+				text: 'acceptance tests have been approved by the user',
 			},
 			{
 				keyword: 'When',
-				text: 'the specifier run is complete',
+				text: 'the QA procedure document is generated',
 			},
 			{
 				keyword: 'Then',
-				text: 'the user is asked for explicit approval before implementation changes begin',
+				text: 'implementation changes can proceed without separate QA procedure approval',
 			},
 		] as const;
 
-		it('Keep the approval gate before implementation', async () => {
+		it('Do not require additional approval for QA procedure output', async () => {
 			await runScenario(
-				Keep_the_approval_gate_before_implementation_steps,
+				Do_not_require_additional_approval_for_QA_procedure_output_steps,
 				stepDefinitions,
 				{},
 			);
