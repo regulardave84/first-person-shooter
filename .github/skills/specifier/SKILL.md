@@ -49,6 +49,9 @@ This version adds safeguards based on real usage:
 	- each scenario has non-empty steps
 - Normalize formatting (stable indentation and ordering) to reduce noisy diffs.
 - Flag ambiguity explicitly (example: “TBD” or “clarify expected outcome”).
+- For architecture-impacting features, require explicit modularity constraints:
+	- include module-boundary expectations in acceptance text
+	- explicitly forbid adding new feature logic to aggregator/barrel files
 
 ### 3) Human review gate (mandatory)
 

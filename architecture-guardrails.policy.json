@@ -1,0 +1,9 @@
+{
+	"maxSourceFileLines": 1000,
+	"barrelFiles": ["src/fpsRuntime.ts", "src/gameLogic.ts", "src/specifier.ts"],
+	"ignoredFilePatterns": [
+		"\\.test\\.[cm]?[jt]sx?$",
+		"\\.acceptance\\.test\\.[cm]?[jt]sx?$",
+		"\\.acceptance\\.generated\\.test\\.[cm]?[jt]sx?$"
+	]
+}

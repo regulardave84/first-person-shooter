@@ -1,3 +1,4 @@
+/*
 import {
 	DEFAULT_MOVE_SPEED,
 	GRAVITY,
@@ -6,43 +7,14 @@ import {
 	getMovementDelta,
 	triggerJump,
 	updateLookAngles,
-	type JumpState,
-	type MovementKeys,
-} from '../core/gameLogic';
 
-export type MovementKeyCode = keyof MovementKeys;
-
-const MOVEMENT_KEYS: ReadonlyArray<MovementKeyCode> = [
-	'KeyW',
-	'KeyA',
-	'KeyS',
-	'KeyD',
-];
-
-export const PLAYER_COLLISION_RADIUS = 0.9;
-export const PROJECTILE_FIRE_RATE = 2;
-export const PROJECTILE_SPEED = 45;
-export const PROJECTILE_LENGTH = 0.35;
-export const PROJECTILE_COLOR = 0xffffff;
-
-export type WallSpec = {
-	x: number;
-	y: number;
-	z: number;
-	w: number;
-	h: number;
-	d: number;
-	kind: 'outer' | 'inner';
-};
-
-export const WORLD_WALLS: ReadonlyArray<WallSpec> = [
-	{ x: 0, y: 2, z: -20, w: 40, h: 4, d: 1, kind: 'outer' },
-	{ x: 0, y: 2, z: 20, w: 40, h: 4, d: 1, kind: 'outer' },
-	{ x: -20, y: 2, z: 0, w: 1, h: 4, d: 40, kind: 'outer' },
-	{ x: 20, y: 2, z: 0, w: 1, h: 4, d: 40, kind: 'outer' },
-	{ x: 0, y: 2, z: 0, w: 12, h: 4, d: 1, kind: 'inner' },
-	{ x: -8, y: 2, z: 8, w: 1, h: 4, d: 10, kind: 'inner' },
-];
+	export * from './logger';
+	export * from './world';
+	export * from './input';
+	export * from './audio';
+	export * from './combat';
+	export * from './movement';
+	export * from './viewport';
 
 export type RuntimeLogLevel = 'debug' | 'info' | 'warn' | 'error';
 
@@ -951,3 +923,13 @@ export function applyViewportResize(
 	camera.updateProjectionMatrix();
 	renderer.setSize(width, height);
 }
+
+*/
+
+export * from './logger';
+export * from './world';
+export * from './input';
+export * from './audio';
+export * from './combat';
+export * from './movement';
+export * from './viewport';

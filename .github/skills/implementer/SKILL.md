@@ -26,6 +26,10 @@ Use this skill after the `specifier` skill has produced and approved a `.feature
 - Preserve one-to-one traceability: `Scenario` -> test case(s) -> implementation changes.
 - Keep changes minimal and style-consistent.
 - At each critical phase, write a checkpoint entry before continuing.
+- Apply SOLID boundaries during implementation planning and coding:
+	- map each scenario to focused module responsibilities (single reason to change)
+	- reject designs that place unrelated feature responsibilities in one file
+	- avoid adding new feature logic to aggregator/barrel files
 
 ## Complexity Classification
 

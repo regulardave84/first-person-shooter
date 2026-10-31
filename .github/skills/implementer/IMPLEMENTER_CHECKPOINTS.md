@@ -4,6 +4,151 @@ Persistent execution log for the `implementer` skill.
 
 ---
 
+## 2026-10-31 — Maintainable architecture guardrails for feature delivery
+
+- Timestamp: 2026-10-31
+- Feature file: src/maintainableArchitectureGuardrails.acceptance.feature
+- Complexity: complex
+- Current phase: P4
+- Checkpoint status: COMPLETE (`P0_COMPLETE` -> `P4_COMPLETE`)
+
+### Plan Overview
+
+- Objective: enforce three anti-monolith layers (specifier constraints, implementer SOLID mapping, CI architecture gates) without breaking existing feature workflow.
+- Dependencies: existing dependency policy checker, lint/build/test gates, approved acceptance contract.
+- Exit criteria:
+	- specification layer explicitly encodes module-boundary + aggregator-file constraints
+	- implementer contract explicitly enforces SOLID-aligned responsibility mapping
+	- CI gate fails on maintainability and boundary-rule violations
+
+### Phase Breakdown
+
+- P0 Intake + contract lock: approved feature file persisted and locked.
+- P1 Test design: added acceptance and unit tests for specification, implementer, and CI guardrails.
+- P2 Implementation: added architecture guardrail tooling, policy file, CI script, and workflow doc updates.
+- P3 Verification: executed lint, build, unit+acceptance tests, and branch mutation gate.
+- P4 Handoff: finalized traceability and checkpoint reporting.
+
+### Checkpoint Gates
+
+- P0 gate: feature file approved by user and immutable without permission.
+- P1 gate: each accepted scenario mapped to at least one automated test.
+- P2 gate: package scripts include dependency and architecture checks in CI-facing lint flow.
+- P3 gate: quality commands pass with no unresolved blockers.
+- P4 gate: traceability summary and verification output recorded.
+
+### Rollback / Mitigation Notes
+
+- Architecture enforcement is configured through `architecture-guardrails.policy.json` so limits can be tuned without changing implementation logic.
+- Existing large runtime module is tolerated by configured line limit while still preventing further unchecked growth.
+
+### Completed work
+
+- Added approved acceptance contract lock header to architecture guardrail feature file.
+- Added architecture guardrails core helper module with specification-layer validation, implementer mapping validation, and CI gate evaluation.
+- Added unit tests and acceptance tests covering all approved scenarios.
+- Added architecture guardrails policy and CI script that checks source-file length and internal barrel import boundary violations.
+- Updated lint gate to include dependency-policy check and architecture guardrails check.
+- Updated specifier and implementer skill docs with explicit modularity and SOLID anti-monolith requirements.
+
+### Files changed so far
+
+- src/maintainableArchitectureGuardrails.acceptance.feature
+- src/maintainableArchitectureGuardrails.acceptance.test.ts
+- src/architectureGuardrails.test.ts
+- src/tools/architectureGuardrails.ts
+- scripts/architecture-guardrails.mjs
+- scripts/hardener-branch-mutation.mjs
+- architecture-guardrails.policy.json
+- package.json
+- .github/skills/specifier/SKILL.md
+- .github/skills/implementer/SKILL.md
+- README.md
+
+### Scenario -> test mapping
+
+- Specification layer requires modularity constraints in acceptance criteria -> `src/maintainableArchitectureGuardrails.acceptance.test.ts` (`Specification layer requires modularity constraints in acceptance criteria`) + `src/architectureGuardrails.test.ts` (`validates specification text includes module-boundary and aggregator constraints`)
+- Implementer layer enforces SOLID-aligned module boundaries -> `src/maintainableArchitectureGuardrails.acceptance.test.ts` (`Implementer layer enforces SOLID-aligned module boundaries`) + `src/architectureGuardrails.test.ts` (`passes implementer mapping when each module has one reason to change`, `fails implementer mapping when one module has unrelated responsibilities`)
+- CI layer blocks monolithic file growth and architecture drift -> `src/maintainableArchitectureGuardrails.acceptance.test.ts` (`CI layer blocks monolithic file growth and architecture drift`) + `src/architectureGuardrails.test.ts` (`evaluates CI maintainability limits and boundary violations`)
+- Handoff report shows traceability across all three layers -> `src/maintainableArchitectureGuardrails.acceptance.test.ts` (`Handoff report shows traceability across all three layers`) + checkpoint traceability in this log section
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Hardener: PASS (`npm run test:mutation:branch` -> `86.32%`, target `>= 80%`)
+
+### Risks / blockers
+
+- None.
+
+### Next action
+
+- Proceed to final user handoff.
+
+### User review status
+
+- Confirmed
+
+---
+
+## 2026-10-31 — SOLID runtime architecture refactor
+
+- Timestamp: 2026-10-31
+- Feature file: src/solidArchitectureRefactor.acceptance.feature
+- Complexity: complex
+- Current phase: P4
+- Checkpoint status: COMPLETE (`SPECIFIER_COMPLETE` -> `IMPLEMENTER_COMPLETE`) with `CLEANER_COMPLETE` and `HARDENER_COMPLETE`
+
+### Completed work
+
+- Created an approved SOLID-focused acceptance contract for runtime modularization.
+- Refactored runtime helpers into focused modules: logging, world layout, input/look handling, audio, combat/projectiles, movement/physics, and viewport updates.
+- Kept consumer API stable by continuing to export runtime symbols from `src/runtime/fpsRuntime.ts` and `src/fpsRuntime.ts`.
+- Preserved behavior with existing unit and acceptance test coverage and verified green quality gates.
+
+### Files changed so far
+
+- src/solidArchitectureRefactor.acceptance.feature
+- src/runtime/logger.ts
+- src/runtime/world.ts
+- src/runtime/input.ts
+- src/runtime/audio.ts
+- src/runtime/combat.ts
+- src/runtime/movement.ts
+- src/runtime/viewport.ts
+- src/runtime/fpsRuntime.ts
+
+### Scenario -> test mapping
+
+- Single Responsibility Principle is enforced for runtime helpers -> `src/fpsRuntime.test.ts` (runtime behaviors remain correct with separated modules)
+- Open-Closed and Interface Segregation principles are preserved -> `src/fpsRuntime.test.ts` + `src/bootstrap.test.ts` (public imports and collaborators remain compatible)
+- Dependency Inversion is applied to external side effects -> `src/fpsRuntime.test.ts` (logger and audio collaborators are optional/injected abstractions)
+- Quality gates remain green after refactor -> lint/build/tests/mutation branch commands below
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Hardener: PASS (`npm run test:mutation:branch` -> `80.60%`, target `>= 80%`)
+
+### Risks / blockers
+
+- No blocking issues for this refactor.
+- Runtime submodule mutation score is below project target when isolated, but repository-level branch gate score passes and satisfies configured hardener threshold.
+
+### Next action
+
+- Optional follow-up: add dedicated, per-module mutation-focused tests for runtime `audio`, `combat`, and `movement` modules to raise local mutation resilience.
+
+### User review status
+
+- Approved
+
+---
+
 ## 2026-10-31 — Bullet firing sound
 
 - Timestamp: 2026-10-31

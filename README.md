@@ -127,6 +127,14 @@ npm run cleaner
 
 This generates a CRAP hotspot report at `reports/cleaner/CRAP_REPORT.md`.
 
+### 16) Run architecture guardrails check
+
+```bash
+npm run architecture:check
+```
+
+This enforces source-file size limits and import-boundary rules and writes `reports/cleaner/ARCHITECTURE_GUARDRAILS_REPORT.md`.
+
 ## Controls
 
 - Click in the game window to lock the mouse
@@ -149,6 +157,7 @@ This generates a CRAP hotspot report at `reports/cleaner/CRAP_REPORT.md`.
 - `src/*.qa-procedure.md` – generated manual QA procedures from approved acceptance criteria
 - `src/style.css` – basic styling for HUD/crosshair
 - `eslint.config.js` – ESLint flat config for TypeScript/browser code
+- `architecture-guardrails.policy.json` – architecture gate policy (file-size and boundary constraints)
 - `vitest.config.ts` – Vitest configuration (excludes generated mutation artifacts)
 - `stryker.conf.json` – Stryker mutation testing configuration
 - `tsconfig.json` – TypeScript configuration

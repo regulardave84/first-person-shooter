@@ -68,8 +68,14 @@ function getChangedFiles(baseBranch) {
 	]);
 	const stagedOutput = runGit(['diff', '--name-only', '--cached']);
 	const unstagedOutput = runGit(['diff', '--name-only']);
+	const untrackedOutput = runGit(['ls-files', '--others', '--exclude-standard']);
 
-	const mergedOutput = [baseOutput, stagedOutput, unstagedOutput]
+	const mergedOutput = [
+		baseOutput,
+		stagedOutput,
+		unstagedOutput,
+		untrackedOutput,
+	]
 		.filter(Boolean)
 		.join('\n');
 

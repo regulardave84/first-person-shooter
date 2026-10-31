@@ -10,6 +10,7 @@ The `implementer` skill converts approved Gherkin acceptance criteria into real 
 - Consumes approved `.feature` files from `specifier`
 - Writes/updates unit tests mapped to each scenario
 - Implements or updates production code to satisfy tests
+- Enforces SOLID-aligned module boundaries (single reason to change)
 - Uses mandatory phased checkpoints persisted to disk
 
 ## Checkpointing model
