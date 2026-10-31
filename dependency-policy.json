@@ -1,0 +1,5 @@
+{
+	"allowed": ["three", "vitest"],
+	"disallowed": [],
+	"requireExplicitPermissionToModify": true
+}
