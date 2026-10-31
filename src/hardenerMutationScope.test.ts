@@ -65,4 +65,21 @@ describe('hardenerMutationScope', () => {
 		expect(summary).toContain('Changed files considered: src/a.ts, src/a.test.ts');
 		expect(summary).toContain('Mutate targets: src/a.ts');
 	});
+
+	it('creates blocked summary text with explicit reason and empty lists', () => {
+		const summary = createMutationScopeSummary({
+			status: 'blocked',
+			baseBranch: 'origin/main',
+			changedFilesConsidered: [],
+			mutateTargets: [],
+			reason: 'No changed implementation source files under src were found for mutation scope.',
+		});
+
+		expect(summary).toContain('Mutation scope status: blocked');
+		expect(summary).toContain('Changed files considered: (none)');
+		expect(summary).toContain('Mutate targets: (none)');
+		expect(summary).toContain(
+			'Reason: No changed implementation source files under src were found for mutation scope.',
+		);
+	});
 });

@@ -88,6 +88,106 @@ Persistent execution log for the `implementer` skill.
 
 ---
 
+## 2026-10-31 — Hardener survivor loop completion
+
+- Timestamp: 2026-10-31
+- Feature file: src/hardener.branchMutationScope.acceptance.feature
+- Complexity: standard
+- Current phase: P4
+- Checkpoint status: COMPLETE (`HARDENER_LOOP_COMPLETE`)
+
+### Completed work
+
+- Added targeted runtime wiring tests for bootstrap behavior to kill surviving mutants reported in prior branch-scoped mutation runs.
+- Validated logger enablement path, sink routing, input event wiring, pointer-lock transition wiring, animation frame movement application, render invocation, and resize delegation.
+- Re-ran hardener mutation workflow with branch-scoped mutate targets.
+- Achieved mutation score above gate threshold.
+
+### Files changed so far
+
+- src/bootstrap.test.ts
+
+### Scenario -> test mapping
+
+- Hardener survivor-driven test strengthening for branch-scoped mutation targets -> `src/bootstrap.test.ts` (`enables debug runtime logging from query string and wires sink levels`, `initializes renderer and scene primitives with expected values`, `registers input handlers and delegates runtime helpers`, `runs one animation frame, renders, and wires resize handling`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:unit`, `npm run test:all`)
+- Cleaner: PASS (`npm run cleaner`)
+- Mutation: PASS (`npm run test:mutation:branch` -> `83.33%`)
+
+### Risks / blockers
+
+- None. Mutation score meets hardener threshold.
+
+### Next action
+
+- Proceed to final handoff/state sync.
+
+### User review status
+
+- Confirmed
+
+---
+
+## 2026-10-31 — Cleaner coverage threshold enforcement
+
+- Timestamp: 2026-10-31
+- Feature file: src/cleaner.coverageThreshold.acceptance.feature
+- Complexity: standard
+- Current phase: P4
+- Checkpoint status: COMPLETE (`P0_COMPLETE` -> `P4_COMPLETE`)
+
+### Completed work
+
+- Added approved acceptance criteria for enforcing coverage thresholds in cleaner.
+- Removed cleaner coverage threshold overrides from `package.json` so cleaner uses `vitest.config.ts` policy.
+- Added coverage threshold evaluation helper for deterministic threshold-violation messaging.
+- Added unit and acceptance tests mapped to all approved scenarios.
+- Updated cleaner skill docs to state threshold enforcement behavior.
+- Added targeted branch-coverage test for mutation scope summary to restore global branch coverage to policy level.
+
+### Files changed so far
+
+- src/cleaner.coverageThreshold.acceptance.feature
+- src/cleaner.coverageThreshold.acceptance.test.ts
+- src/cleanerCoverageGate.test.ts
+- src/tools/cleanerCoverageGate.ts
+- src/hardenerMutationScope.test.ts
+- package.json
+- .github/skills/cleaner/SKILL.md
+- .github/skills/cleaner/README.md
+
+### Scenario -> test mapping
+
+- Cleaner fails when branch coverage drops below threshold -> `src/cleaner.coverageThreshold.acceptance.test.ts` (`Cleaner fails when branch coverage drops below threshold`) + `src/cleanerCoverageGate.test.ts` (`fails with clear violation messages when a metric is below threshold`)
+- Cleaner passes when coverage meets configured thresholds -> `src/cleaner.coverageThreshold.acceptance.test.ts` (`Cleaner passes when coverage meets configured thresholds`) + `src/cleanerCoverageGate.test.ts` (`passes when all metrics meet thresholds`)
+- Cleaner uses same thresholds as primary Vitest policy -> `src/cleaner.coverageThreshold.acceptance.test.ts` (`Cleaner uses the same thresholds as the primary Vitest coverage policy`) + `src/cleanerCoverageGate.test.ts` (`detects threshold overrides in command strings`)
+- Cleaner reporting preserves threshold context -> `src/cleaner.coverageThreshold.acceptance.test.ts` (`Cleaner reporting preserves threshold context`) + `src/cleanerCoverageGate.test.ts` (`fails with clear violation messages when a metric is below threshold`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+
+### Risks / blockers
+
+- Branch-scoped mutation run completed but remains below 80% overall mutation threshold (`66.22%`) due existing survivors concentrated in `src/app/bootstrap.ts`.
+
+### Next action
+
+- Add targeted tests for `src/app/bootstrap.ts` runtime wiring behavior to improve mutation score in hardener loop.
+
+### User review status
+
+- Confirmed
+
+---
+
 ## 2026-10-31 — Hardener branch-scoped mutation targets
 
 - Timestamp: 2026-10-31

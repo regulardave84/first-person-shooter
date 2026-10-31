@@ -8,6 +8,7 @@ The `cleaner` skill identifies Change Risk Anti-Patterns (CRAP) and drives safe 
 ## What cleaner does
 
 - Combines cyclomatic complexity with test coverage.
+- Enforces configured global coverage thresholds during cleaner coverage run.
 - Computes CRAP score per function.
 - Flags high-risk hotspots.
 - Runs dependency policy validation after review and before cleanup refactors.

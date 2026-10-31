@@ -33,6 +33,7 @@ Where:
 ### 1) Collect metrics
 
 - Run coverage (`npm run test:coverage`).
+- Enforce repository coverage thresholds during cleaner coverage execution (same policy as `vitest.config.ts`; no threshold downgrades).
 - Run complexity analysis through ESLint complexity diagnostics.
 - Produce report at `reports/cleaner/CRAP_REPORT.md`.
 
