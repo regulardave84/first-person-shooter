@@ -496,7 +496,10 @@ export function advancePrimaryFireState(params: {
 	const fireRate = params.fireRate ?? PROJECTILE_FIRE_RATE;
 	const interval = 1 / fireRate;
 	const dt = Math.max(0, Number.isFinite(params.dt) ? params.dt : 0);
-	let secondsUntilNextShot = Math.max(0, params.state.secondsUntilNextShot - dt);
+	let secondsUntilNextShot = Math.max(
+		0,
+		params.state.secondsUntilNextShot - dt,
+	);
 	let hasQueuedImmediateShot = params.state.hasQueuedImmediateShot;
 	let shotsToSpawn = 0;
 
@@ -654,7 +657,10 @@ function normalizeProjectileDeltaTime(dt: number): number {
 	return Math.max(0, Number.isFinite(dt) ? dt : 0);
 }
 
-function getProjectileTravelEnd(projectile: Projectile, dt: number): Position3D {
+function getProjectileTravelEnd(
+	projectile: Projectile,
+	dt: number,
+): Position3D {
 	const travel = projectile.speed * dt;
 	return {
 		x: projectile.head.x + projectile.direction.x * travel,

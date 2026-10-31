@@ -183,7 +183,11 @@ document.addEventListener('pointerlockchange', () => {
 	});
 
 	if (!isPointerLockActive()) {
-		primaryFireState = setPrimaryFirePressedState(primaryFireState, false, false);
+		primaryFireState = setPrimaryFirePressedState(
+			primaryFireState,
+			false,
+			false,
+		);
 	}
 });
 

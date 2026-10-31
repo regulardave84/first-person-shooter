@@ -200,12 +200,9 @@ describe('fpsRuntime helpers', () => {
 		});
 
 		expect(stepped.activeProjectiles).toHaveLength(0);
-		expect(stepped.impacts.map((impact) => impact.colliderKind).sort()).toEqual([
-			'ceiling',
-			'entity',
-			'floor',
-			'wall',
-		]);
+		expect(stepped.impacts.map((impact) => impact.colliderKind).sort()).toEqual(
+			['ceiling', 'entity', 'floor', 'wall'],
+		);
 	});
 
 	it('creates a disabled logger by default', () => {
@@ -918,7 +915,10 @@ describe('fpsRuntime helpers', () => {
 		expect(audioContext.createOscillator).toHaveBeenCalledTimes(1);
 		expect(oscillator.start).toHaveBeenCalledWith(3);
 		expect(oscillator.stop).toHaveBeenCalledWith(3.1);
-		expect(gain.gain.exponentialRampToValueAtTime).toHaveBeenCalledWith(1, 3.005);
+		expect(gain.gain.exponentialRampToValueAtTime).toHaveBeenCalledWith(
+			1,
+			3.005,
+		);
 		expect(sink).toHaveBeenCalledWith({
 			level: 'debug',
 			event: 'bullet.sound.played',

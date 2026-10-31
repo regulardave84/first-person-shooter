@@ -50,10 +50,11 @@ const runtimeMocks = vi.hoisted(() => ({
 		projectiles: [] as unknown[],
 	})),
 	stepProjectiles: vi.fn(
-		() => ({ activeProjectiles: [] as unknown[], impacts: [] as unknown[] }) as {
-			activeProjectiles: unknown[];
-			impacts: unknown[];
-		},
+		() =>
+			({ activeProjectiles: [] as unknown[], impacts: [] as unknown[] }) as {
+				activeProjectiles: unknown[];
+				impacts: unknown[];
+			},
 	),
 	WORLD_PROJECTILE_COLLIDERS: [],
 	PROJECTILE_COLOR: 0xffffff,
@@ -421,7 +422,9 @@ describe('bootstrap runtime wiring', () => {
 		await import('./app/bootstrap');
 
 		const renderer = threeState.renderers[0];
-		expect(renderer.domElement.addEventListener.mock.calls[0]?.[0]).toBe('click');
+		expect(renderer.domElement.addEventListener.mock.calls[0]?.[0]).toBe(
+			'click',
+		);
 	});
 
 	it('registers input handlers and delegates runtime helpers', async () => {
@@ -568,14 +571,21 @@ describe('bootstrap runtime wiring', () => {
 					color: 0xffffff,
 				},
 			],
-			impacts: [{ projectileId: 1, point: { x: 0, y: 1.6, z: -1 }, colliderKind: 'wall' }],
+			impacts: [
+				{
+					projectileId: 1,
+					point: { x: 0, y: 1.6, z: -1 },
+					colliderKind: 'wall',
+				},
+			],
 		});
 
 		await import('./app/bootstrap');
 
 		const renderer = threeState.renderers[0];
-		(globalThis.document as { pointerLockElement: unknown }).pointerLockElement =
-			renderer.domElement;
+		(
+			globalThis.document as { pointerLockElement: unknown }
+		).pointerLockElement = renderer.domElement;
 
 		documentListeners.get('mousedown')?.({ button: 0 });
 		expect(runtimeMocks.setPrimaryFirePressedState).toHaveBeenCalledWith(
@@ -591,8 +601,9 @@ describe('bootstrap runtime wiring', () => {
 			true,
 		);
 
-		(globalThis.document as { pointerLockElement: unknown }).pointerLockElement =
-			null;
+		(
+			globalThis.document as { pointerLockElement: unknown }
+		).pointerLockElement = null;
 		documentListeners.get('pointerlockchange')?.();
 		expect(runtimeMocks.setPrimaryFirePressedState).toHaveBeenCalledWith(
 			expect.any(Object),
@@ -730,14 +741,19 @@ describe('bootstrap runtime wiring', () => {
 			.mockReturnValueOnce({
 				activeProjectiles: [],
 				impacts: [
-					{ projectileId: 1, point: { x: 0, y: 1.6, z: -0.6 }, colliderKind: 'wall' },
+					{
+						projectileId: 1,
+						point: { x: 0, y: 1.6, z: -0.6 },
+						colliderKind: 'wall',
+					},
 				],
 			});
 
 		await import('./app/bootstrap');
 
-		const animationFn = (globalThis.requestAnimationFrame as ReturnType<typeof vi.fn>)
-			.mock.calls[0]?.[0] as (() => void) | undefined;
+		const animationFn = (
+			globalThis.requestAnimationFrame as ReturnType<typeof vi.fn>
+		).mock.calls[0]?.[0] as (() => void) | undefined;
 		animationFn?.();
 
 		const scene = threeState.scenes[0];
@@ -803,12 +819,15 @@ describe('bootstrap runtime wiring', () => {
 
 		await import('./app/bootstrap');
 
-		const animationFn = (globalThis.requestAnimationFrame as ReturnType<typeof vi.fn>)
-			.mock.calls[0]?.[0] as (() => void) | undefined;
+		const animationFn = (
+			globalThis.requestAnimationFrame as ReturnType<typeof vi.fn>
+		).mock.calls[0]?.[0] as (() => void) | undefined;
 		animationFn?.();
 
 		expect(threeState.scenes[0].add).toHaveBeenCalledTimes(6);
-		expect(threeState.bufferGeometries[0].setFromPoints).toHaveBeenCalledTimes(2);
+		expect(threeState.bufferGeometries[0].setFromPoints).toHaveBeenCalledTimes(
+			2,
+		);
 		expect(threeState.vectors[0]?.z).toBeCloseTo(0.05);
 		expect(threeState.vectors[1]?.z).toBeCloseTo(-0.3);
 	});
