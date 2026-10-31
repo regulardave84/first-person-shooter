@@ -29,6 +29,9 @@ const runtimeMocks = vi.hoisted(() => ({
 		}
 		return { isGrounded: false, verticalVelocity: 5.2 };
 	}),
+	createJumpSoundPlayer: vi.fn(() => ({
+		play: vi.fn(),
+	})),
 	setMovementKeyState: vi.fn(),
 	requestPointerLock: vi.fn(),
 	handlePointerLockChange: vi.fn(() => ({ isLocked: true })),
@@ -76,6 +79,7 @@ vi.mock('./runtime/fpsRuntime', () => ({
 	createInitialMovementKeys: runtimeMocks.createInitialMovementKeys,
 	createInitialJumpState: runtimeMocks.createInitialJumpState,
 	handleJumpInput: runtimeMocks.handleJumpInput,
+	createJumpSoundPlayer: runtimeMocks.createJumpSoundPlayer,
 	setMovementKeyState: runtimeMocks.setMovementKeyState,
 	requestPointerLock: runtimeMocks.requestPointerLock,
 	handlePointerLockChange: runtimeMocks.handlePointerLockChange,

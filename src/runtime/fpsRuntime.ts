@@ -130,6 +130,58 @@ export function setMovementKeyState(
 	}
 }
 
+export function createJumpSoundPlayer(
+	logger?: RuntimeLogger,
+): { play: () => void } {
+	const AudioCtor =
+		(globalThis as typeof globalThis & {
+			AudioContext?: typeof AudioContext;
+			webkitAudioContext?: typeof AudioContext;
+		}).AudioContext ??
+		(globalThis as typeof globalThis & {
+			AudioContext?: typeof AudioContext;
+			webkitAudioContext?: typeof AudioContext;
+		}).webkitAudioContext;
+
+	if (!AudioCtor) {
+		logger?.debug('audio.unavailable');
+		return { play: () => {} };
+	}
+
+	let audioContext: AudioContext | undefined;
+
+	return {
+		play: () => {
+			try {
+				const context = audioContext ?? new AudioCtor();
+				audioContext = context;
+				const startTime = context.currentTime;
+				const oscillator = context.createOscillator();
+				const gain = context.createGain();
+
+				oscillator.type = 'square';
+				oscillator.frequency.setValueAtTime(420, startTime);
+				oscillator.frequency.exponentialRampToValueAtTime(180, startTime + 0.12);
+
+				gain.gain.setValueAtTime(0.0001, startTime);
+				gain.gain.exponentialRampToValueAtTime(0.18, startTime + 0.01);
+				gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.15);
+
+				oscillator.connect(gain);
+				gain.connect(context.destination);
+				oscillator.start(startTime);
+				oscillator.stop(startTime + 0.16);
+
+				logger?.debug('jump.sound.played', { startTime, frequency: 420 });
+			} catch (error) {
+				logger?.warn('jump.sound.failed', {
+					error: error instanceof Error ? error.message : 'unknown',
+				});
+			}
+		},
+	};
+}
+
 export function requestPointerLock(
 	element: {
 		requestPointerLock: () => void;

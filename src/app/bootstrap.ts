@@ -6,6 +6,7 @@ import {
 	applyFrameMovement,
 	applyViewportResize,
 	createInitialJumpState,
+	createJumpSoundPlayer,
 	createRuntimeLogger,
 	createInitialMovementKeys,
 	handleJumpInput,
@@ -70,6 +71,7 @@ for (const wall of WORLD_WALLS) {
 
 const keys = createInitialMovementKeys();
 let jumpState = createInitialJumpState();
+const jumpSound = createJumpSoundPlayer();
 const runtimeLogger = createRuntimeLogger({
 	enabled: isDebugLoggingEnabled(window.location.search),
 	sink: (entry) => {
@@ -87,7 +89,11 @@ const moveSpeed = DEFAULT_MOVE_SPEED;
 
 document.addEventListener('keydown', (event) => {
 	if (event.code === 'Space') {
-		jumpState = handleJumpInput(jumpState, event.code);
+		const nextJumpState = handleJumpInput(jumpState, event.code);
+		if (nextJumpState !== jumpState) {
+			jumpSound.play();
+			jumpState = nextJumpState;
+		}
 		return;
 	}
 	setMovementKeyState(keys, event.code, true, runtimeLogger);
