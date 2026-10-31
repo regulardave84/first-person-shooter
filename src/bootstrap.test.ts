@@ -10,6 +10,7 @@ type InputEventLike = {
 type ListenerMap = Map<string, (event?: InputEventLike) => void>;
 
 const runtimeMocks = vi.hoisted(() => ({
+	RUN_SPEED_MULTIPLIER: 2,
 	WORLD_WALLS: [
 		{ x: 1, y: 2, z: 3, w: 4, h: 5, d: 6, kind: 'outer' as const },
 		{ x: -1, y: 2, z: -3, w: 2, h: 4, d: 6, kind: 'inner' as const },
@@ -20,6 +21,14 @@ const runtimeMocks = vi.hoisted(() => ({
 		KeyS: false,
 		KeyD: false,
 	})),
+	createInitialRunKeys: vi.fn(() => ({
+		ShiftLeft: false,
+		ShiftRight: false,
+	})),
+	isRunActive: vi.fn(
+		(keys: { ShiftLeft: boolean; ShiftRight: boolean }) =>
+			keys.ShiftLeft || keys.ShiftRight,
+	),
 	createInitialJumpState: vi.fn(() => ({
 		isGrounded: true,
 		verticalVelocity: 0,
@@ -61,6 +70,17 @@ const runtimeMocks = vi.hoisted(() => ({
 	createJumpSoundPlayer: vi.fn(() => ({
 		play: vi.fn(),
 	})),
+	setRunKeyState: vi.fn(
+		(
+			keys: { ShiftLeft: boolean; ShiftRight: boolean },
+			code: string,
+			isPressed: boolean,
+		) => {
+			if (code === 'ShiftLeft' || code === 'ShiftRight') {
+				keys[code] = isPressed;
+			}
+		},
+	),
 	setMovementKeyState: vi.fn(),
 	requestPointerLock: vi.fn(),
 	handlePointerLockChange: vi.fn(() => ({ isLocked: true })),
@@ -119,8 +139,11 @@ const threeState = vi.hoisted(() => ({
 }));
 
 vi.mock('./runtime/fpsRuntime', () => ({
+	RUN_SPEED_MULTIPLIER: runtimeMocks.RUN_SPEED_MULTIPLIER,
 	WORLD_WALLS: runtimeMocks.WORLD_WALLS,
 	createInitialMovementKeys: runtimeMocks.createInitialMovementKeys,
+	createInitialRunKeys: runtimeMocks.createInitialRunKeys,
+	isRunActive: runtimeMocks.isRunActive,
 	createInitialJumpState: runtimeMocks.createInitialJumpState,
 	createInitialPrimaryFireState: runtimeMocks.createInitialPrimaryFireState,
 	createBulletFireSoundPlayer: runtimeMocks.createBulletFireSoundPlayer,
@@ -133,6 +156,7 @@ vi.mock('./runtime/fpsRuntime', () => ({
 	WORLD_PROJECTILE_COLLIDERS: runtimeMocks.WORLD_PROJECTILE_COLLIDERS,
 	PROJECTILE_COLOR: runtimeMocks.PROJECTILE_COLOR,
 	createJumpSoundPlayer: runtimeMocks.createJumpSoundPlayer,
+	setRunKeyState: runtimeMocks.setRunKeyState,
 	setMovementKeyState: runtimeMocks.setMovementKeyState,
 	requestPointerLock: runtimeMocks.requestPointerLock,
 	handlePointerLockChange: runtimeMocks.handlePointerLockChange,
@@ -492,6 +516,26 @@ describe('bootstrap runtime wiring', () => {
 		);
 	});
 
+	it('delegates shift keydown and keyup to run key state helper', async () => {
+		await import('./app/bootstrap');
+
+		documentListeners.get('keydown')?.({ code: 'ShiftLeft' });
+		documentListeners.get('keyup')?.({ code: 'ShiftRight' });
+
+		expect(runtimeMocks.setRunKeyState).toHaveBeenCalledWith(
+			expect.any(Object),
+			'ShiftLeft',
+			true,
+			expect.any(Object),
+		);
+		expect(runtimeMocks.setRunKeyState).toHaveBeenCalledWith(
+			expect.any(Object),
+			'ShiftRight',
+			false,
+			expect.any(Object),
+		);
+	});
+
 	it('runs one animation frame, renders, and wires resize handling', async () => {
 		runtimeMocks.applyFrameMovement.mockReturnValueOnce({ x: 7, y: 8, z: 9 });
 
@@ -529,6 +573,33 @@ describe('bootstrap runtime wiring', () => {
 			renderer,
 			1920,
 			1080,
+		);
+	});
+
+	it('keeps run-speed multiplier in air when Shift is released after jump takeoff', async () => {
+		await import('./app/bootstrap');
+
+		documentListeners.get('keydown')?.({ code: 'ShiftLeft' });
+		documentListeners.get('keydown')?.({ code: 'Space' });
+
+		const firstScheduledFrame = (
+			globalThis.requestAnimationFrame as ReturnType<typeof vi.fn>
+		).mock.calls[0]?.[0] as (() => void) | undefined;
+		firstScheduledFrame?.();
+
+		expect(runtimeMocks.applyFrameMovement).toHaveBeenLastCalledWith(
+			expect.objectContaining({ moveSpeed: 10 }),
+		);
+
+		documentListeners.get('keyup')?.({ code: 'ShiftLeft' });
+
+		const secondScheduledFrame = (
+			globalThis.requestAnimationFrame as ReturnType<typeof vi.fn>
+		).mock.calls[1]?.[0] as (() => void) | undefined;
+		secondScheduledFrame?.();
+
+		expect(runtimeMocks.applyFrameMovement).toHaveBeenLastCalledWith(
+			expect.objectContaining({ moveSpeed: 10 }),
 		);
 	});
 

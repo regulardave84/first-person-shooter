@@ -3,6 +3,7 @@ import '../style.css';
 import { DEFAULT_MOVE_SPEED, PLAYER_HEIGHT } from '../core/gameLogic';
 import {
 	PROJECTILE_COLOR,
+	RUN_SPEED_MULTIPLIER,
 	WORLD_WALLS,
 	WORLD_PROJECTILE_COLLIDERS,
 	advancePrimaryFireState,
@@ -12,12 +13,15 @@ import {
 	createInitialJumpState,
 	createBulletFireSoundPlayer,
 	createJumpSoundPlayer,
+	createInitialRunKeys,
 	createRuntimeLogger,
 	createInitialMovementKeys,
 	handleJumpInput,
 	handlePointerLockChange,
 	handleMouseMoveForLook,
+	isRunActive,
 	requestPointerLock,
+	setRunKeyState,
 	setMovementKeyState,
 	playBulletFireSounds,
 	setPrimaryFirePressedState,
@@ -81,6 +85,7 @@ for (const wall of WORLD_WALLS) {
 }
 
 const keys = createInitialMovementKeys();
+const runKeys = createInitialRunKeys();
 let jumpState = createInitialJumpState();
 let primaryFireState = createInitialPrimaryFireState();
 let activeProjectiles: Projectile[] = [];
@@ -99,7 +104,7 @@ const runtimeLogger = createRuntimeLogger({
 
 let yaw = 0;
 let pitch = 0;
-const moveSpeed = DEFAULT_MOVE_SPEED;
+let airborneRunSpeedMultiplier = 1;
 const projectileVisuals = new Map<number, THREE.Line>();
 const projectileMaterial = new THREE.LineBasicMaterial({
 	color: PROJECTILE_COLOR,
@@ -156,12 +161,16 @@ document.addEventListener('keydown', (event) => {
 	if (event.code === 'Space') {
 		const nextJumpState = handleJumpInput(jumpState, event.code);
 		if (nextJumpState !== jumpState) {
+			airborneRunSpeedMultiplier = isRunActive(runKeys)
+				? RUN_SPEED_MULTIPLIER
+				: 1;
 			jumpSound.play();
 			jumpState = nextJumpState;
 		}
 		return;
 	}
 	setMovementKeyState(keys, event.code, true, runtimeLogger);
+	setRunKeyState(runKeys, event.code, true, runtimeLogger);
 });
 
 document.addEventListener('keyup', (event) => {
@@ -169,6 +178,7 @@ document.addEventListener('keyup', (event) => {
 		return;
 	}
 	setMovementKeyState(keys, event.code, false, runtimeLogger);
+	setRunKeyState(runKeys, event.code, false, runtimeLogger);
 });
 
 renderer.domElement.addEventListener('click', () => {
@@ -239,17 +249,25 @@ function animate() {
 	requestAnimationFrame(animate);
 
 	const dt = clock.getDelta();
+	const moveSpeedMultiplier = jumpState.isGrounded
+		? isRunActive(runKeys)
+			? RUN_SPEED_MULTIPLIER
+			: 1
+		: airborneRunSpeedMultiplier;
 	const nextPosition = applyFrameMovement({
 		position: camera.position,
 		keys,
 		yaw,
 		dt,
-		moveSpeed,
+		moveSpeed: DEFAULT_MOVE_SPEED * moveSpeedMultiplier,
 		playerHeight: PLAYER_HEIGHT,
 		logger: runtimeLogger,
 		jumpState,
 		groundY: PLAYER_HEIGHT,
 	});
+	if (jumpState.isGrounded) {
+		airborneRunSpeedMultiplier = 1;
+	}
 	camera.position.x = nextPosition.x;
 	camera.position.y = nextPosition.y;
 	camera.position.z = nextPosition.z;

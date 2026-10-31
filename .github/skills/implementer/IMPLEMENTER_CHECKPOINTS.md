@@ -4,6 +4,62 @@ Persistent execution log for the `implementer` skill.
 
 ---
 
+## 2026-10-31 — Player can run with Shift and carry jump distance
+
+- Timestamp: 2026-10-31
+- Feature file: src/playerRun.acceptance.feature
+- Complexity: standard
+- Current phase: P4
+- Checkpoint status: COMPLETE (`SPECIFIER_COMPLETE` -> `IMPLEMENTER_COMPLETE`) with `CLEANER_COMPLETE` and `HARDENER_COMPLETE`
+
+### Completed work
+
+- Added approved acceptance criteria for Shift-based running at `2.0x` speed, both Shift keys, no stamina/cooldown limits, and run-jump carry distance.
+- Added run-key runtime helpers in `src/runtime/input.ts` for Left/Right Shift tracking and active-run detection.
+- Wired running into gameplay input and per-frame movement in `src/app/bootstrap.ts`.
+- Implemented takeoff-based airborne run carry so releasing Shift mid-air does not remove jump carry velocity.
+- Added acceptance tests in `src/playerRun.acceptance.test.ts` covering all approved scenarios.
+- Added unit test coverage in `src/fpsRuntime.test.ts` and bootstrap wiring checks in `src/bootstrap.test.ts`.
+
+### Files changed so far
+
+- src/playerRun.acceptance.feature
+- src/playerRun.acceptance.test.ts
+- src/runtime/input.ts
+- src/app/bootstrap.ts
+- src/fpsRuntime.test.ts
+- src/bootstrap.test.ts
+
+### Scenario -> test mapping
+
+- Holding Shift while moving doubles player movement speed -> `src/playerRun.acceptance.test.ts` (`Holding Shift while moving doubles player movement speed`)
+- Releasing Shift while moving restores normal movement speed -> `src/playerRun.acceptance.test.ts` (`Releasing Shift while moving restores normal movement speed`)
+- Holding Shift without movement input does not move the player -> `src/playerRun.acceptance.test.ts` (`Holding Shift without movement input does not move the player`)
+- Either Shift key can enable run speed while held -> `src/playerRun.acceptance.test.ts` (`Either Shift key can enable run speed while held`) + `src/fpsRuntime.test.ts` (`tracks run key state from either shift key`)
+- Running has no stamina or cooldown limit -> `src/playerRun.acceptance.test.ts` (`Releasing Shift while moving restores normal movement speed`) + `src/playerRun.acceptance.test.ts` (`Either Shift key can enable run speed while held`)
+- Jumping while running carries farther than jumping while walking (>= 10%, Shift held at takeoff, same vertical height) -> `src/playerRun.acceptance.test.ts` (`Jumping while running carries at least 10% farther with the same jump height`) + `src/bootstrap.test.ts` (`keeps run-speed multiplier in air when Shift is released after jump takeoff`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Hardener: PASS (`npm run test:mutation:branch` -> `91.53%`, target `>= 80%`)
+
+### Risks / blockers
+
+- None.
+
+### Next action
+
+- Proceed to final handoff.
+
+### User review status
+
+- Confirmed
+
+---
+
 ## 2026-10-31 — Maintainable architecture guardrails for feature delivery
 
 - Timestamp: 2026-10-31

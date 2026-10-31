@@ -2,6 +2,10 @@ import { updateLookAngles, type MovementKeys } from '../core/gameLogic';
 import type { RuntimeLogger } from './logger';
 
 export type MovementKeyCode = keyof MovementKeys;
+export type RunKeyCode = 'ShiftLeft' | 'ShiftRight';
+export type RunKeys = Record<RunKeyCode, boolean>;
+
+export const RUN_SPEED_MULTIPLIER = 2;
 
 const MOVEMENT_KEYS: ReadonlyArray<MovementKeyCode> = [
 	'KeyW',
@@ -9,6 +13,8 @@ const MOVEMENT_KEYS: ReadonlyArray<MovementKeyCode> = [
 	'KeyS',
 	'KeyD',
 ];
+
+const RUN_KEYS: ReadonlyArray<RunKeyCode> = ['ShiftLeft', 'ShiftRight'];
 
 export type LookState = {
 	yaw: number;
@@ -28,8 +34,19 @@ export function createInitialMovementKeys(): MovementKeys {
 	};
 }
 
+export function createInitialRunKeys(): RunKeys {
+	return {
+		ShiftLeft: false,
+		ShiftRight: false,
+	};
+}
+
 export function isMovementKey(code: string): code is MovementKeyCode {
 	return MOVEMENT_KEYS.includes(code as MovementKeyCode);
+}
+
+export function isRunKey(code: string): code is RunKeyCode {
+	return RUN_KEYS.includes(code as RunKeyCode);
 }
 
 export function setMovementKeyState(
@@ -42,6 +59,22 @@ export function setMovementKeyState(
 		keys[code] = isPressed;
 		logger?.debug('input.key.changed', { code, isPressed });
 	}
+}
+
+export function setRunKeyState(
+	keys: RunKeys,
+	code: string,
+	isPressed: boolean,
+	logger?: RuntimeLogger,
+): void {
+	if (isRunKey(code)) {
+		keys[code] = isPressed;
+		logger?.debug('input.run.changed', { code, isPressed });
+	}
+}
+
+export function isRunActive(keys: RunKeys): boolean {
+	return keys.ShiftLeft || keys.ShiftRight;
 }
 
 export function requestPointerLock(

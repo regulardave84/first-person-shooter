@@ -12,15 +12,20 @@ import {
 	createBulletFireSoundPlayer,
 	createJumpSoundPlayer,
 	createRuntimeLogger,
+	createInitialRunKeys,
 	createInitialMovementKeys,
 	getWorldLayoutSummary,
 	handleJumpInput,
 	handlePointerLockChange,
 	handleMouseMoveForLook,
+	isRunActive,
+	isRunKey,
 	isMovementKey,
 	requestPointerLock,
+	RUN_SPEED_MULTIPLIER,
 	resolveHorizontalMovement,
 	playBulletFireSounds,
+	setRunKeyState,
 	setMovementKeyState,
 	setPrimaryFirePressedState,
 	spawnProjectilesFromLook,
@@ -34,6 +39,13 @@ describe('fpsRuntime helpers', () => {
 		expect(isMovementKey('KeyS')).toBe(true);
 		expect(isMovementKey('KeyD')).toBe(true);
 		expect(isMovementKey('Space')).toBe(false);
+	});
+
+	it('validates run key codes and run speed multiplier', () => {
+		expect(isRunKey('ShiftLeft')).toBe(true);
+		expect(isRunKey('ShiftRight')).toBe(true);
+		expect(isRunKey('KeyW')).toBe(false);
+		expect(RUN_SPEED_MULTIPLIER).toBe(2);
 	});
 
 	it('creates and updates movement key state', () => {
@@ -52,6 +64,25 @@ describe('fpsRuntime helpers', () => {
 
 		setMovementKeyState(keys, 'Space', true);
 		expect(keys).toEqual({ KeyW: true, KeyA: false, KeyS: false, KeyD: true });
+	});
+
+	it('tracks run key state from either shift key', () => {
+		const runKeys = createInitialRunKeys();
+		expect(runKeys).toEqual({ ShiftLeft: false, ShiftRight: false });
+		expect(isRunActive(runKeys)).toBe(false);
+
+		setRunKeyState(runKeys, 'ShiftLeft', true);
+		expect(isRunActive(runKeys)).toBe(true);
+
+		setRunKeyState(runKeys, 'ShiftRight', true);
+		setRunKeyState(runKeys, 'ShiftLeft', false);
+		expect(isRunActive(runKeys)).toBe(true);
+
+		setRunKeyState(runKeys, 'ShiftRight', false);
+		expect(isRunActive(runKeys)).toBe(false);
+
+		setRunKeyState(runKeys, 'KeyW', true);
+		expect(runKeys).toEqual({ ShiftLeft: false, ShiftRight: false });
 	});
 
 	it('requests pointer lock on the provided element', () => {
