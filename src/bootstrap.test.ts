@@ -4,6 +4,7 @@ type InputEventLike = {
 	code?: string;
 	movementX?: number;
 	movementY?: number;
+	button?: number;
 };
 
 type ListenerMap = Map<string, (event?: InputEventLike) => void>;
@@ -23,12 +24,39 @@ const runtimeMocks = vi.hoisted(() => ({
 		isGrounded: true,
 		verticalVelocity: 0,
 	})),
+	createInitialPrimaryFireState: vi.fn(() => ({
+		isPrimaryHeld: false,
+		hasQueuedImmediateShot: false,
+		secondsUntilNextShot: 0,
+		nextProjectileId: 1,
+	})),
+	createBulletFireSoundPlayer: vi.fn(() => ({
+		play: vi.fn(),
+	})),
 	handleJumpInput: vi.fn((state, code) => {
 		if (code !== 'Space' || !state.isGrounded) {
 			return state;
 		}
 		return { isGrounded: false, verticalVelocity: 5.2 };
 	}),
+	setPrimaryFirePressedState: vi.fn((state) => state),
+	playBulletFireSounds: vi.fn(),
+	advancePrimaryFireState: vi.fn((params: { state: unknown }) => ({
+		state: params.state,
+		shotsToSpawn: 0,
+	})),
+	spawnProjectilesFromLook: vi.fn((params: { state: unknown }) => ({
+		state: params.state,
+		projectiles: [] as unknown[],
+	})),
+	stepProjectiles: vi.fn(
+		() => ({ activeProjectiles: [] as unknown[], impacts: [] as unknown[] }) as {
+			activeProjectiles: unknown[];
+			impacts: unknown[];
+		},
+	),
+	WORLD_PROJECTILE_COLLIDERS: [],
+	PROJECTILE_COLOR: 0xffffff,
 	createJumpSoundPlayer: vi.fn(() => ({
 		play: vi.fn(),
 	})),
@@ -52,7 +80,22 @@ const runtimeMocks = vi.hoisted(() => ({
 }));
 
 const threeState = vi.hoisted(() => ({
-	scenes: [] as Array<{ add: ReturnType<typeof vi.fn> }>,
+	scenes: [] as Array<{
+		add: ReturnType<typeof vi.fn>;
+		remove: ReturnType<typeof vi.fn>;
+	}>,
+	meshStandardMaterialOptions: [] as unknown[],
+	lineBasicMaterialOptions: [] as unknown[],
+	vectors: [] as Array<{ x: number; y: number; z: number }>,
+	bufferGeometries: [] as Array<{
+		setFromPoints: ReturnType<typeof vi.fn>;
+		dispose: ReturnType<typeof vi.fn>;
+	}>,
+	meshes: [] as Array<{
+		rotation: { x: number };
+		geometry: unknown;
+		material: unknown;
+	}>,
 	renderers: [] as Array<{
 		options: unknown;
 		domElement: { addEventListener: ReturnType<typeof vi.fn> };
@@ -78,7 +121,16 @@ vi.mock('./runtime/fpsRuntime', () => ({
 	WORLD_WALLS: runtimeMocks.WORLD_WALLS,
 	createInitialMovementKeys: runtimeMocks.createInitialMovementKeys,
 	createInitialJumpState: runtimeMocks.createInitialJumpState,
+	createInitialPrimaryFireState: runtimeMocks.createInitialPrimaryFireState,
+	createBulletFireSoundPlayer: runtimeMocks.createBulletFireSoundPlayer,
 	handleJumpInput: runtimeMocks.handleJumpInput,
+	setPrimaryFirePressedState: runtimeMocks.setPrimaryFirePressedState,
+	playBulletFireSounds: runtimeMocks.playBulletFireSounds,
+	advancePrimaryFireState: runtimeMocks.advancePrimaryFireState,
+	spawnProjectilesFromLook: runtimeMocks.spawnProjectilesFromLook,
+	stepProjectiles: runtimeMocks.stepProjectiles,
+	WORLD_PROJECTILE_COLLIDERS: runtimeMocks.WORLD_PROJECTILE_COLLIDERS,
+	PROJECTILE_COLOR: runtimeMocks.PROJECTILE_COLOR,
 	createJumpSoundPlayer: runtimeMocks.createJumpSoundPlayer,
 	setMovementKeyState: runtimeMocks.setMovementKeyState,
 	requestPointerLock: runtimeMocks.requestPointerLock,
@@ -92,6 +144,7 @@ vi.mock('./runtime/fpsRuntime', () => ({
 vi.mock('three', () => {
 	class Scene {
 		add = vi.fn();
+		remove = vi.fn();
 		background: unknown;
 		constructor() {
 			threeState.scenes.push(this);
@@ -174,17 +227,51 @@ vi.mock('three', () => {
 	}
 
 	class MeshStandardMaterial {
-		constructor(_options: unknown) {
-			void _options;
+		constructor(options: unknown) {
+			threeState.meshStandardMaterialOptions.push(options);
+		}
+	}
+
+	class LineBasicMaterial {
+		constructor(options: unknown) {
+			threeState.lineBasicMaterialOptions.push(options);
+		}
+	}
+
+	class Vector3 {
+		constructor(
+			public x: number,
+			public y: number,
+			public z: number,
+		) {
+			threeState.vectors.push({ x, y, z });
+		}
+	}
+
+	class BufferGeometry {
+		setFromPoints = vi.fn(() => this);
+		dispose = vi.fn();
+		constructor() {
+			threeState.bufferGeometries.push(this);
+		}
+	}
+
+	class Line {
+		geometry: BufferGeometry;
+		constructor(geometry: BufferGeometry, _material: unknown) {
+			this.geometry = geometry;
+			void _material;
 		}
 	}
 
 	class Mesh {
 		position = { set: vi.fn() };
 		rotation = { x: 0 };
-		constructor(_geometry: unknown, _material: unknown) {
-			void _geometry;
-			void _material;
+		constructor(
+			public geometry: unknown,
+			public material: unknown,
+		) {
+			threeState.meshes.push(this);
 		}
 	}
 
@@ -205,6 +292,10 @@ vi.mock('three', () => {
 		PlaneGeometry,
 		BoxGeometry,
 		MeshStandardMaterial,
+		LineBasicMaterial,
+		Vector3,
+		BufferGeometry,
+		Line,
 		Mesh,
 		Clock,
 	};
@@ -219,6 +310,11 @@ describe('bootstrap runtime wiring', () => {
 		vi.clearAllMocks();
 
 		threeState.scenes.length = 0;
+		threeState.meshStandardMaterialOptions.length = 0;
+		threeState.lineBasicMaterialOptions.length = 0;
+		threeState.vectors.length = 0;
+		threeState.bufferGeometries.length = 0;
+		threeState.meshes.length = 0;
 		threeState.renderers.length = 0;
 		threeState.cameras.length = 0;
 		threeState.clocks.length = 0;
@@ -291,6 +387,17 @@ describe('bootstrap runtime wiring', () => {
 		expect(errorSpy).toHaveBeenCalledWith('[runtime] evt.error', { b: 2 });
 	});
 
+	it('disables debug runtime logging when query string is not enabled', async () => {
+		(globalThis.window as { location: { search: string } }).location.search =
+			'?debugLogging=0';
+
+		await import('./app/bootstrap');
+
+		expect(runtimeMocks.createRuntimeLogger).toHaveBeenCalledWith(
+			expect.objectContaining({ enabled: false }),
+		);
+	});
+
 	it('initializes renderer and scene primitives with expected values', async () => {
 		await import('./app/bootstrap');
 
@@ -301,6 +408,20 @@ describe('bootstrap runtime wiring', () => {
 
 		const scene = threeState.scenes[0];
 		expect(scene.add).toHaveBeenCalledTimes(5);
+		expect(threeState.cameras[0].aspect).toBeCloseTo(1920 / 1080);
+		expect(threeState.meshStandardMaterialOptions).toEqual([
+			{ color: 0x334155 },
+			{ color: 0x64748b },
+		]);
+		expect(threeState.meshes[0]?.rotation.x).toBeCloseTo(-Math.PI / 2);
+		expect(threeState.lineBasicMaterialOptions).toEqual([{ color: 0xffffff }]);
+	});
+
+	it('registers click handler on renderer canvas for pointer lock request', async () => {
+		await import('./app/bootstrap');
+
+		const renderer = threeState.renderers[0];
+		expect(renderer.domElement.addEventListener.mock.calls[0]?.[0]).toBe('click');
 	});
 
 	it('registers input handlers and delegates runtime helpers', async () => {
@@ -384,6 +505,13 @@ describe('bootstrap runtime wiring', () => {
 				logger: expect.any(Object),
 			}),
 		);
+		expect(runtimeMocks.spawnProjectilesFromLook).not.toHaveBeenCalled();
+		expect(runtimeMocks.playBulletFireSounds).not.toHaveBeenCalled();
+		expect(runtimeMocks.stepProjectiles).toHaveBeenCalledWith(
+			expect.objectContaining({
+				projectiles: [],
+			}),
+		);
 
 		const renderer = threeState.renderers[0];
 		const camera = threeState.cameras[0];
@@ -399,5 +527,289 @@ describe('bootstrap runtime wiring', () => {
 			1920,
 			1080,
 		);
+	});
+
+	it('handles primary fire input, pointer-lock gating, and projectile frame updates', async () => {
+		runtimeMocks.advancePrimaryFireState.mockReturnValueOnce({
+			state: {
+				isPrimaryHeld: true,
+				hasQueuedImmediateShot: false,
+				secondsUntilNextShot: 0.5,
+				nextProjectileId: 1,
+			},
+			shotsToSpawn: 1,
+		});
+		runtimeMocks.spawnProjectilesFromLook.mockReturnValueOnce({
+			state: {
+				isPrimaryHeld: true,
+				hasQueuedImmediateShot: false,
+				secondsUntilNextShot: 0.5,
+				nextProjectileId: 2,
+			},
+			projectiles: [
+				{
+					id: 1,
+					head: { x: 0, y: 1.6, z: 0 },
+					direction: { x: 0, y: 0, z: -1 },
+					speed: 45,
+					length: 0.35,
+					color: 0xffffff,
+				},
+			],
+		});
+		runtimeMocks.stepProjectiles.mockReturnValueOnce({
+			activeProjectiles: [
+				{
+					id: 1,
+					head: { x: 0, y: 1.6, z: -0.5 },
+					direction: { x: 0, y: 0, z: -1 },
+					speed: 45,
+					length: 0.35,
+					color: 0xffffff,
+				},
+			],
+			impacts: [{ projectileId: 1, point: { x: 0, y: 1.6, z: -1 }, colliderKind: 'wall' }],
+		});
+
+		await import('./app/bootstrap');
+
+		const renderer = threeState.renderers[0];
+		(globalThis.document as { pointerLockElement: unknown }).pointerLockElement =
+			renderer.domElement;
+
+		documentListeners.get('mousedown')?.({ button: 0 });
+		expect(runtimeMocks.setPrimaryFirePressedState).toHaveBeenCalledWith(
+			expect.any(Object),
+			true,
+			true,
+		);
+
+		documentListeners.get('mouseup')?.({ button: 0 });
+		expect(runtimeMocks.setPrimaryFirePressedState).toHaveBeenCalledWith(
+			expect.any(Object),
+			false,
+			true,
+		);
+
+		(globalThis.document as { pointerLockElement: unknown }).pointerLockElement =
+			null;
+		documentListeners.get('pointerlockchange')?.();
+		expect(runtimeMocks.setPrimaryFirePressedState).toHaveBeenCalledWith(
+			expect.any(Object),
+			false,
+			false,
+		);
+
+		expect(runtimeMocks.advancePrimaryFireState).toHaveBeenCalledWith(
+			expect.objectContaining({
+				dt: 0.016,
+				isPointerLockActive: false,
+			}),
+		);
+		expect(runtimeMocks.playBulletFireSounds).toHaveBeenCalledWith(
+			expect.any(Object),
+			1,
+		);
+		expect(runtimeMocks.spawnProjectilesFromLook).toHaveBeenCalledWith(
+			expect.objectContaining({
+				count: 1,
+				origin: expect.objectContaining({ x: expect.any(Number) }),
+			}),
+		);
+		expect(runtimeMocks.stepProjectiles).toHaveBeenCalledWith(
+			expect.objectContaining({
+				worldColliders: runtimeMocks.WORLD_PROJECTILE_COLLIDERS,
+				entityColliders: [],
+			}),
+		);
+	});
+
+	it('routes Space key through jump flow only and ignores jump on keyup', async () => {
+		const jumpSoundPlayer = { play: vi.fn() };
+		runtimeMocks.createJumpSoundPlayer.mockReturnValueOnce(jumpSoundPlayer);
+		runtimeMocks.handleJumpInput.mockReturnValueOnce({
+			isGrounded: false,
+			verticalVelocity: 5.2,
+		});
+
+		await import('./app/bootstrap');
+
+		documentListeners.get('keydown')?.({ code: 'Space' });
+		expect(runtimeMocks.handleJumpInput).toHaveBeenCalledWith(
+			expect.any(Object),
+			'Space',
+		);
+		expect(jumpSoundPlayer.play).toHaveBeenCalledTimes(1);
+		expect(runtimeMocks.setMovementKeyState).not.toHaveBeenCalledWith(
+			expect.any(Object),
+			'Space',
+			true,
+			expect.any(Object),
+		);
+
+		documentListeners.get('keyup')?.({ code: 'Space' });
+		expect(runtimeMocks.setMovementKeyState).not.toHaveBeenCalledWith(
+			expect.any(Object),
+			'Space',
+			false,
+			expect.any(Object),
+		);
+	});
+
+	it('does not play jump sound when jump input returns the same state', async () => {
+		const jumpSoundPlayer = { play: vi.fn() };
+		runtimeMocks.createJumpSoundPlayer.mockReturnValueOnce(jumpSoundPlayer);
+		runtimeMocks.handleJumpInput.mockImplementation((state) => state);
+
+		await import('./app/bootstrap');
+
+		documentListeners.get('keydown')?.({ code: 'Space' });
+		expect(jumpSoundPlayer.play).not.toHaveBeenCalled();
+	});
+
+	it('ignores non-left mouse buttons for firing state updates', async () => {
+		await import('./app/bootstrap');
+
+		documentListeners.get('mousedown')?.({ button: 1 });
+		documentListeners.get('mouseup')?.({ button: 2 });
+
+		expect(runtimeMocks.setPrimaryFirePressedState).not.toHaveBeenCalledWith(
+			expect.any(Object),
+			true,
+			expect.any(Boolean),
+		);
+		expect(runtimeMocks.setPrimaryFirePressedState).not.toHaveBeenCalledWith(
+			expect.any(Object),
+			false,
+			expect.any(Boolean),
+		);
+	});
+
+	it('updates existing projectile line geometry and removes impacted visuals', async () => {
+		runtimeMocks.advancePrimaryFireState.mockReturnValueOnce({
+			state: {
+				isPrimaryHeld: true,
+				hasQueuedImmediateShot: false,
+				secondsUntilNextShot: 0.5,
+				nextProjectileId: 2,
+			},
+			shotsToSpawn: 1,
+		});
+		runtimeMocks.spawnProjectilesFromLook.mockReturnValueOnce({
+			state: {
+				isPrimaryHeld: true,
+				hasQueuedImmediateShot: false,
+				secondsUntilNextShot: 0.5,
+				nextProjectileId: 2,
+			},
+			projectiles: [
+				{
+					id: 1,
+					head: { x: 0, y: 1.6, z: 0 },
+					direction: { x: 0, y: 0, z: -1 },
+					speed: 45,
+					length: 0.35,
+					color: 0xffffff,
+				},
+			],
+		});
+		runtimeMocks.stepProjectiles
+			.mockReturnValueOnce({
+				activeProjectiles: [
+					{
+						id: 1,
+						head: { x: 0, y: 1.6, z: -0.3 },
+						direction: { x: 0, y: 0, z: -1 },
+						speed: 45,
+						length: 0.35,
+						color: 0xffffff,
+					},
+				],
+				impacts: [],
+			})
+			.mockReturnValueOnce({
+				activeProjectiles: [],
+				impacts: [
+					{ projectileId: 1, point: { x: 0, y: 1.6, z: -0.6 }, colliderKind: 'wall' },
+				],
+			});
+
+		await import('./app/bootstrap');
+
+		const animationFn = (globalThis.requestAnimationFrame as ReturnType<typeof vi.fn>)
+			.mock.calls[0]?.[0] as (() => void) | undefined;
+		animationFn?.();
+
+		const scene = threeState.scenes[0];
+		expect(scene.add).toHaveBeenCalled();
+		expect(scene.remove).toHaveBeenCalled();
+	});
+
+	it('reuses existing projectile visual and updates points from tail-to-head math', async () => {
+		runtimeMocks.advancePrimaryFireState.mockReturnValueOnce({
+			state: {
+				isPrimaryHeld: true,
+				hasQueuedImmediateShot: false,
+				secondsUntilNextShot: 0.5,
+				nextProjectileId: 2,
+			},
+			shotsToSpawn: 1,
+		});
+		runtimeMocks.spawnProjectilesFromLook.mockReturnValueOnce({
+			state: {
+				isPrimaryHeld: true,
+				hasQueuedImmediateShot: false,
+				secondsUntilNextShot: 0.5,
+				nextProjectileId: 2,
+			},
+			projectiles: [
+				{
+					id: 1,
+					head: { x: 0, y: 1.6, z: -0.3 },
+					direction: { x: 0, y: 0, z: -1 },
+					speed: 45,
+					length: 0.35,
+					color: 0xffffff,
+				},
+			],
+		});
+		runtimeMocks.stepProjectiles
+			.mockReturnValueOnce({
+				activeProjectiles: [
+					{
+						id: 1,
+						head: { x: 0, y: 1.6, z: -0.3 },
+						direction: { x: 0, y: 0, z: -1 },
+						speed: 45,
+						length: 0.35,
+						color: 0xffffff,
+					},
+				],
+				impacts: [],
+			})
+			.mockReturnValueOnce({
+				activeProjectiles: [
+					{
+						id: 1,
+						head: { x: 0, y: 1.6, z: -0.6 },
+						direction: { x: 0, y: 0, z: -1 },
+						speed: 45,
+						length: 0.35,
+						color: 0xffffff,
+					},
+				],
+				impacts: [],
+			});
+
+		await import('./app/bootstrap');
+
+		const animationFn = (globalThis.requestAnimationFrame as ReturnType<typeof vi.fn>)
+			.mock.calls[0]?.[0] as (() => void) | undefined;
+		animationFn?.();
+
+		expect(threeState.scenes[0].add).toHaveBeenCalledTimes(6);
+		expect(threeState.bufferGeometries[0].setFromPoints).toHaveBeenCalledTimes(2);
+		expect(threeState.vectors[0]?.z).toBeCloseTo(0.05);
+		expect(threeState.vectors[1]?.z).toBeCloseTo(-0.3);
 	});
 });

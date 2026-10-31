@@ -2,10 +2,15 @@ import * as THREE from 'three';
 import '../style.css';
 import { DEFAULT_MOVE_SPEED, PLAYER_HEIGHT } from '../core/gameLogic';
 import {
+	PROJECTILE_COLOR,
 	WORLD_WALLS,
+	WORLD_PROJECTILE_COLLIDERS,
+	advancePrimaryFireState,
 	applyFrameMovement,
 	applyViewportResize,
+	createInitialPrimaryFireState,
 	createInitialJumpState,
+	createBulletFireSoundPlayer,
 	createJumpSoundPlayer,
 	createRuntimeLogger,
 	createInitialMovementKeys,
@@ -14,6 +19,12 @@ import {
 	handleMouseMoveForLook,
 	requestPointerLock,
 	setMovementKeyState,
+	playBulletFireSounds,
+	setPrimaryFirePressedState,
+	spawnProjectilesFromLook,
+	stepProjectiles,
+	type Position3D,
+	type Projectile,
 } from '../runtime/fpsRuntime';
 
 function isDebugLoggingEnabled(search: string): boolean {
@@ -71,7 +82,10 @@ for (const wall of WORLD_WALLS) {
 
 const keys = createInitialMovementKeys();
 let jumpState = createInitialJumpState();
+let primaryFireState = createInitialPrimaryFireState();
+let activeProjectiles: Projectile[] = [];
 const jumpSound = createJumpSoundPlayer();
+const bulletFireSound = createBulletFireSoundPlayer();
 const runtimeLogger = createRuntimeLogger({
 	enabled: isDebugLoggingEnabled(window.location.search),
 	sink: (entry) => {
@@ -86,6 +100,57 @@ const runtimeLogger = createRuntimeLogger({
 let yaw = 0;
 let pitch = 0;
 const moveSpeed = DEFAULT_MOVE_SPEED;
+const projectileVisuals = new Map<number, THREE.Line>();
+const projectileMaterial = new THREE.LineBasicMaterial({
+	color: PROJECTILE_COLOR,
+});
+
+function isPointerLockActive(): boolean {
+	return document.pointerLockElement === renderer.domElement;
+}
+
+function toProjectileSegmentEndpoints(projectile: Projectile): {
+	tail: Position3D;
+	head: Position3D;
+} {
+	return {
+		head: projectile.head,
+		tail: {
+			x: projectile.head.x - projectile.direction.x * projectile.length,
+			y: projectile.head.y - projectile.direction.y * projectile.length,
+			z: projectile.head.z - projectile.direction.z * projectile.length,
+		},
+	};
+}
+
+function upsertProjectileVisual(projectile: Projectile): void {
+	const segment = toProjectileSegmentEndpoints(projectile);
+	const points = [
+		new THREE.Vector3(segment.tail.x, segment.tail.y, segment.tail.z),
+		new THREE.Vector3(segment.head.x, segment.head.y, segment.head.z),
+	];
+
+	const existing = projectileVisuals.get(projectile.id);
+	if (existing) {
+		(existing.geometry as THREE.BufferGeometry).setFromPoints(points);
+		return;
+	}
+
+	const geometry = new THREE.BufferGeometry().setFromPoints(points);
+	const line = new THREE.Line(geometry, projectileMaterial);
+	projectileVisuals.set(projectile.id, line);
+	scene.add(line);
+}
+
+function removeProjectileVisual(projectileId: number): void {
+	const visual = projectileVisuals.get(projectileId);
+	if (!visual) {
+		return;
+	}
+	projectileVisuals.delete(projectileId);
+	scene.remove(visual);
+	(visual.geometry as THREE.BufferGeometry).dispose();
+}
 
 document.addEventListener('keydown', (event) => {
 	if (event.code === 'Space') {
@@ -116,6 +181,32 @@ document.addEventListener('pointerlockchange', () => {
 		rendererElement: renderer.domElement,
 		logger: runtimeLogger,
 	});
+
+	if (!isPointerLockActive()) {
+		primaryFireState = setPrimaryFirePressedState(primaryFireState, false, false);
+	}
+});
+
+document.addEventListener('mousedown', (event) => {
+	if (event.button !== 0) {
+		return;
+	}
+	primaryFireState = setPrimaryFirePressedState(
+		primaryFireState,
+		true,
+		isPointerLockActive(),
+	);
+});
+
+document.addEventListener('mouseup', (event) => {
+	if (event.button !== 0) {
+		return;
+	}
+	primaryFireState = setPrimaryFirePressedState(
+		primaryFireState,
+		false,
+		isPointerLockActive(),
+	);
 });
 
 document.addEventListener('mousemove', (event) => {
@@ -158,6 +249,46 @@ function animate() {
 	camera.position.x = nextPosition.x;
 	camera.position.y = nextPosition.y;
 	camera.position.z = nextPosition.z;
+
+	const fireAdvance = advancePrimaryFireState({
+		state: primaryFireState,
+		dt,
+		isPointerLockActive: isPointerLockActive(),
+	});
+	primaryFireState = fireAdvance.state;
+
+	if (fireAdvance.shotsToSpawn > 0) {
+		playBulletFireSounds(bulletFireSound, fireAdvance.shotsToSpawn);
+		const spawned = spawnProjectilesFromLook({
+			state: primaryFireState,
+			count: fireAdvance.shotsToSpawn,
+			origin: {
+				x: camera.position.x,
+				y: camera.position.y,
+				z: camera.position.z,
+			},
+			yaw,
+			pitch,
+		});
+		primaryFireState = spawned.state;
+		activeProjectiles = [...activeProjectiles, ...spawned.projectiles];
+	}
+
+	const projectileStep = stepProjectiles({
+		projectiles: activeProjectiles,
+		dt,
+		worldColliders: WORLD_PROJECTILE_COLLIDERS,
+		entityColliders: [],
+	});
+	activeProjectiles = projectileStep.activeProjectiles;
+
+	for (const impact of projectileStep.impacts) {
+		removeProjectileVisual(impact.projectileId);
+	}
+
+	for (const projectile of activeProjectiles) {
+		upsertProjectileVisual(projectile);
+	}
 
 	renderer.render(scene, camera);
 }

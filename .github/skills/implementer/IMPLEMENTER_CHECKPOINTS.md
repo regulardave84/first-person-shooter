@@ -4,6 +4,117 @@ Persistent execution log for the `implementer` skill.
 
 ---
 
+## 2026-10-31 — Bullet firing sound
+
+- Timestamp: 2026-10-31
+- Feature file: src/bulletFireSound.acceptance.feature
+- Complexity: standard
+- Current phase: P4
+- Checkpoint status: COMPLETE (`P0_COMPLETE` -> `P4_COMPLETE`)
+
+### Completed work
+
+- Added approved acceptance criteria for synthesized constant bullet firing sound behavior.
+- Added acceptance tests for single-shot sound playback, hold cadence playback, release stop behavior, pointer-lock inactive no-play behavior, and sound-to-bullet emission coupling.
+- Implemented synthesized constant `pew` bullet sound player in runtime helpers.
+- Implemented explicit `playBulletFireSounds()` helper that plays exactly once per emitted bullet.
+- Wired bullet firing sound playback into runtime bootstrap so sound triggers when bullets are emitted.
+- Added unit tests for bullet audio creation/play/failure paths and exact per-bullet playback counts.
+- Extended bootstrap runtime wiring tests for bullet sound integration.
+
+### Files changed so far
+
+- src/bulletFireSound.acceptance.feature
+- src/bulletFireSound.acceptance.test.ts
+- src/runtime/fpsRuntime.ts
+- src/app/bootstrap.ts
+- src/fpsRuntime.test.ts
+- src/bootstrap.test.ts
+
+### Scenario -> test mapping
+
+- A firing sound plays for a single valid left-click shot -> `src/bulletFireSound.acceptance.test.ts` (`A firing sound plays for a single valid left-click shot`) + `src/fpsRuntime.test.ts` (`plays exactly one firing sound per emitted bullet`)
+- Holding left mouse plays one sound per emitted bullet at fire cadence -> `src/bulletFireSound.acceptance.test.ts` (`Holding left mouse plays one sound per emitted bullet at fire cadence`) + `src/fpsRuntime.test.ts` (`plays exactly one firing sound per emitted bullet`)
+- Releasing left mouse stops additional firing sounds -> `src/bulletFireSound.acceptance.test.ts` (`Releasing left mouse stops additional firing sounds`) + `src/fpsRuntime.test.ts` (`plays exactly one firing sound per emitted bullet`)
+- No firing sound is played when firing input is ignored -> `src/bulletFireSound.acceptance.test.ts` (`No firing sound is played when firing input is ignored`) + bootstrap integration checks in `src/bootstrap.test.ts`
+- Sound trigger is coupled to bullet emission only -> `src/bulletFireSound.acceptance.test.ts` (`Sound trigger is coupled to bullet emission only`) + `src/bootstrap.test.ts` (`handles primary fire input, pointer-lock gating, and projectile frame updates`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Hardener: PASS (`npm run test:mutation:branch` -> `82.14%`, target `>= 80%`)
+
+### Risks / blockers
+
+- None.
+
+### Next action
+
+- Proceed to final handoff.
+
+### User review status
+
+- Confirmed
+
+---
+
+## 2026-10-31 — Player machine-gun projectile firing
+
+- Timestamp: 2026-10-31
+- Feature file: src/playerMachineGunFire.acceptance.feature
+- Complexity: complex
+- Current phase: P4
+- Checkpoint status: COMPLETE (`P0_COMPLETE` -> `P4_COMPLETE`)
+
+### Completed work
+
+- Added approved acceptance criteria for pointer-lock-gated machine-gun projectile firing.
+- Added acceptance tests covering single-shot click behavior, continuous 2/sec fire cadence, release-to-stop behavior, collision stop/disappear behavior, and pointer-lock inactive ignore behavior.
+- Added runtime projectile firing/collision helpers in `src/runtime/fpsRuntime.ts`.
+- Wired runtime projectile spawning and updates into `src/app/bootstrap.ts` with visible thin short white line projectiles.
+- Added and expanded unit tests for firing state progression, projectile spawn metadata, and collision handling.
+- Expanded bootstrap wiring tests to cover primary fire input and projectile lifecycle wiring.
+
+### Files changed so far
+
+- src/playerMachineGunFire.acceptance.feature
+- src/playerMachineGunFire.acceptance.test.ts
+- src/runtime/fpsRuntime.ts
+- src/fpsRuntime.test.ts
+- src/app/bootstrap.ts
+- src/bootstrap.test.ts
+
+### Scenario -> test mapping
+
+- Single left click fires exactly one bullet immediately when pointer lock is active -> `src/playerMachineGunFire.acceptance.test.ts` (`Single left click fires exactly one bullet immediately when pointer lock is active`) + `src/fpsRuntime.test.ts` (`queues one immediate projectile on left click only when pointer lock is active`)
+- Holding left mouse continuously fires at 2 bullets per second while pointer lock is active -> `src/playerMachineGunFire.acceptance.test.ts` (`Holding left mouse continuously fires at 2 bullets per second while pointer lock is active`) + `src/fpsRuntime.test.ts` (`fires continuously at 2 shots per second while holding left mouse`)
+- Releasing left mouse stops continuous firing -> `src/playerMachineGunFire.acceptance.test.ts` (`Releasing left mouse stops continuous firing`) + `src/fpsRuntime.test.ts` (`stops firing after left mouse release`)
+- Bullets stop and disappear on impact with world or entity geometry -> `src/playerMachineGunFire.acceptance.test.ts` (`Bullets stop and disappear on impact with world or entity geometry`) + `src/fpsRuntime.test.ts` (`removes projectiles when they hit wall floor ceiling or entity colliders`)
+- Firing input is ignored when pointer lock is inactive -> `src/playerMachineGunFire.acceptance.test.ts` (`Firing input is ignored when pointer lock is inactive`) + `src/fpsRuntime.test.ts` (`queues one immediate projectile on left click only when pointer lock is active`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Hardener: PASS (`npm run test:mutation:branch` -> `82.85%`, target `>= 80%`)
+
+### Risks / blockers
+
+- None.
+
+### Next action
+
+- Proceed to final handoff.
+
+### User review status
+
+- Confirmed
+
+---
+
 ## 2026-10-31 — Hardener full-suite mutation gate
 
 - Timestamp: 2026-10-31
