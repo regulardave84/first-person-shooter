@@ -12,6 +12,9 @@ A minimal first-person browser game starter built with TypeScript, Vite, and Thr
   - `W`, `A`, `S`, `D` to move
   - Mouse to look around
   - Pointer lock on click
+- Movement constraints:
+   - Solid wall collision with player radius
+   - Jumping and gravity with grounded state handling
 - Simple on-screen HUD/instructions and a crosshair
 - Acceptance-first tooling helpers for:
    - Parsing Gherkin
@@ -104,13 +107,19 @@ npm run test:watch:acceptance
 npm run test:coverage
 ```
 
-### 13) Run mutation tests
+### 13) Run mutation tests (default Stryker config)
 
 ```bash
 npm run test:mutation
 ```
 
-### 14) Analyze CRAP score (complexity + coverage)
+### 14) Run branch-scoped hardener mutation workflow
+
+```bash
+npm run test:mutation:branch
+```
+
+### 15) Analyze CRAP score (complexity + coverage)
 
 ```bash
 npm run cleaner
@@ -172,23 +181,25 @@ The default quality gate sequence for feature delivery is:
 npm run lint
 npm run test:all
 npm run build
-npm run test:mutation
+npm run test:mutation:branch
 ```
 
 Mutation testing target is at least 80% unless explicitly approved as blocked.
 
 ## Mutation Testing
 
-Mutation testing is configured with Stryker to validate the strength of the unit tests.
+Mutation testing is configured with Stryker to validate test strength.
 
-- Target file under mutation: `src/gameLogic.ts`
-- Test runner: Stryker command runner (executes `npm run test`)
+- Default mutation run: `npm run test:mutation`
+- Branch-scoped hardener run: `npm run test:mutation:branch`
+- Branch hardener run executes full test-suite gate (`npm run test:all`) before mutation and blocks mutation when the suite fails
+- Branch-scoped mutate targets are derived from changed implementation files under `src/`
 - HTML report output: `reports/mutation/index.html`
 
-Run mutation tests with:
+Run branch-scoped mutation tests with:
 
 ```bash
-npm run test:mutation
+npm run test:mutation:branch
 ```
 
 ## Main Components (How it Works)
@@ -212,8 +223,8 @@ npm run test:mutation
 
 ## Notes
 
-- This is intentionally minimal: no collision, gravity, jumping, or shooting yet.
-- A natural next step is adding wall collision so the player cannot move through walls.
+- Current gameplay includes wall collision, jumping, and gravity.
+- Shooting/combat systems are not implemented yet.
 - Project mission statement (intent, non-behavioral specs, UI guidelines): [MISSION_STATEMENT.md](MISSION_STATEMENT.md)
 - Copilot default feature workflow instructions: [.github/copilot-instructions.md](.github/copilot-instructions.md)
 - AI feature orchestration workflow docs: [.github/skills/feature-workflow/README.md](.github/skills/feature-workflow/README.md)

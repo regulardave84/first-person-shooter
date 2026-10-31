@@ -43,6 +43,7 @@ Run these skills in this exact order:
 ### Step 4: hardening gate
 
 - Run `hardener` mutation workflow.
+- Require full test-suite gate (`npm run test:all`) before mutation execution.
 - Require branch-scoped mutation targeting based on current branch implementation changes.
 - If mutation score < 80%, improve tests and iterate.
 - Stop as `BLOCKED` only when loop/control rules are exhausted.

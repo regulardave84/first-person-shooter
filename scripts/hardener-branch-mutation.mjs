@@ -8,6 +8,7 @@ const STRYKER_CONFIG_PATH = path.join(ROOT, 'stryker.conf.json');
 const SCOPED_CONFIG_PATH = path.join(ROOT, '.stryker-branch.conf.json');
 const REPORT_DIR = path.join(ROOT, 'reports', 'hardener');
 const REPORT_PATH = path.join(REPORT_DIR, 'MUTATION_SCOPE_REPORT.md');
+const FULL_TEST_SUITE_COMMAND = ['run', 'test:all'];
 
 const IMPLEMENTATION_SOURCE_PATTERN = /^src\/.*\.ts$/;
 const IGNORED_SOURCE_PATTERNS = [
@@ -122,7 +123,15 @@ function logScope(scope) {
 	}
 }
 
-function writeScopeReport(scope) {
+function writeScopeReportWithGate(
+	scope,
+	{
+		testSuiteStatus,
+		testSuiteCommand,
+		testSuiteFailureReason,
+		blockReason,
+	} = {},
+) {
 	const lines = [
 		'# Mutation Scope Report',
 		'',
@@ -130,6 +139,15 @@ function writeScopeReport(scope) {
 		`- Base branch: ${scope.baseBranch}`,
 		`- Changed files considered: ${scope.changedFilesConsidered.length}`,
 		`- Mutate targets: ${scope.mutateTargets.length}`,
+		`- Full test suite gate: ${(testSuiteStatus ?? 'not-run').toUpperCase()}`,
+		'',
+		'## Full test suite gate',
+		'',
+		`- Command: ${testSuiteCommand ?? `npm ${FULL_TEST_SUITE_COMMAND.join(' ')}`}`,
+		`- Status: ${(testSuiteStatus ?? 'not-run').toUpperCase()}`,
+		...(testSuiteFailureReason
+			? [`- Failure reason: ${testSuiteFailureReason}`]
+			: []),
 		'',
 		'## Changed files considered',
 		'',
@@ -144,8 +162,9 @@ function writeScopeReport(scope) {
 			: ['- (none)']),
 	];
 
-	if (scope.reason) {
-		lines.push('', '## Block reason', '', `- ${scope.reason}`);
+	const effectiveBlockReason = blockReason ?? scope.reason;
+	if (effectiveBlockReason) {
+		lines.push('', '## Block reason', '', `- ${effectiveBlockReason}`);
 	}
 
 	mkdirSync(REPORT_DIR, { recursive: true });
@@ -155,18 +174,65 @@ function writeScopeReport(scope) {
 	);
 }
 
+function runFullTestSuite() {
+	const commandText = `npm ${FULL_TEST_SUITE_COMMAND.join(' ')}`;
+	console.log(`Running full test suite gate: ${commandText}`);
+
+	try {
+		execFileSync('npm', FULL_TEST_SUITE_COMMAND, {
+			stdio: 'inherit',
+		});
+		return {
+			passed: true,
+			command: commandText,
+		};
+	} catch (error) {
+		const failureReason =
+			error instanceof Error ? error.message : 'Full test suite failed.';
+		return {
+			passed: false,
+			command: commandText,
+			failureReason,
+		};
+	}
+}
+
 function main() {
 	const baseBranch = detectBaseBranch();
 	const changedFiles = getChangedFiles(baseBranch);
 	const scope = buildScope(baseBranch, changedFiles);
 
 	logScope(scope);
-	writeScopeReport(scope);
+	const testGate = runFullTestSuite();
 
-	if (scope.status === 'blocked') {
+	if (!testGate.passed) {
+		const blockReason =
+			'Mutation testing is blocked because the full test suite failed. Run npm run test:all and fix failing tests before mutation testing.';
+
+		console.error(blockReason);
+		writeScopeReportWithGate(scope, {
+			testSuiteStatus: 'failed',
+			testSuiteCommand: testGate.command,
+			testSuiteFailureReason: testGate.failureReason,
+			blockReason,
+		});
 		process.exitCode = 1;
 		return;
 	}
+
+	if (scope.status === 'blocked') {
+		writeScopeReportWithGate(scope, {
+			testSuiteStatus: 'passed',
+			testSuiteCommand: testGate.command,
+		});
+		process.exitCode = 1;
+		return;
+	}
+
+	writeScopeReportWithGate(scope, {
+		testSuiteStatus: 'passed',
+		testSuiteCommand: testGate.command,
+	});
 
 	const baseConfig = JSON.parse(readFileSync(STRYKER_CONFIG_PATH, 'utf8'));
 	const scopedConfig = {

@@ -19,5 +19,6 @@ Use this as the default path when a prompt asks to add or change a feature.
 - Scenario-to-test traceability
 - Cleanup/refactor pass after implementation
 - Dependency-policy gate in cleaner after review and before cleanup refactor
+- Full test-suite hardener gate before mutation execution
 - Branch-scoped mutation hardening target of >= 80%
 - Phase-by-phase reporting with blockers

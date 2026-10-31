@@ -1,6 +1,6 @@
 ---
 name: hardener
-description: Analyze branch changes, run related tests, gate on failures, run mutation testing, and iteratively improve tests until mutation score is at least 80%.
+description: Analyze branch changes, run full test-suite gating, block on failures, run branch-scoped mutation testing, and iteratively improve tests until mutation score is at least 80%.
 ---
 
 # Hardener Skill
@@ -20,7 +20,7 @@ This version includes safeguards for common real-world issues seen during harden
 
 For the current branch:
 1. Analyze what changed.
-2. Run relevant tests first.
+2. Run the full test suite first.
 3. If relevant tests fail, stop and report failures.
 4. If tests pass, run mutation testing.
 5. If mutation score is below 80%, add or correct tests based on survivors.
@@ -46,22 +46,18 @@ For the current branch:
   - test files (`src/**/*.test.ts`)
   - config/tooling files (`package.json`, test/lint configs)
 
-### 2) Run relevant tests only
+### 2) Run full test suite gate
 
-Use judgment to run the smallest meaningful test scope first:
-
-- If source files changed: run tests related to those files (for Vitest, prefer `vitest related --run <files>`).
-- If only test files changed: run those specific test files.
-- If changes are broad (config/tooling/many files): run full unit test suite.
+- Run the entire suite before mutation testing: `npm run test:all`.
 - Before running non-mutation tests, clean stale mutation artifacts if present to avoid false positives/noise.
 
 ### 3) Test failure gate (hard stop)
 
-If any relevant tests fail:
+If any tests fail in the full suite gate:
 
-- Report that tests are failing.
+- Report that the full test suite is failing.
 - Include failing test names/files and concise reason.
-- State clearly: **mutation testing cannot continue until these tests pass**.
+- State clearly: **mutation testing cannot continue until the full suite passes**.
 - Stop execution.
 
 ### 4) Run mutation testing

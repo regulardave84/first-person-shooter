@@ -3,6 +3,8 @@ import {
 	applyMutationTargetsToConfig,
 	buildMutationScope,
 	createMutationScopeSummary,
+	evaluateMutationExecutionGate,
+	HARDENER_FULL_TEST_SUITE_COMMAND,
 	isImplementationSourceFile,
 } from './tools/hardenerMutationScope';
 
@@ -84,5 +86,55 @@ describe('hardenerMutationScope', () => {
 		expect(summary).toContain(
 			'Reason: No changed implementation source files under src were found for mutation scope.',
 		);
+	});
+
+	it('blocks mutation execution when full test suite fails', () => {
+		const gate = evaluateMutationExecutionGate({
+			scope: {
+				status: 'ready',
+				baseBranch: 'origin/main',
+				changedFilesConsidered: ['src/runtime/fpsRuntime.ts'],
+				mutateTargets: ['src/runtime/fpsRuntime.ts'],
+			},
+			fullTestSuitePassed: false,
+		});
+
+		expect(gate.status).toBe('blocked');
+		expect(gate.shouldRunMutation).toBe(false);
+		expect(gate.reason).toContain('full test suite failed');
+		expect(gate.fullTestSuiteCommand).toBe(HARDENER_FULL_TEST_SUITE_COMMAND);
+	});
+
+	it('allows mutation execution only after full suite pass and ready scope', () => {
+		const gate = evaluateMutationExecutionGate({
+			scope: {
+				status: 'ready',
+				baseBranch: 'origin/main',
+				changedFilesConsidered: ['src/runtime/fpsRuntime.ts'],
+				mutateTargets: ['src/runtime/fpsRuntime.ts'],
+			},
+			fullTestSuitePassed: true,
+		});
+
+		expect(gate.status).toBe('ready');
+		expect(gate.shouldRunMutation).toBe(true);
+		expect(gate.fullTestSuiteCommand).toBe(HARDENER_FULL_TEST_SUITE_COMMAND);
+	});
+
+	it('keeps mutation blocked when scope is blocked even if full suite passes', () => {
+		const gate = evaluateMutationExecutionGate({
+			scope: {
+				status: 'blocked',
+				baseBranch: 'origin/main',
+				changedFilesConsidered: ['README.md'],
+				mutateTargets: [],
+				reason: 'No changed implementation source files under src were found.',
+			},
+			fullTestSuitePassed: true,
+		});
+
+		expect(gate.status).toBe('blocked');
+		expect(gate.shouldRunMutation).toBe(false);
+		expect(gate.reason).toContain('No changed implementation source files');
 	});
 });

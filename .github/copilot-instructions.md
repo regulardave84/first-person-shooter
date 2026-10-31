@@ -31,7 +31,7 @@ Before final handoff, ensure these pass unless blocked by user-approved exceptio
 - `npm run lint`
 - `npm run test:all`
 - `npm run build`
-- `npm run test:mutation` (hardener target: >= 80%)
+- `npm run test:mutation:branch` (hardener target: >= 80%)
 
 ## Change-control rules
 

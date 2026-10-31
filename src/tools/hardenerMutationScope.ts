@@ -16,6 +16,15 @@ export type MutationScopeReport = {
 	reason?: string;
 };
 
+export const HARDENER_FULL_TEST_SUITE_COMMAND = 'npm run test:all';
+
+export type MutationExecutionGate = {
+	status: MutationScopeStatus;
+	shouldRunMutation: boolean;
+	reason?: string;
+	fullTestSuiteCommand: string;
+};
+
 function normalizePath(filePath: string): string {
 	return filePath.replace(/\\/g, '/');
 }
@@ -94,4 +103,34 @@ export function createMutationScopeSummary(
 			`Mutate targets: ${targets}`,
 		].join('\n') + reason
 	);
+}
+
+export function evaluateMutationExecutionGate(params: {
+	scope: MutationScopeReport;
+	fullTestSuitePassed: boolean;
+}): MutationExecutionGate {
+	if (!params.fullTestSuitePassed) {
+		return {
+			status: 'blocked',
+			shouldRunMutation: false,
+			reason:
+				'Mutation testing is blocked because the full test suite failed. Run npm run test:all and fix failing tests before mutation testing.',
+			fullTestSuiteCommand: HARDENER_FULL_TEST_SUITE_COMMAND,
+		};
+	}
+
+	if (params.scope.status === 'blocked') {
+		return {
+			status: 'blocked',
+			shouldRunMutation: false,
+			reason: params.scope.reason,
+			fullTestSuiteCommand: HARDENER_FULL_TEST_SUITE_COMMAND,
+		};
+	}
+
+	return {
+		status: 'ready',
+		shouldRunMutation: true,
+		fullTestSuiteCommand: HARDENER_FULL_TEST_SUITE_COMMAND,
+	};
 }

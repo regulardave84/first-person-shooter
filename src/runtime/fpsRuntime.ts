@@ -19,6 +19,8 @@ const MOVEMENT_KEYS: ReadonlyArray<MovementKeyCode> = [
 	'KeyD',
 ];
 
+export const PLAYER_COLLISION_RADIUS = 0.9;
+
 export type WallSpec = {
 	x: number;
 	y: number;
@@ -312,6 +314,67 @@ function syncJumpState(
 	destination.verticalVelocity = source.verticalVelocity;
 }
 
+function collidesWithWall(
+	positionX: number,
+	positionZ: number,
+	wall: WallSpec,
+	playerRadius: number,
+): boolean {
+	const halfW = wall.w / 2 + playerRadius;
+	const halfD = wall.d / 2 + playerRadius;
+	const dx = Math.abs(positionX - wall.x);
+	const dz = Math.abs(positionZ - wall.z);
+
+	return dx <= halfW && dz <= halfD;
+}
+
+function collidesWithWalls(
+	positionX: number,
+	positionZ: number,
+	walls: ReadonlyArray<WallSpec>,
+	playerRadius: number,
+): boolean {
+	return walls.some((wall) =>
+		collidesWithWall(positionX, positionZ, wall, playerRadius),
+	);
+}
+
+export function resolveHorizontalMovement(
+	position: Position3D,
+	desired: Position3D,
+	walls: ReadonlyArray<WallSpec> = WORLD_WALLS,
+	playerRadius = PLAYER_COLLISION_RADIUS,
+): Position3D {
+	const next = { ...position, x: desired.x, y: desired.y, z: desired.z };
+	if (!collidesWithWalls(next.x, next.z, walls, playerRadius)) {
+		return next;
+	}
+
+	const xOnly = { ...position, x: desired.x, y: desired.y };
+	const zOnly = { ...position, z: desired.z, y: desired.y };
+	const xOnlyBlocked = collidesWithWalls(
+		xOnly.x,
+		position.z,
+		walls,
+		playerRadius,
+	);
+	const zOnlyBlocked = collidesWithWalls(
+		position.x,
+		zOnly.z,
+		walls,
+		playerRadius,
+	);
+
+	if (!xOnlyBlocked) {
+		return xOnly;
+	}
+	if (!zOnlyBlocked) {
+		return zOnly;
+	}
+
+	return { ...position, y: desired.y };
+}
+
 export function applyFrameMovement(params: {
 	position: Position3D;
 	keys: MovementKeys;
@@ -342,20 +405,27 @@ export function applyFrameMovement(params: {
 
 	syncJumpState(params.jumpState, updatedJump.jumpState);
 
-	const nextPosition = {
+	const rawNextPosition = {
 		x: params.position.x + move.x,
 		y: updatedJump.y,
 		z: params.position.z + move.z,
 	};
 
+	const resolvedPosition = resolveHorizontalMovement(
+		params.position,
+		rawNextPosition,
+		WORLD_WALLS,
+		PLAYER_COLLISION_RADIUS,
+	);
+
 	params.logger?.debug('frame.movementApplied', {
 		dt: safeDeltaTime,
-		nextPosition,
+		nextPosition: resolvedPosition,
 		yaw: params.yaw,
 		jumpState: updatedJump.jumpState,
 	});
 
-	return nextPosition;
+	return resolvedPosition;
 }
 
 type CameraLike = {

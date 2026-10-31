@@ -9,8 +9,8 @@ This directory contains the `hardener` AI skill configuration and usage notes.
 The `hardener` skill is designed to:
 
 - Analyze branch changes
-- Run relevant tests first and stop on failures
-- Run mutation tests after tests pass, scoped to implementation files changed on branch
+- Run the full test suite first and stop on failures
+- Run mutation tests after the full suite passes, scoped to implementation files changed on branch
 - Improve/add tests when mutation score is below `80%`
 - Repeat until mutation score is `>= 80%`
 
@@ -25,8 +25,8 @@ Typical local sequence:
 git status --short
 git diff --name-only
 
-# 2) Run relevant tests first (or full suite when broad changes)
-npm run test
+# 2) Run full test suite gate
+npm run test:all
 
 # 3) Run mutation testing
 npm run test:mutation:branch

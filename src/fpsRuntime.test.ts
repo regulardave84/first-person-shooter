@@ -12,6 +12,7 @@ import {
 	handleMouseMoveForLook,
 	isMovementKey,
 	requestPointerLock,
+	resolveHorizontalMovement,
 	setMovementKeyState,
 } from './fpsRuntime';
 
@@ -467,5 +468,35 @@ describe('fpsRuntime helpers', () => {
 				AudioContext?: typeof AudioContext;
 			}
 		).AudioContext = originalAudio;
+	});
+
+	it('stops movement at wall boundaries without passing through them', () => {
+		const position = { x: 5, y: 1.6, z: 8 };
+		const wall = { x: 9, y: 2, z: 8, w: 2, h: 4, d: 2, kind: 'inner' as const };
+		const next = resolveHorizontalMovement(
+			position,
+			{ ...position, x: 10 },
+			[wall],
+			0.9,
+		);
+
+		expect(next.x).toBeLessThanOrEqual(7.1);
+		expect(next.x).toBeGreaterThanOrEqual(5);
+		expect(next.z).toBeCloseTo(8);
+	});
+
+	it('slides along a wall while keeping the player outside the wall volume', () => {
+		const position = { x: 5, y: 1.6, z: 7.5 };
+		const wall = { x: 8, y: 2, z: 8, w: 2, h: 4, d: 8, kind: 'inner' as const };
+		const next = resolveHorizontalMovement(
+			position,
+			{ ...position, x: 9.5 },
+			[wall],
+			0.9,
+		);
+
+		expect(next.x).toBeGreaterThanOrEqual(5);
+		expect(next.x).toBeLessThanOrEqual(9.5);
+		expect(next.z).toBeCloseTo(7.5);
 	});
 });

@@ -4,6 +4,61 @@ Persistent execution log for the `implementer` skill.
 
 ---
 
+## 2026-10-31 — Hardener full-suite mutation gate
+
+- Timestamp: 2026-10-31
+- Feature file: src/hardener.relatedTestsAndMutationGate.acceptance.feature
+- Complexity: standard
+- Current phase: P4
+- Checkpoint status: COMPLETE (`P0_COMPLETE` -> `P4_COMPLETE`)
+
+### Completed work
+
+- Added approved acceptance coverage for full test-suite gating before branch-scoped mutation.
+- Implemented explicit mutation execution gate helpers in `src/tools/hardenerMutationScope.ts`.
+- Updated branch mutation workflow script to run `npm run test:all` before mutation and block mutation with a clear reason if the suite fails.
+- Extended mutation scope report output to include full test-suite gate command/status and block reason.
+- Updated hardener skill documentation to use full test-suite gate language.
+
+### Files changed so far
+
+- src/hardener.relatedTestsAndMutationGate.acceptance.feature
+- src/hardener.relatedTestsAndMutationGate.acceptance.test.ts
+- src/tools/hardenerMutationScope.ts
+- src/hardenerMutationScope.test.ts
+- scripts/hardener-branch-mutation.mjs
+- .github/skills/hardener/SKILL.md
+
+### Scenario -> test mapping
+
+- Identify branch changes against main -> `src/hardener.relatedTestsAndMutationGate.acceptance.test.ts` (`Identify branch changes against main`) + `buildMutationScope()` unit coverage in `src/hardenerMutationScope.test.ts`
+- Run the full test suite before mutation -> `src/hardener.relatedTestsAndMutationGate.acceptance.test.ts` (`Run the full test suite before mutation`) + `HARDENER_FULL_TEST_SUITE_COMMAND` unit coverage in `src/hardenerMutationScope.test.ts`
+- Block mutation when any test fails -> `src/hardener.relatedTestsAndMutationGate.acceptance.test.ts` (`Block mutation when any test fails`) + `evaluateMutationExecutionGate()` unit coverage in `src/hardenerMutationScope.test.ts`
+- Run branch-scoped mutation after full test suite passes -> `src/hardener.relatedTestsAndMutationGate.acceptance.test.ts` (`Run branch-scoped mutation after full test suite passes`) + script verification via `npm run test:mutation:branch`
+- Mutation run executes only after full test pass gate -> `src/hardener.relatedTestsAndMutationGate.acceptance.test.ts` (`Mutation run executes only after full test pass gate`) + `evaluateMutationExecutionGate()` unit coverage in `src/hardenerMutationScope.test.ts`
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Cleaner: PASS (`npm run cleaner`)
+- Hardener: PASS (`npm run test:mutation:branch` scored `82.06%`)
+
+### Risks / blockers
+
+- None.
+
+### Next action
+
+- Proceed to final handoff.
+
+### User review status
+
+- Confirmed
+
+---
+
 ## Run Template
 
 - Timestamp:
@@ -607,3 +662,54 @@ Persistent execution log for the `implementer` skill.
 ### User review status
 
 - Confirmed
+
+---
+
+## 2026-10-31 — Solid walls feature completion
+
+- Timestamp: 2026-10-31
+- Feature file: src/solidWalls.acceptance.feature
+- Complexity: standard
+- Current phase: P4
+- Checkpoint status: COMPLETE (`SPECIFIER_COMPLETE` -> `IMPLEMENTER_COMPLETE`) with `CLEANER_COMPLETE` and `HARDENER_BLOCKED`
+
+### Completed work
+
+- Added approved acceptance criteria for solid wall collision behavior with a small player radius, stopping at wall boundaries, and preventing penetration while airborne.
+- Implemented runtime horizontal collision resolution in `src/runtime/fpsRuntime.ts` to prevent wall penetration while preserving sliding along walls.
+- Added wall-penetration regression tests in `src/fpsRuntime.test.ts` to cover stopping and sliding behavior.
+
+### Files changed so far
+
+- src/solidWalls.acceptance.feature
+- src/runtime/fpsRuntime.ts
+- src/fpsRuntime.test.ts
+
+### Scenario -> test mapping
+
+- Player movement stops at wall boundaries -> `src/fpsRuntime.test.ts` (`stops movement at wall boundaries without passing through them`)
+- Player can slide along a wall without penetrating -> `src/fpsRuntime.test.ts` (`slides along a wall while keeping the player outside the wall volume`)
+- Jumping respects wall collision while airborne -> `src/fpsRuntime.test.ts` (`prevents wall penetration while airborne`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:unit`, `npm run test:acceptance`)
+- Cleaner: PASS (`npm run cleaner`)
+- Hardener: BLOCKED by repository mutation configuration (`npm run test:mutation` reported `0 mutant(s)` and no computable mutation score)
+
+### Risks / blockers
+
+- Mutation quality gate is blocked by the current Stryker configuration, which instruments zero mutants in the repo’s configured target set.
+- This is an execution/configuration blocker rather than a failing solid-wall implementation.
+
+### Next action
+
+- Optionally retarget Stryker `mutate` configuration to concrete implementation files to enable meaningful mutation scoring.
+
+### User review status
+
+- Confirmed
+
+---
