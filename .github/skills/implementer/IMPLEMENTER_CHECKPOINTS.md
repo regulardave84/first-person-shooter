@@ -4,6 +4,219 @@ Persistent execution log for the `implementer` skill.
 
 ---
 
+## 2026-11-01 — Restore outer wall texture clarity
+
+- Timestamp: 2026-11-01
+- Feature file: src/acceptance/features/textureGridTiling.acceptance.feature
+- Complexity: small
+- Current phase: P4
+- Checkpoint status: COMPLETE (`SPECIFIER_COMPLETE` -> `IMPLEMENTER_COMPLETE`) with `CLEANER_COMPLETE` and `HARDENER_COMPLETE`
+
+### Completed work
+
+- Merged approved outer-wall clarity scenario into canonical texture tiling acceptance contract.
+- Added `createWallGeometryForKind()` in `src/app/wallTexture.ts` to apply UV-tiling only to inner walls.
+- Updated runtime wall mesh creation in `src/app/bootstrap.ts` to use kind-aware geometry selection.
+- Preserved clear outer-wall look by restoring default BoxGeometry UVs for outer walls.
+- Added test coverage for kind-aware geometry behavior in unit and acceptance tests.
+- Marked the temporary proposal feature file as superseded.
+
+### Files changed so far
+
+- src/acceptance/features/textureGridTiling.acceptance.feature
+- src/acceptance/features/textureGridTiling.outerWallsRestore.proposed.feature
+- src/acceptance/tests/textureGridTiling.acceptance.test.ts
+- src/app/bootstrap.ts
+- src/app/wallTexture.ts
+- src/app/wallTexture.test.ts
+
+### Scenario -> test mapping
+
+- Outer wall faces render with clear non-squashed brick scale -> `src/acceptance/tests/textureGridTiling.acceptance.test.ts` (`Outer wall faces render with clear non-squashed brick scale`)
+- UV tiling applied only to inner walls -> `src/app/wallTexture.test.ts` (`applies UV tiling to inner walls only`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Hardener: PASS (`npm run test:mutation:branch` -> `86.19%`, target `>= 80%`)
+
+### Risks / blockers
+
+- None.
+
+### Next action
+
+- Proceed to final handoff.
+
+### User review status
+
+- Approved
+
+---
+
+## 2026-11-01 — Inner wall side-face texture clarity
+
+- Timestamp: 2026-11-01
+- Feature file: src/acceptance/features/textureGridTiling.acceptance.feature
+- Complexity: standard
+- Current phase: P4
+- Checkpoint status: COMPLETE (`SPECIFIER_COMPLETE` -> `IMPLEMENTER_COMPLETE`) with `CLEANER_COMPLETE` and `HARDENER_COMPLETE`
+
+### Completed work
+
+- Updated approved acceptance contract with explicit inner wall side-face non-squashing behavior.
+- Added `applyTiledUvToWallGeometry()` and `createTiledWallGeometry()` in `src/app/wallTexture.ts`.
+- Applied wall-face UV scaling by face dimensions so thin inner-wall side faces no longer squash bricks.
+- Updated wall mesh creation in `src/app/bootstrap.ts` to use tiled wall geometry.
+- Added/updated acceptance and unit tests for side-face UV density and consistency.
+
+### Files changed so far
+
+- src/acceptance/features/textureGridTiling.acceptance.feature
+- src/acceptance/features/textureGridTiling.innerWallSides.proposed.feature
+- src/acceptance/tests/textureGridTiling.acceptance.test.ts
+- src/app/bootstrap.ts
+- src/app/wallTexture.ts
+- src/app/wallTexture.test.ts
+
+### Scenario -> test mapping
+
+- Inner wall side faces render with clear non-squashed bricks -> `src/acceptance/tests/textureGridTiling.acceptance.test.ts` (`Inner wall side faces render with clear non-squashed bricks`)
+- Front and side wall face UV density consistency -> `src/app/wallTexture.test.ts` (`creates tiled wall geometry with per-face u-scale from dimensions`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Hardener: PASS (`npm run test:mutation:branch` -> `85.84%`, target `>= 80%`)
+
+### Risks / blockers
+
+- None.
+
+### Next action
+
+- Proceed to final handoff.
+
+### User review status
+
+- Approved
+
+---
+
+## 2026-11-01 — Outer wall brick scale aligned to inner walls
+
+- Timestamp: 2026-11-01
+- Feature file: src/acceptance/features/textureGridTiling.acceptance.feature
+- Complexity: small
+- Current phase: P4
+- Checkpoint status: COMPLETE (`SPECIFIER_COMPLETE` -> `IMPLEMENTER_COMPLETE`) with `CLEANER_COMPLETE` and `HARDENER_COMPLETE`
+
+### Completed work
+
+- Updated approved acceptance contract to require outer wall brick scale to match inner walls.
+- Added `calculateWallTextureRepeatX()` in `src/app/wallTexture.ts` to scale wall repeat by world-space wall span.
+- Updated `src/app/bootstrap.ts` to apply wall textures per wall with repeat x derived from each wall’s primary span.
+- Kept repeat y fixed to existing wall default for vertical consistency.
+- Added coverage for repeat scaling helper in `src/app/wallTexture.test.ts`.
+- Updated bootstrap integration tests for per-wall material setup and repeat calls in `src/bootstrap.test.ts`.
+- Updated acceptance test wording and assertions in `src/acceptance/tests/textureGridTiling.acceptance.test.ts`.
+
+### Files changed so far
+
+- src/acceptance/features/textureGridTiling.acceptance.feature
+- src/acceptance/tests/textureGridTiling.acceptance.test.ts
+- src/app/bootstrap.ts
+- src/app/wallTexture.ts
+- src/app/wallTexture.test.ts
+- src/bootstrap.test.ts
+
+### Scenario -> test mapping
+
+- Outer wall texture matches inner wall brick scale -> `src/acceptance/tests/textureGridTiling.acceptance.test.ts` (`Outer wall texture matches inner wall brick scale`) + `src/bootstrap.test.ts` (`initializes renderer and scene primitives with expected values`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Hardener: PASS (`npm run test:mutation:branch` -> `88.66%`, target `>= 80%`)
+
+### Risks / blockers
+
+- None.
+
+### Next action
+
+- Proceed to final handoff.
+
+### User review status
+
+- Approved
+
+---
+
+## 2026-11-01 — Grid-like floor and wall texture tiling
+
+- Timestamp: 2026-11-01
+- Feature file: src/acceptance/features/textureGridTiling.acceptance.feature
+- Complexity: small
+- Current phase: P4
+- Checkpoint status: COMPLETE (`SPECIFIER_COMPLETE` -> `IMPLEMENTER_COMPLETE`) with `CLEANER_COMPLETE` and `HARDENER_COMPLETE`
+
+### Completed work
+
+- Marked approved acceptance contract for grid-like texture tiling.
+- Updated floor texture mapping in `src/app/floorTexture.ts` from clamp-to-edge to repeat wrapping.
+- Increased default floor repeat values to `8 x 8` for visible concrete tile repetition.
+- Increased default wall repeat values to `4 x 2` for denser brick tiling on wall faces.
+- Added acceptance coverage in `src/acceptance/tests/textureGridTiling.acceptance.test.ts` for all approved scenarios.
+- Updated existing floor acceptance expectations in `src/acceptance/tests/floorConcreteTexture.acceptance.test.ts` for repeat wrapping.
+- Updated runtime bootstrap texture repeat expectations in `src/bootstrap.test.ts`.
+- Strengthened unit coverage in `src/app/floorTexture.test.ts` and `src/app/wallTexture.test.ts` for wrap mode and repeat defaults.
+
+### Files changed so far
+
+- src/acceptance/features/textureGridTiling.acceptance.feature
+- src/acceptance/tests/textureGridTiling.acceptance.test.ts
+- src/acceptance/tests/floorConcreteTexture.acceptance.test.ts
+- src/app/floorTexture.ts
+- src/app/wallTexture.ts
+- src/app/floorTexture.test.ts
+- src/app/wallTexture.test.ts
+- src/bootstrap.test.ts
+
+### Scenario -> test mapping
+
+- Floor texture is tiled in a repeatable grid pattern -> `src/acceptance/tests/textureGridTiling.acceptance.test.ts` (`Floor texture is tiled in a repeatable grid pattern`)
+- Outer wall texture preserves brick proportions through tiling -> `src/acceptance/tests/textureGridTiling.acceptance.test.ts` (`Outer wall texture preserves brick proportions through tiling`)
+- Tiled textures remain stable while looking around -> `src/acceptance/tests/textureGridTiling.acceptance.test.ts` (`Tiled textures remain stable while looking around`)
+- Texture loading failure still uses safe fallback rendering -> `src/acceptance/tests/textureGridTiling.acceptance.test.ts` (`Texture loading failure still uses safe fallback rendering`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Hardener: PASS (`npm run test:mutation:branch` -> `100.00%`, target `>= 80%`)
+
+### Risks / blockers
+
+- None.
+
+### Next action
+
+- Proceed to final handoff.
+
+### User review status
+
+- Approved
+
+---
+
 ## 2026-11-01 — PNG texture asset compatibility defaults
 
 - Timestamp: 2026-11-01

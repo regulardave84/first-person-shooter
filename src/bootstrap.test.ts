@@ -125,7 +125,7 @@ function createDocumentStub(documentListeners: ListenerMap): DocumentStub {
 const runtimeMocks = vi.hoisted(() => ({
 	RUN_SPEED_MULTIPLIER: 2,
 	WORLD_WALLS: [
-		{ x: 1, y: 2, z: 3, w: 4, h: 5, d: 6, kind: 'outer' as const },
+		{ x: 1, y: 2, z: 3, w: 4, h: 5, d: 12, kind: 'outer' as const },
 		{ x: -1, y: 2, z: -3, w: 2, h: 4, d: 6, kind: 'inner' as const },
 	],
 	createInitialMovementKeys: vi.fn(() => ({
@@ -533,31 +533,42 @@ function getRuntimeWarnMock(): ReturnType<typeof vi.fn> {
 	).warn;
 }
 
+function expectMaterialTextureSuccess(materialIndex: number): void {
+	expect(
+		threeState.meshStandardMaterials[materialIndex]?.color.setHex,
+	).toHaveBeenCalledWith(0xffffff);
+	expect(threeState.meshStandardMaterials[materialIndex]?.needsUpdate).toBe(
+		true,
+	);
+}
+
+function expectMaterialTextureFallback(
+	materialIndex: number,
+	fallbackColor: number,
+): void {
+	expect(
+		threeState.meshStandardMaterials[materialIndex]?.color.setHex,
+	).toHaveBeenCalledWith(fallbackColor);
+	expect(threeState.meshStandardMaterials[materialIndex]?.map).toBeNull();
+	expect(threeState.meshStandardMaterials[materialIndex]?.needsUpdate).toBe(
+		true,
+	);
+}
+
 function expectFloorAndWallTextureSuccessState(): void {
 	expect(threeState.loadedTextures[0]?.repeat.set).toHaveBeenCalledWith(1, 1);
-	expect(threeState.loadedTextures[1]?.repeat.set).toHaveBeenCalledWith(1, 1);
-	expect(threeState.loadedTextures[2]?.repeat.set).toHaveBeenCalledWith(2, 1);
-	expect(
-		threeState.meshStandardMaterials[0]?.color.setHex,
-	).toHaveBeenCalledWith(0xffffff);
-	expect(threeState.meshStandardMaterials[0]?.needsUpdate).toBe(true);
-	expect(
-		threeState.meshStandardMaterials[1]?.color.setHex,
-	).toHaveBeenCalledWith(0xffffff);
-	expect(threeState.meshStandardMaterials[1]?.needsUpdate).toBe(true);
+	expect(threeState.loadedTextures[1]?.repeat.set).toHaveBeenCalledWith(8, 8);
+	expect(threeState.loadedTextures[2]?.repeat.set).toHaveBeenCalledWith(4, 2);
+	expect(threeState.loadedTextures[3]?.repeat.set).toHaveBeenCalledWith(2, 2);
+	expectMaterialTextureSuccess(0);
+	expectMaterialTextureSuccess(1);
+	expectMaterialTextureSuccess(2);
 }
 
 function expectFloorAndWallTextureFallbackState(): void {
-	expect(
-		threeState.meshStandardMaterials[0]?.color.setHex,
-	).toHaveBeenCalledWith(0x334155);
-	expect(threeState.meshStandardMaterials[0]?.map).toBeNull();
-	expect(threeState.meshStandardMaterials[0]?.needsUpdate).toBe(true);
-	expect(
-		threeState.meshStandardMaterials[1]?.color.setHex,
-	).toHaveBeenCalledWith(0x64748b);
-	expect(threeState.meshStandardMaterials[1]?.map).toBeNull();
-	expect(threeState.meshStandardMaterials[1]?.needsUpdate).toBe(true);
+	expectMaterialTextureFallback(0, 0x334155);
+	expectMaterialTextureFallback(1, 0x64748b);
+	expectMaterialTextureFallback(2, 0x64748b);
 
 	const warn = getRuntimeWarnMock();
 	expect(warn).toHaveBeenCalledWith(
@@ -676,10 +687,12 @@ describe('bootstrap runtime wiring', () => {
 		expect(threeState.meshStandardMaterialOptions).toEqual([
 			{ color: 0x334155 },
 			{ color: 0x64748b },
+			{ color: 0x64748b },
 		]);
 		expectTextureLoadOrder([
 			'ceiling-sky.svg',
 			'floor-concrete.png',
+			'wall-brick.png',
 			'wall-brick.png',
 		]);
 		expect(threeState.meshBasicMaterialOptions).toHaveLength(6);
@@ -710,6 +723,7 @@ describe('bootstrap runtime wiring', () => {
 		expectTextureLoadOrder([
 			'ceiling-sky.svg',
 			'floor-concrete.png',
+			'wall-brick.png',
 			'wall-brick.png',
 		]);
 		expect(threeState.meshBasicMaterialOptions).toHaveLength(0);

@@ -5,8 +5,11 @@ import {
 	applyDefaultWorldCeilingSkybox,
 } from './ceilingSkybox';
 import {
+	DEFAULT_WORLD_WALL_TEXTURE_REPEAT_Y,
 	DEFAULT_WORLD_WALL_COLOR,
 	applyDefaultWorldWallTexture,
+	calculateWallTextureRepeatX,
+	createWallGeometryForKind,
 } from './wallTexture';
 import {
 	DEFAULT_WORLD_FLOOR_COLOR,
@@ -78,10 +81,6 @@ const floor = new THREE.Mesh(
 floor.rotation.x = -Math.PI / 2;
 scene.add(floor);
 
-const wallMaterial = new THREE.MeshStandardMaterial({
-	color: DEFAULT_WORLD_WALL_COLOR,
-});
-
 function addWall(
 	x: number,
 	y: number,
@@ -89,23 +88,17 @@ function addWall(
 	w: number,
 	h: number,
 	d: number,
+	kind: 'outer' | 'inner',
+	material: THREE.MeshStandardMaterial,
 ) {
-	const wall = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wallMaterial);
+	const wall = new THREE.Mesh(
+		createWallGeometryForKind(w, h, d, kind),
+		material,
+	);
 	wall.position.set(x, y, z);
 	scene.add(wall);
 }
 
-for (const wall of WORLD_WALLS) {
-	addWall(wall.x, wall.y, wall.z, wall.w, wall.h, wall.d);
-}
-
-const keys = createInitialMovementKeys();
-const runKeys = createInitialRunKeys();
-let jumpState = createInitialJumpState();
-let primaryFireState = createInitialPrimaryFireState();
-let activeProjectiles: Projectile[] = [];
-const jumpSound = createJumpSoundPlayer();
-const bulletFireSound = createBulletFireSoundPlayer();
 const runtimeLogger = createRuntimeLogger({
 	enabled: isDebugLoggingEnabled(window.location.search),
 	sink: (entry) => {
@@ -116,6 +109,14 @@ const runtimeLogger = createRuntimeLogger({
 		console.debug(`[runtime] ${entry.event}`, entry.context);
 	},
 });
+
+const keys = createInitialMovementKeys();
+const runKeys = createInitialRunKeys();
+let jumpState = createInitialJumpState();
+let primaryFireState = createInitialPrimaryFireState();
+let activeProjectiles: Projectile[] = [];
+const jumpSound = createJumpSoundPlayer();
+const bulletFireSound = createBulletFireSoundPlayer();
 
 applyDefaultWorldCeilingSkybox(scene, {
 	logger: {
@@ -129,11 +130,31 @@ applyDefaultWorldFloorTexture(floor.material as THREE.MeshStandardMaterial, {
 	},
 });
 
-applyDefaultWorldWallTexture(wallMaterial, {
-	logger: {
-		warn: (event, context) => runtimeLogger.warn(event, context),
-	},
-});
+for (const wall of WORLD_WALLS) {
+	const wallMaterial = new THREE.MeshStandardMaterial({
+		color: DEFAULT_WORLD_WALL_COLOR,
+	});
+	const primaryWallSpan = Math.max(wall.w, wall.d);
+	const repeatX = calculateWallTextureRepeatX(primaryWallSpan);
+	applyDefaultWorldWallTexture(wallMaterial, {
+		repeatX,
+		repeatY: DEFAULT_WORLD_WALL_TEXTURE_REPEAT_Y,
+		logger: {
+			warn: (event, context) => runtimeLogger.warn(event, context),
+		},
+	});
+
+	addWall(
+		wall.x,
+		wall.y,
+		wall.z,
+		wall.w,
+		wall.h,
+		wall.d,
+		wall.kind,
+		wallMaterial,
+	);
+}
 
 const weaponHud = initializeWeaponHud({
 	logger: {

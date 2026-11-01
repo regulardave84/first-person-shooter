@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
 import {
+	DEFAULT_WORLD_FLOOR_TEXTURE_REPEAT_X,
+	DEFAULT_WORLD_FLOOR_TEXTURE_REPEAT_Y,
 	type FloorTextureLoaderLike,
 	applyDefaultWorldFloorTexture,
 } from './floorTexture';
@@ -46,6 +48,14 @@ describe('floorTexture', () => {
 		}).not.toThrow();
 
 		expect(materialWithoutColor.map).toBeInstanceOf(THREE.Texture);
+		expect(materialWithoutColor.map?.wrapS).toBe(THREE.RepeatWrapping);
+		expect(materialWithoutColor.map?.wrapT).toBe(THREE.RepeatWrapping);
+		expect(materialWithoutColor.map?.repeat.x).toBe(
+			DEFAULT_WORLD_FLOOR_TEXTURE_REPEAT_X,
+		);
+		expect(materialWithoutColor.map?.repeat.y).toBe(
+			DEFAULT_WORLD_FLOOR_TEXTURE_REPEAT_Y,
+		);
 		expect(materialWithoutColor.needsUpdate).toBe(true);
 	});
 

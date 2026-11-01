@@ -1,12 +1,119 @@
 import * as THREE from 'three';
 
 export const DEFAULT_WORLD_WALL_COLOR = 0x64748b;
-export const DEFAULT_WORLD_WALL_TEXTURE_REPEAT_X = 2;
-export const DEFAULT_WORLD_WALL_TEXTURE_REPEAT_Y = 1;
+export const DEFAULT_WORLD_WALL_TEXTURE_REPEAT_X = 4;
+export const DEFAULT_WORLD_WALL_TEXTURE_REPEAT_Y = 2;
+export const DEFAULT_WORLD_WALL_TEXTURE_WORLD_UNITS_PER_TILE = 3;
 export const DEFAULT_WORLD_WALL_TEXTURE_PATH = new URL(
 	'../assets/wall-brick.png',
 	import.meta.url,
 ).href;
+
+export function calculateWallTextureRepeatX(
+	primaryWallSpan: number,
+	worldUnitsPerTile: number = DEFAULT_WORLD_WALL_TEXTURE_WORLD_UNITS_PER_TILE,
+): number {
+	const resolvedWorldUnitsPerTile =
+		Number.isFinite(worldUnitsPerTile) && worldUnitsPerTile > 0
+			? worldUnitsPerTile
+			: DEFAULT_WORLD_WALL_TEXTURE_WORLD_UNITS_PER_TILE;
+	const resolvedPrimaryWallSpan =
+		Number.isFinite(primaryWallSpan) && primaryWallSpan > 0
+			? primaryWallSpan
+			: resolvedWorldUnitsPerTile;
+
+	return Math.max(
+		1,
+		Math.round(resolvedPrimaryWallSpan / resolvedWorldUnitsPerTile),
+	);
+}
+
+function resolveWorldUnitsPerTile(worldUnitsPerTile?: number): number {
+	if (Number.isFinite(worldUnitsPerTile) && (worldUnitsPerTile ?? 0) > 0) {
+		return worldUnitsPerTile as number;
+	}
+	return DEFAULT_WORLD_WALL_TEXTURE_WORLD_UNITS_PER_TILE;
+}
+
+function getFaceUvOffset(faceIndex: number): number {
+	return faceIndex * 8;
+}
+
+function applyFaceUvScale(
+	uvArray: Float32Array,
+	baseUvArray: Float32Array,
+	faceIndex: number,
+	uScale: number,
+	vScale: number,
+): void {
+	const offset = getFaceUvOffset(faceIndex);
+	for (let vertex = 0; vertex < 4; vertex += 1) {
+		const index = offset + vertex * 2;
+		uvArray[index] = baseUvArray[index] * uScale;
+		uvArray[index + 1] = baseUvArray[index + 1] * vScale;
+	}
+}
+
+export function applyTiledUvToWallGeometry(
+	geometry: THREE.BoxGeometry,
+	wallDimensions: { width: number; height: number; depth: number },
+	worldUnitsPerTile: number = DEFAULT_WORLD_WALL_TEXTURE_WORLD_UNITS_PER_TILE,
+): THREE.BoxGeometry {
+	const maybeGetAttribute = geometry as THREE.BoxGeometry & {
+		getAttribute?: (name: string) => { array?: ArrayLike<number> };
+	};
+	const uvAttribute = maybeGetAttribute.getAttribute?.('uv');
+	const rawUvArray = uvAttribute?.array;
+	if (!rawUvArray || !(rawUvArray instanceof Float32Array)) {
+		return geometry;
+	}
+
+	const unitsPerTile = resolveWorldUnitsPerTile(worldUnitsPerTile);
+	const widthTiles = wallDimensions.width / unitsPerTile;
+	const heightTiles = wallDimensions.height / unitsPerTile;
+	const depthTiles = wallDimensions.depth / unitsPerTile;
+
+	const baseUvArray = Float32Array.from(rawUvArray);
+
+	// BoxGeometry face order: right, left, top, bottom, front, back.
+	applyFaceUvScale(rawUvArray, baseUvArray, 0, depthTiles, heightTiles);
+	applyFaceUvScale(rawUvArray, baseUvArray, 1, depthTiles, heightTiles);
+	applyFaceUvScale(rawUvArray, baseUvArray, 2, widthTiles, depthTiles);
+	applyFaceUvScale(rawUvArray, baseUvArray, 3, widthTiles, depthTiles);
+	applyFaceUvScale(rawUvArray, baseUvArray, 4, widthTiles, heightTiles);
+	applyFaceUvScale(rawUvArray, baseUvArray, 5, widthTiles, heightTiles);
+
+	const maybeNeedsUpdate = uvAttribute as { needsUpdate?: boolean };
+	maybeNeedsUpdate.needsUpdate = true;
+
+	return geometry;
+}
+
+export function createTiledWallGeometry(
+	width: number,
+	height: number,
+	depth: number,
+	worldUnitsPerTile: number = DEFAULT_WORLD_WALL_TEXTURE_WORLD_UNITS_PER_TILE,
+): THREE.BoxGeometry {
+	const geometry = new THREE.BoxGeometry(width, height, depth);
+	return applyTiledUvToWallGeometry(
+		geometry,
+		{ width, height, depth },
+		worldUnitsPerTile,
+	);
+}
+
+export function createWallGeometryForKind(
+	width: number,
+	height: number,
+	depth: number,
+	kind: 'outer' | 'inner',
+): THREE.BoxGeometry {
+	if (kind === 'inner') {
+		return createTiledWallGeometry(width, height, depth);
+	}
+	return new THREE.BoxGeometry(width, height, depth);
+}
 
 export type WallTextureLogger = {
 	warn?: (message: string, context?: Record<string, unknown>) => void;

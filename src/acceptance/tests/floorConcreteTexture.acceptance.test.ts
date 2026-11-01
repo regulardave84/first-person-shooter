@@ -46,14 +46,16 @@ describe('Acceptance: Dark grey concrete texture on default map floor', () => {
 		});
 
 		expect(floorMaterial.map).toBeInstanceOf(THREE.Texture);
-		expect(floorMaterial.map?.wrapS).toBe(THREE.ClampToEdgeWrapping);
-		expect(floorMaterial.map?.wrapT).toBe(THREE.ClampToEdgeWrapping);
+		expect(floorMaterial.map?.wrapS).toBe(THREE.RepeatWrapping);
+		expect(floorMaterial.map?.wrapT).toBe(THREE.RepeatWrapping);
 		expect(floorMaterial.map?.repeat.x).toBe(
 			DEFAULT_WORLD_FLOOR_TEXTURE_REPEAT_X,
 		);
 		expect(floorMaterial.map?.repeat.y).toBe(
 			DEFAULT_WORLD_FLOOR_TEXTURE_REPEAT_Y,
 		);
+		expect(DEFAULT_WORLD_FLOOR_TEXTURE_REPEAT_X).toBeGreaterThan(1);
+		expect(DEFAULT_WORLD_FLOOR_TEXTURE_REPEAT_Y).toBeGreaterThan(1);
 		expect(floorMaterial.color.getHex()).toBe(0xffffff);
 	});
 

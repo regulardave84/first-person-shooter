@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 
 export const DEFAULT_WORLD_FLOOR_COLOR = 0x334155;
-export const DEFAULT_WORLD_FLOOR_TEXTURE_REPEAT_X = 1;
-export const DEFAULT_WORLD_FLOOR_TEXTURE_REPEAT_Y = 1;
+export const DEFAULT_WORLD_FLOOR_TEXTURE_REPEAT_X = 8;
+export const DEFAULT_WORLD_FLOOR_TEXTURE_REPEAT_Y = 8;
 export const DEFAULT_WORLD_FLOOR_TEXTURE_PATH = new URL(
 	'../assets/floor-concrete.png',
 	import.meta.url,
@@ -87,8 +87,8 @@ export function applyDefaultWorldFloorTexture(
 	resolved.textureLoader.load(
 		resolved.textureUrl,
 		(texture) => {
-			texture.wrapS = THREE.ClampToEdgeWrapping;
-			texture.wrapT = THREE.ClampToEdgeWrapping;
+			texture.wrapS = THREE.RepeatWrapping;
+			texture.wrapT = THREE.RepeatWrapping;
 			texture.repeat.set(resolved.repeatX, resolved.repeatY);
 			floorMaterial.map = texture;
 			setMaterialColorHex(floorMaterial, 0xffffff);
