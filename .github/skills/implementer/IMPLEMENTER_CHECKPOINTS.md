@@ -4,6 +4,112 @@ Persistent execution log for the `implementer` skill.
 
 ---
 
+## 2026-11-01 — Single-texture ceiling sky dome
+
+- Timestamp: 2026-11-01
+- Feature file: src/acceptance/features/ceilingSkyDome.acceptance.feature
+- Complexity: small
+- Current phase: P4
+- Checkpoint status: COMPLETE (`SPECIFIER_COMPLETE` -> `IMPLEMENTER_COMPLETE`) with `CLEANER_COMPLETE` and `HARDENER_COMPLETE`
+
+### Completed work
+
+- Promoted approved proposed contract into canonical acceptance feature for single-texture sky dome rendering.
+- Marked the proposal feature file as superseded.
+- Replaced box-based sky mesh generation with sphere-based dome geometry in `src/app/ceilingSkybox.ts` while preserving existing API and fallback logger contract.
+- Updated unit coverage to validate a single textured back-sided dome material and spherical geometry in `src/app/ceilingSkybox.test.ts`.
+- Added new acceptance coverage for dome geometry, non-duplicated single-texture intent, and fallback behavior in `src/acceptance/tests/ceilingSkyDome.acceptance.test.ts`.
+- Updated existing sky acceptance tests to align with dome behavior and preserved fallback assertions.
+- Updated bootstrap runtime integration tests and Three.js test doubles to support `SphereGeometry` and skydome naming.
+
+### Files changed so far
+
+- src/acceptance/features/ceilingSkyDome.acceptance.feature
+- src/acceptance/features/ceilingSkyDome.proposed.feature
+- src/acceptance/tests/ceilingSkyDome.acceptance.test.ts
+- src/acceptance/tests/ceilingSkyPanorama.acceptance.test.ts
+- src/acceptance/tests/ceilingSkyTexture.acceptance.test.ts
+- src/app/ceilingSkybox.ts
+- src/app/ceilingSkybox.test.ts
+- src/bootstrap.test.ts
+
+### Scenario -> test mapping
+
+- Default sky uses dome geometry instead of a box -> `src/acceptance/tests/ceilingSkyDome.acceptance.test.ts` (`Default sky uses dome geometry instead of a box`) + `src/app/ceilingSkybox.test.ts` (`creates a single-material sky dome mesh`) + `src/bootstrap.test.ts` (`initializes renderer and scene primitives with expected values`)
+- Sky texture appears once without side duplication -> `src/acceptance/tests/ceilingSkyDome.acceptance.test.ts` (`Sky texture appears once without side duplication`)
+- Existing fallback behavior is preserved on texture load failure -> `src/acceptance/tests/ceilingSkyDome.acceptance.test.ts` (`Existing fallback behavior is preserved on texture load failure`) + `src/app/ceilingSkybox.test.ts` (`does not throw on load failure without logger`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Hardener: PASS (`npm run test:mutation:branch` -> `93.75%`, target `>= 80%`)
+
+### Risks / blockers
+
+- None.
+
+### Next action
+
+- Proceed to final handoff.
+
+### User review status
+
+- Approved
+
+## 2026-11-01 — Continuous ceiling sky panorama mapping
+
+- Timestamp: 2026-11-01
+- Feature file: src/acceptance/features/ceilingSkyPanorama.acceptance.feature
+- Complexity: small
+- Current phase: P4
+- Checkpoint status: COMPLETE (`SPECIFIER_COMPLETE` -> `IMPLEMENTER_COMPLETE`) with `CLEANER_COMPLETE` and `HARDENER_COMPLETE`
+
+### Completed work
+
+- Promoted approved proposed contract into canonical acceptance feature for continuous ceiling sky panorama mapping.
+- Marked the proposal feature file as superseded.
+- Updated `src/app/ceilingSkybox.ts` to preserve existing skybox rendering and apply per-side panoramic U windows on side faces.
+- Preserved texture fallback behavior and warning logging contract.
+- Added unit coverage for side-face panoramic UV windows in `src/app/ceilingSkybox.test.ts`.
+- Added acceptance coverage for continuous non-duplicated side mapping and fallback behavior in `src/acceptance/tests/ceilingSkyPanorama.acceptance.test.ts`.
+- Updated `src/bootstrap.test.ts` Three.js doubles with `BufferAttribute` and UV-capable `BoxGeometry` so runtime integration tests can validate panorama-aware skybox construction.
+
+### Files changed so far
+
+- src/acceptance/features/ceilingSkyPanorama.acceptance.feature
+- src/acceptance/features/ceilingSkyPanorama.proposed.feature
+- src/acceptance/tests/ceilingSkyPanorama.acceptance.test.ts
+- src/app/ceilingSkybox.ts
+- src/app/ceilingSkybox.test.ts
+- src/bootstrap.test.ts
+
+### Scenario -> test mapping
+
+- Sky uses a continuous panoramic mapping -> `src/acceptance/tests/ceilingSkyPanorama.acceptance.test.ts` (`Sky uses a continuous panoramic mapping`) + `src/app/ceilingSkybox.test.ts` (`maps side faces to unique panoramic U windows`)
+- Sky remains stable while looking around -> `src/acceptance/tests/ceilingSkyPanorama.acceptance.test.ts` (`Sky remains stable while looking around`)
+- Texture load failure preserves existing fallback behavior -> `src/acceptance/tests/ceilingSkyPanorama.acceptance.test.ts` (`Texture load failure preserves existing fallback behavior`) + `src/app/ceilingSkybox.test.ts` (`does not throw on load failure without logger`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Hardener: PASS (`npm run test:mutation:branch` -> `92.50%`, target `>= 80%`)
+
+### Risks / blockers
+
+- None currently.
+
+### Next action
+
+- Proceed to final handoff.
+
+### User review status
+
+- Approved
+
 ## 2026-11-01 — Ceiling skybox PNG asset migration
 
 - Timestamp: 2026-11-01

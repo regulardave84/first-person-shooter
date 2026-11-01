@@ -373,11 +373,47 @@ vi.mock('three', () => {
 		}
 	}
 
+	class BufferAttribute {
+		needsUpdate = false;
+		constructor(
+			public array: Float32Array,
+			public itemSize: number,
+		) {
+			void this.itemSize;
+		}
+	}
+
 	class BoxGeometry {
+		private uvAttribute: BufferAttribute;
 		constructor(_w: number, _h: number, _d: number) {
 			void _w;
 			void _h;
 			void _d;
+			this.uvAttribute = new BufferAttribute(
+				new Float32Array([
+					1, 1, 0, 1, 1, 0, 0, 0,
+					1, 1, 0, 1, 1, 0, 0, 0,
+					1, 1, 0, 1, 1, 0, 0, 0,
+					1, 1, 0, 1, 1, 0, 0, 0,
+					1, 1, 0, 1, 1, 0, 0, 0,
+					1, 1, 0, 1, 1, 0, 0, 0,
+				]),
+				2,
+			);
+		}
+
+		getAttribute(name: string): BufferAttribute | undefined {
+			if (name !== 'uv') {
+				return undefined;
+			}
+			return this.uvAttribute;
+		}
+	}
+
+	class SphereGeometry {
+		parameters: { radius: number; widthSegments: number; heightSegments: number };
+		constructor(radius: number, widthSegments: number, heightSegments: number) {
+			this.parameters = { radius, widthSegments, heightSegments };
 		}
 	}
 
@@ -502,7 +538,9 @@ vi.mock('three', () => {
 		HemisphereLight,
 		DirectionalLight,
 		PlaneGeometry,
+		BufferAttribute,
 		BoxGeometry,
+		SphereGeometry,
 		MeshStandardMaterial,
 		MeshBasicMaterial,
 		LineBasicMaterial,
@@ -690,14 +728,19 @@ describe('bootstrap runtime wiring', () => {
 
 		const scene = threeState.scenes[0];
 		expect(scene.add).toHaveBeenCalledTimes(6);
-		const skyboxMesh = threeState.meshes.find(
+		const skydomeMesh = threeState.meshes.find(
 			(mesh) =>
 				typeof mesh === 'object' &&
 				mesh !== null &&
-				Array.isArray(mesh.material),
-		) as ({ name?: string } & { material: unknown[] }) | undefined;
-		expect(skyboxMesh?.name).toBe('default-world-ceiling-skybox');
-		expect(skyboxMesh?.material).toHaveLength(6);
+				(mesh as { name?: string }).name ===
+					'default-world-ceiling-skydome',
+		) as ({ name?: string } & { material: unknown; geometry: unknown }) | undefined;
+		expect(skydomeMesh?.name).toBe('default-world-ceiling-skydome');
+		expect(skydomeMesh?.material).toBeDefined();
+		expect(
+			(skydomeMesh?.geometry as { parameters?: { radius?: number } } | undefined)
+				?.parameters?.radius,
+		).toBe(200);
 		expect(threeState.cameras[0].aspect).toBeCloseTo(1920 / 1080);
 		expect(threeState.meshStandardMaterialOptions).toEqual([
 			{ color: 0x334155 },
@@ -710,7 +753,7 @@ describe('bootstrap runtime wiring', () => {
 			'wall-brick.png',
 			'wall-brick.png',
 		]);
-		expect(threeState.meshBasicMaterialOptions).toHaveLength(6);
+		expect(threeState.meshBasicMaterialOptions).toHaveLength(1);
 		expect(
 			threeState.meshBasicMaterialOptions.every(
 				(options) =>

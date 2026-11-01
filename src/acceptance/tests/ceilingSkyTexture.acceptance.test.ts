@@ -35,29 +35,9 @@ function createFailingTextureLoader(): TextureLoaderLike {
 	};
 }
 
-function getSkyboxMaterials(scene: THREE.Scene): THREE.MeshBasicMaterial[] {
-	const skybox = scene.children[0] as THREE.Mesh;
-	return skybox.material as THREE.MeshBasicMaterial[];
-}
-
-function assertTopFaceTextureIsStretched(
-	materials: THREE.MeshBasicMaterial[],
-): void {
-	const topTexture = materials[2]?.map;
-	expect(topTexture).toBeInstanceOf(THREE.Texture);
-	expect(topTexture?.wrapS).toBe(THREE.ClampToEdgeWrapping);
-	expect(topTexture?.wrapT).toBe(THREE.ClampToEdgeWrapping);
-	expect(topTexture?.repeat.x).toBeCloseTo(1);
-	expect(topTexture?.repeat.y).toBeCloseTo(1);
-}
-
-function assertAllFacesUseSkyTexture(
-	materials: THREE.MeshBasicMaterial[],
-): void {
-	for (const material of materials) {
-		expect(material.map).toBeInstanceOf(THREE.Texture);
-		expect(material.side).toBe(THREE.BackSide);
-	}
+function getSkyMaterial(scene: THREE.Scene): THREE.MeshBasicMaterial {
+	const sky = scene.children[0] as THREE.Mesh;
+	return sky.material as THREE.MeshBasicMaterial;
 }
 
 describe('Acceptance: Blue sky visible above default map walls', () => {
@@ -79,12 +59,16 @@ describe('Acceptance: Blue sky visible above default map walls', () => {
 
 		expect(scene.children).toHaveLength(1);
 		expect((scene.children[0] as THREE.Mesh).name).toBe(
-			'default-world-ceiling-skybox',
+			'default-world-ceiling-skydome',
 		);
-		const materials = getSkyboxMaterials(scene);
-		expect(materials).toHaveLength(6);
-		assertAllFacesUseSkyTexture(materials);
-		assertTopFaceTextureIsStretched(materials);
+		const material = getSkyMaterial(scene);
+		expect(material.map).toBeInstanceOf(THREE.Texture);
+		expect(material.side).toBe(THREE.BackSide);
+		const texture = material.map;
+		expect(texture?.wrapS).toBe(THREE.ClampToEdgeWrapping);
+		expect(texture?.wrapT).toBe(THREE.ClampToEdgeWrapping);
+		expect(texture?.repeat.x).toBeCloseTo(1);
+		expect(texture?.repeat.y).toBeCloseTo(1);
 	});
 
 	it('Looking around keeps sky visible above walls', () => {
@@ -93,13 +77,12 @@ describe('Acceptance: Blue sky visible above default map walls', () => {
 			textureLoader: createSuccessfulTextureLoader(),
 		});
 
-		const skybox = scene.children[0] as THREE.Mesh;
-		const materials = getSkyboxMaterials(scene);
-		assertAllFacesUseSkyTexture(materials);
-		const geometry = skybox.geometry as THREE.BoxGeometry;
-		expect(geometry.parameters.width).toBe(DEFAULT_WORLD_CEILING_SKYBOX_SIZE);
-		expect(geometry.parameters.height).toBe(DEFAULT_WORLD_CEILING_SKYBOX_SIZE);
-		expect(geometry.parameters.depth).toBe(DEFAULT_WORLD_CEILING_SKYBOX_SIZE);
+		const sky = scene.children[0] as THREE.Mesh;
+		expect(getSkyMaterial(scene).map).toBeInstanceOf(THREE.Texture);
+		const geometry = sky.geometry as THREE.SphereGeometry;
+		expect(geometry.parameters.radius).toBe(
+			DEFAULT_WORLD_CEILING_SKYBOX_SIZE / 2,
+		);
 	});
 
 	it('Sky rendering does not change floor or wall materials', () => {

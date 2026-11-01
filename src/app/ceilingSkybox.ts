@@ -54,22 +54,12 @@ function resolveSkyboxConfig(config?: {
 
 function createSkyboxMaterials(
 	texture: THREE.Texture,
-): THREE.MeshBasicMaterial[] {
-	const createFace = () =>
-		new THREE.MeshBasicMaterial({
-			map: texture,
-			color: 0xffffff,
-			side: THREE.BackSide,
-		});
-
-	return [
-		createFace(),
-		createFace(),
-		createFace(),
-		createFace(),
-		createFace(),
-		createFace(),
-	];
+	): THREE.MeshBasicMaterial {
+	return new THREE.MeshBasicMaterial({
+		map: texture,
+		color: 0xffffff,
+		side: THREE.BackSide,
+	});
 }
 
 export function applyDefaultWorldCeilingSkybox(
@@ -91,16 +81,16 @@ export function applyDefaultWorldCeilingSkybox(
 			texture.wrapT = THREE.ClampToEdgeWrapping;
 			texture.repeat.set(1, 1);
 
-			const skybox = new THREE.Mesh(
-				new THREE.BoxGeometry(
-					resolved.skyboxSize,
-					resolved.skyboxSize,
-					resolved.skyboxSize,
+			const skydome = new THREE.Mesh(
+				new THREE.SphereGeometry(
+					resolved.skyboxSize / 2,
+					64,
+					32,
 				),
 				createSkyboxMaterials(texture),
 			);
-			skybox.name = 'default-world-ceiling-skybox';
-			scene.add(skybox);
+			skydome.name = 'default-world-ceiling-skydome';
+			scene.add(skydome);
 		},
 		undefined,
 		() => {
