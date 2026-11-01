@@ -25,9 +25,7 @@ function createFailingTextureLoader(): TextureLoaderLike {
 		load: (
 			_textureUrl: string,
 			_onLoad?: (texture: THREE.Texture) => void,
-			_onProgress?: (
-				event: ProgressEvent<EventTarget>,
-			) => void,
+			_onProgress?: (event: ProgressEvent<EventTarget>) => void,
 			onError?: (event: unknown) => void,
 		): THREE.Texture => {
 			onError?.(new Error('texture failed'));
@@ -41,7 +39,9 @@ function getSkyboxMaterials(scene: THREE.Scene): THREE.MeshBasicMaterial[] {
 	return skybox.material as THREE.MeshBasicMaterial[];
 }
 
-function assertTopFaceTextureIsStretched(materials: THREE.MeshBasicMaterial[]): void {
+function assertTopFaceTextureIsStretched(
+	materials: THREE.MeshBasicMaterial[],
+): void {
 	const topTexture = materials[2]?.map;
 	expect(topTexture).toBeInstanceOf(THREE.Texture);
 	expect(topTexture?.wrapS).toBe(THREE.ClampToEdgeWrapping);
@@ -50,7 +50,9 @@ function assertTopFaceTextureIsStretched(materials: THREE.MeshBasicMaterial[]): 
 	expect(topTexture?.repeat.y).toBeCloseTo(1);
 }
 
-function assertAllFacesUseSkyTexture(materials: THREE.MeshBasicMaterial[]): void {
+function assertAllFacesUseSkyTexture(
+	materials: THREE.MeshBasicMaterial[],
+): void {
 	for (const material of materials) {
 		expect(material.map).toBeInstanceOf(THREE.Texture);
 		expect(material.side).toBe(THREE.BackSide);

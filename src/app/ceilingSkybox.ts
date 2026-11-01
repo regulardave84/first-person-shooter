@@ -52,7 +52,9 @@ function resolveSkyboxConfig(config?: {
 	};
 }
 
-function createSkyboxMaterials(texture: THREE.Texture): THREE.MeshBasicMaterial[] {
+function createSkyboxMaterials(
+	texture: THREE.Texture,
+): THREE.MeshBasicMaterial[] {
 	const createFace = () =>
 		new THREE.MeshBasicMaterial({
 			map: texture,
