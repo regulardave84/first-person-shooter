@@ -54,7 +54,7 @@ function resolveSkyboxConfig(config?: {
 
 function createSkyboxMaterials(
 	texture: THREE.Texture,
-	): THREE.MeshBasicMaterial {
+): THREE.MeshBasicMaterial {
 	return new THREE.MeshBasicMaterial({
 		map: texture,
 		color: 0xffffff,
@@ -82,11 +82,7 @@ export function applyDefaultWorldCeilingSkybox(
 			texture.repeat.set(1, 1);
 
 			const skydome = new THREE.Mesh(
-				new THREE.SphereGeometry(
-					resolved.skyboxSize / 2,
-					64,
-					32,
-				),
+				new THREE.SphereGeometry(resolved.skyboxSize / 2, 64, 32),
 				createSkyboxMaterials(texture),
 			);
 			skydome.name = 'default-world-ceiling-skydome';

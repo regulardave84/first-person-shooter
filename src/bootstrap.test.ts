@@ -391,12 +391,9 @@ vi.mock('three', () => {
 			void _d;
 			this.uvAttribute = new BufferAttribute(
 				new Float32Array([
-					1, 1, 0, 1, 1, 0, 0, 0,
-					1, 1, 0, 1, 1, 0, 0, 0,
-					1, 1, 0, 1, 1, 0, 0, 0,
-					1, 1, 0, 1, 1, 0, 0, 0,
-					1, 1, 0, 1, 1, 0, 0, 0,
-					1, 1, 0, 1, 1, 0, 0, 0,
+					1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0,
+					0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0,
+					0, 0,
 				]),
 				2,
 			);
@@ -411,7 +408,11 @@ vi.mock('three', () => {
 	}
 
 	class SphereGeometry {
-		parameters: { radius: number; widthSegments: number; heightSegments: number };
+		parameters: {
+			radius: number;
+			widthSegments: number;
+			heightSegments: number;
+		};
 		constructor(radius: number, widthSegments: number, heightSegments: number) {
 			this.parameters = { radius, widthSegments, heightSegments };
 		}
@@ -732,14 +733,18 @@ describe('bootstrap runtime wiring', () => {
 			(mesh) =>
 				typeof mesh === 'object' &&
 				mesh !== null &&
-				(mesh as { name?: string }).name ===
-					'default-world-ceiling-skydome',
-		) as ({ name?: string } & { material: unknown; geometry: unknown }) | undefined;
+				(mesh as { name?: string }).name === 'default-world-ceiling-skydome',
+		) as
+			| ({ name?: string } & { material: unknown; geometry: unknown })
+			| undefined;
 		expect(skydomeMesh?.name).toBe('default-world-ceiling-skydome');
 		expect(skydomeMesh?.material).toBeDefined();
 		expect(
-			(skydomeMesh?.geometry as { parameters?: { radius?: number } } | undefined)
-				?.parameters?.radius,
+			(
+				skydomeMesh?.geometry as
+					| { parameters?: { radius?: number } }
+					| undefined
+			)?.parameters?.radius,
 		).toBe(200);
 		expect(threeState.cameras[0].aspect).toBeCloseTo(1920 / 1080);
 		expect(threeState.meshStandardMaterialOptions).toEqual([
