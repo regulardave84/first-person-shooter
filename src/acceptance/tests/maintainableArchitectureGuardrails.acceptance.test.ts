@@ -5,7 +5,7 @@ import {
 	evaluateCiLayerArchitectureGate,
 	validateImplementerLayerMappings,
 	validateSpecificationLayerContract,
-} from './tools/architectureGuardrails';
+} from '../../tools/architectureGuardrails';
 
 describe('Acceptance: Enforce maintainable architecture guardrails for feature delivery', () => {
 	function readPackageScripts() {
@@ -20,7 +20,7 @@ describe('Acceptance: Enforce maintainable architecture guardrails for feature d
 		const featureText = readFileSync(
 			path.join(
 				process.cwd(),
-				'src/maintainableArchitectureGuardrails.acceptance.feature',
+				'src/acceptance/features/maintainableArchitectureGuardrails.acceptance.feature',
 			),
 			'utf8',
 		);

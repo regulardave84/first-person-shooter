@@ -5,7 +5,7 @@ import {
 	createInitialPrimaryFireState,
 	playBulletFireSounds,
 	setPrimaryFirePressedState,
-} from './fpsRuntime';
+} from '../../fpsRuntime';
 
 describe('Acceptance: Bullet firing sound', () => {
 	it('A firing sound plays for a single valid left-click shot', () => {

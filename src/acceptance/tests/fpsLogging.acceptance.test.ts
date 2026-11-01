@@ -7,7 +7,7 @@ import {
 	handlePointerLockChange,
 	requestPointerLock,
 	setMovementKeyState,
-} from './fpsRuntime';
+} from '../../fpsRuntime';
 
 describe('Acceptance: Runtime logging for FPS debugging', () => {
 	it('Logging is disabled by default', () => {

@@ -152,9 +152,10 @@ This enforces source-file size limits and import-boundary rules and writes `repo
 - `src/tools/specifier/` – split specifier modules (`gherkinParser`, `acceptanceGenerator`, `unitTestGenerator`, `qaProcedureGenerator`, `scenarioRunner`, `types`)
 - `src/gameLogic.ts`, `src/fpsRuntime.ts`, `src/specifier.ts` – compatibility barrels for stable imports
 - `src/*.test.ts` – unit tests (game logic, runtime helpers, and specifier tooling)
-- `src/*.acceptance.feature` – approved acceptance criteria in Gherkin
-- `src/*.acceptance*.ts` – acceptance tests and generated acceptance scaffolding
-- `src/*.qa-procedure.md` – generated manual QA procedures from approved acceptance criteria
+- `src/acceptance/features/*.acceptance.feature` – approved acceptance criteria in Gherkin
+- `src/acceptance/tests/*.acceptance.test.ts` – acceptance tests
+- `src/acceptance/tests/generated/*.acceptance.generated.test.ts` – generated acceptance scaffolding
+- `src/acceptance/qa/*.qa-procedure.md` – generated manual QA procedures from approved acceptance criteria
 - `src/style.css` – basic styling for HUD/crosshair
 - `eslint.config.js` – ESLint flat config for TypeScript/browser code
 - `architecture-guardrails.policy.json` – architecture gate policy (file-size and boundary constraints)

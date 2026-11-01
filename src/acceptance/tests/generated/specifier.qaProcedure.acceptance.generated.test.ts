@@ -1,5 +1,5 @@
 import { describe, it } from 'vitest';
-import { runScenario, type StepDefinitions } from './specifier';
+import { runScenario, type StepDefinitions } from '../../../specifier';
 
 const stepDefinitions: StepDefinitions = {
 	'Given a feature request has approved Gherkin acceptance scenarios': async (

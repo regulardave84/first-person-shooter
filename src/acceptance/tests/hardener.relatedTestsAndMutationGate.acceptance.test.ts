@@ -4,7 +4,7 @@ import {
 	buildMutationScope,
 	evaluateMutationExecutionGate,
 	HARDENER_FULL_TEST_SUITE_COMMAND,
-} from './tools/hardenerMutationScope';
+} from '../../tools/hardenerMutationScope';
 
 describe('Acceptance: Hardener gates mutation runs by full test suite', () => {
 	it('Identify branch changes against main', () => {

@@ -8,12 +8,12 @@ import {
 	handleMouseMoveForLook,
 	setMovementKeyState,
 	requestPointerLock,
-} from './fpsRuntime';
+} from '../../fpsRuntime';
 import {
 	DEFAULT_MOVE_SPEED,
 	PLAYER_HEIGHT,
 	getMovementDelta,
-} from './gameLogic';
+} from '../../gameLogic';
 
 describe('Acceptance: First person shooter current behavior', () => {
 	it('Player can request pointer lock by clicking the game canvas', () => {

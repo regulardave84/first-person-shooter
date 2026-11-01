@@ -4,7 +4,7 @@ import path from 'node:path';
 import {
 	evaluateCoverageThresholds,
 	hasCoverageThresholdOverrides,
-} from './tools/cleanerCoverageGate';
+} from '../../tools/cleanerCoverageGate';
 
 describe('Acceptance: Cleaner enforces coverage quality threshold', () => {
 	function readPackageScripts() {

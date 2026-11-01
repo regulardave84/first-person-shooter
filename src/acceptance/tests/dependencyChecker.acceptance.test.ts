@@ -5,7 +5,7 @@ import {
 	scanDependenciesInFiles,
 	updateDependencyPolicy,
 	validateDependenciesAgainstPolicy,
-} from './tools/dependencyChecker';
+} from '../../tools/dependencyChecker';
 
 describe('Acceptance: Dependency checker enforces approved dependency policy', () => {
 	it('Scan source files to discover used dependencies', () => {

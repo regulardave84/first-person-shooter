@@ -7,7 +7,7 @@ The `implementer` skill converts approved Gherkin acceptance criteria into real 
 
 ## What implementer does
 
-- Consumes approved `.feature` files from `specifier`
+- Consumes approved `.feature` files from `specifier` (default location: `src/acceptance/features`)
 - Writes/updates unit tests mapped to each scenario
 - Implements or updates production code to satisfy tests
 - Enforces SOLID-aligned module boundaries (single reason to change)

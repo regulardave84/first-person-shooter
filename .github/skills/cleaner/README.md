@@ -7,6 +7,7 @@ The `cleaner` skill identifies Change Risk Anti-Patterns (CRAP) and drives safe 
 
 ## What cleaner does
 
+- Assesses repository directory structure first as part of general code review.
 - Combines cyclomatic complexity with test coverage.
 - Enforces configured global coverage thresholds during cleaner coverage run.
 - Computes CRAP score per function.
@@ -20,3 +21,5 @@ The `cleaner` skill identifies Change Risk Anti-Patterns (CRAP) and drives safe 
 - `npm run analyze:crap` (analyze existing coverage + complexity)
 - `npm run deps:check` (scan source dependencies against allowed/disallowed policy)
 - `npm run cleaner` (run coverage, CRAP analysis, then dependency check pre-cleanup gate)
+
+Cleaner review policy requires directory-structure assessment to execute first before dependency validation and cleanup refactors.

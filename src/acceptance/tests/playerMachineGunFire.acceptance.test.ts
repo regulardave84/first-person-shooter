@@ -8,7 +8,7 @@ import {
 	setPrimaryFirePressedState,
 	spawnProjectilesFromLook,
 	stepProjectiles,
-} from './fpsRuntime';
+} from '../../fpsRuntime';
 
 describe('Acceptance: Player machine-gun bullet firing', () => {
 	it('Single left click fires exactly one bullet immediately when pointer lock is active', () => {

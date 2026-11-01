@@ -23,7 +23,10 @@ Run these skills in this exact order:
 - Run `specifier` on the user requirement.
 - Generate acceptance scenarios in Gherkin.
 - Generate a manual UI QA procedure document from approved scenarios.
-- Persist to a `.feature` file.
+- Reuse/update matching existing feature file(s) when intent already exists; create new feature files only when no suitable match exists.
+- Persist approved scenarios to `src/acceptance/features/*.acceptance.feature`.
+- Persist generated acceptance scaffolding to `src/acceptance/tests/generated/*.acceptance.generated.test.ts`.
+- Persist generated QA procedures to `src/acceptance/qa/*.qa-procedure.md`.
 - Request explicit user approval.
 - **Do not proceed until approval is granted.**
 
@@ -36,6 +39,7 @@ Run these skills in this exact order:
 ### Step 3: cleanup gate
 
 - Run `cleaner` to review and reduce change risk.
+- Ensure cleaner performs directory-structure assessment first within general code review.
 - Run dependency checker during cleaner after review and before cleanup refactors.
 - Apply safe refactors only (no behavior change).
 - Re-run lint/tests/build after cleanup changes.

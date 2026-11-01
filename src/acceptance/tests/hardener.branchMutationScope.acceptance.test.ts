@@ -3,7 +3,7 @@ import {
 	applyMutationTargetsToConfig,
 	buildMutationScope,
 	createMutationScopeSummary,
-} from './tools/hardenerMutationScope';
+} from '../../tools/hardenerMutationScope';
 
 describe('Acceptance: Hardener scopes mutation testing to current branch changes', () => {
 	it('Select changed implementation files as mutation targets', () => {

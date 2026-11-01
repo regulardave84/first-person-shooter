@@ -16,6 +16,7 @@ This version adds safeguards based on real usage:
 - Unit tests should be traceable scenario-by-scenario to acceptance tests.
 - Runtime-heavy behavior should be extracted into testable pure helpers where possible.
 - Generated tests should fail loudly when step mappings are missing.
+- Existing feature files should be reused when the requested intent already exists.
 
 ## Core Contract
 
@@ -25,6 +26,7 @@ This version adds safeguards based on real usage:
 4. Parse approved acceptance tests into unit-test scaffolding.
 5. Generate a manual UI QA procedure document from approved acceptance scenarios.
 6. Preserve one-to-one traceability between `Scenario` items and generated unit tests/manual tests.
+7. Reuse and update matching existing feature file(s) instead of creating duplicate feature files.
 
 ## Required Workflow
 
@@ -53,6 +55,17 @@ This version adds safeguards based on real usage:
 	- include module-boundary expectations in acceptance text
 	- explicitly forbid adding new feature logic to aggregator/barrel files
 
+### 2.2) Existing feature-file reuse checks (before proposing a new file)
+
+- Scan existing feature files under `src/acceptance/features`.
+- Evaluate candidate matches using:
+	- feature title/name similarity
+	- scenario intent overlap
+	- domain vocabulary consistency
+- If one or more matching feature file(s) exist, propose updates to those existing file(s).
+- Do not create a new feature file when a matching existing file already covers the same intent.
+- Create a new feature file only when no suitable match exists.
+
 ### 3) Human review gate (mandatory)
 
 Before generating/altering implementation tests:
@@ -60,10 +73,11 @@ Before generating/altering implementation tests:
 - Ask the user to review the acceptance tests.
 - Wait for explicit approval (or requested edits).
 - Treat approved acceptance tests as immutable unless the user grants permission for edits.
+- When updating an existing feature file, show the proposed delta and require explicit approval before persisting.
 
 After approval:
 
-- Persist approved tests in a canonical `.feature` file (single source of truth).
+- Persist approved tests in a canonical `.feature` file under `src/acceptance/features` (single source of truth), preferring updates to matched existing feature file(s) over creating new files.
 - Add a lock notice comment (approved date + “do not modify without permission”).
 - Reject silent rewrites or auto-edits to approved acceptance tests.
 
@@ -71,6 +85,7 @@ After approval:
 
 - Parse `Feature`/`Scenario`/steps into an AST-like model.
 - Generate deterministic unit-test scaffolding (e.g., Vitest).
+- Persist generated acceptance scaffolding in `src/acceptance/tests/generated`.
 - Create placeholders for step definitions and assertions where needed.
 - Generate one `it(...)` block per scenario, preserving scenario names.
 - Keep step-definition keys deterministic (`Given ...`, `When ...`, `Then ...`).
@@ -86,7 +101,7 @@ After approval:
 	- step-by-step UI actions
 	- expected UI outcomes
 	- clear pass/fail criteria
-- Persist the QA procedure in the repository (for example `src/<feature>.qa-procedure.md`).
+- Persist the QA procedure in the repository under `src/acceptance/qa` (for example `src/acceptance/qa/<feature>.qa-procedure.md`).
 - Regenerate the QA procedure whenever approved scenarios change.
 
 ### 4.1) Testability bridge for implementation code
@@ -111,6 +126,7 @@ After approval:
 When a run is complete, report:
 
 - acceptance file path
+- acceptance file action (`updated-existing` | `created-new`)
 - approval status (pending/approved)
 - generated test file path(s)
 - generated QA procedure file path

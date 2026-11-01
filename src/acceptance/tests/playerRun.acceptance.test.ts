@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_MOVE_SPEED, PLAYER_HEIGHT } from './gameLogic';
+import { DEFAULT_MOVE_SPEED, PLAYER_HEIGHT } from '../../gameLogic';
 import {
 	RUN_SPEED_MULTIPLIER,
 	applyFrameMovement,
@@ -10,7 +10,7 @@ import {
 	isRunActive,
 	setRunKeyState,
 	type MovementKeyCode,
-} from './fpsRuntime';
+} from '../../fpsRuntime';
 
 function applyStep(params: {
 	movementKey?: MovementKeyCode;

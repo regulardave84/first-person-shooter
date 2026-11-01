@@ -237,11 +237,57 @@ Feature: Camera pitch
 `);
 
 		expect(output).toContain("import { describe, it } from 'vitest';");
+		expect(output).toContain(
+			"import { runScenario, type StepDefinitions } from '../../../specifier';",
+		);
 		expect(output).toContain('Acceptance: Camera pitch');
 		expect(output).toContain('it("Clamp pitch to max", async () => {');
 		expect(output).toContain('"Given pitch starts at 0": async (context) => {');
 		expect(output).toContain(
 			'await runScenario(Clamp_pitch_to_max_steps, stepDefinitions, {});',
+		);
+	});
+
+	it('generates deterministic scaffold output format', () => {
+		const output = generateUnitTestsFromAcceptanceTests(`
+Feature: Formatting contract
+
+  Scenario: Basic movement
+    Given the player is ready
+    When the player presses W
+    Then the player moves forward
+`);
+
+		expect(output).toBe(
+			[
+				"import { describe, it } from 'vitest';",
+				"import { runScenario, type StepDefinitions } from '../../../specifier';",
+				'',
+				'const stepDefinitions: StepDefinitions = {',
+				"  \"Given the player is ready\": async (context) => {",
+				'    void context;',
+				'  },',
+				"  \"When the player presses W\": async (context) => {",
+				'    void context;',
+				'  },',
+				"  \"Then the player moves forward\": async (context) => {",
+				'    void context;',
+				'  },',
+				'};',
+				'',
+				'describe("Acceptance: Formatting contract", () => {',
+				'  const Basic_movement_steps = [',
+				'      { keyword: "Given", text: "the player is ready" },',
+				'      { keyword: "When", text: "the player presses W" },',
+				'      { keyword: "Then", text: "the player moves forward" },',
+				'  ] as const;',
+				'',
+				'  it("Basic movement", async () => {',
+				'    await runScenario(Basic_movement_steps, stepDefinitions, {});',
+				'  });',
+				'});',
+				'',
+			].join('\n'),
 		);
 	});
 
@@ -281,6 +327,33 @@ Feature: Identifier generation
 
 		expect(output).toContain('const step_123_launch_sequence_steps = [');
 		expect(output).toContain('const unnamed_step_steps = [');
+	});
+
+	it('normalizes symbol and whitespace heavy scenario names without over-prefixing', () => {
+		const output = generateUnitTestsFromAcceptanceTests(`
+Feature: Identifier normalization
+
+	Scenario: A-B
+		Given ready
+		When action starts
+		Then action succeeds
+
+	Scenario: A   B
+		Given prepared
+		When action continues
+		Then action completes
+
+	Scenario: Level 2 run
+		Given configured
+		When launch proceeds
+		Then output is emitted
+`);
+
+		expect(output).toContain('const A_B_steps = [');
+		expect(output).not.toContain('const AB_steps = [');
+		expect(output).not.toContain('const A___B_steps = [');
+		expect(output).toContain('const Level_2_run_steps = [');
+		expect(output).not.toContain('const step_Level_2_run_steps = [');
 	});
 });
 

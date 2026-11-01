@@ -61,7 +61,7 @@ export function generateUnitTestsFromAcceptanceTests(gherkin: string): string {
 
 	return [
 		"import { describe, it } from 'vitest';",
-		"import { runScenario, type StepDefinitions } from './specifier';",
+		"import { runScenario, type StepDefinitions } from '../../../specifier';",
 		'',
 		'const stepDefinitions: StepDefinitions = {',
 		stepDefinitionEntries,
