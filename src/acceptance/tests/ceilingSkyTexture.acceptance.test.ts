@@ -62,12 +62,12 @@ function assertAllFacesUseSkyTexture(
 
 describe('Acceptance: Blue sky visible above default map walls', () => {
 	it('Default skybox points to PNG asset', () => {
-		expect(DEFAULT_WORLD_CEILING_SKY_TEXTURE_PATH.endsWith('ceiling-sky.png')).toBe(
-			true,
-		);
-		expect(DEFAULT_WORLD_CEILING_SKY_TEXTURE_PATH.includes('ceiling-sky.svg')).toBe(
-			false,
-		);
+		expect(
+			DEFAULT_WORLD_CEILING_SKY_TEXTURE_PATH.endsWith('ceiling-sky.png'),
+		).toBe(true);
+		expect(
+			DEFAULT_WORLD_CEILING_SKY_TEXTURE_PATH.includes('ceiling-sky.svg'),
+		).toBe(false);
 	});
 
 	it('Default map renders blue sky above wall height', () => {
