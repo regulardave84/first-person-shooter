@@ -41,10 +41,7 @@ describe('cleanerWorkflow', () => {
 	it('reports passing directory structure when required layout and artifact placement are valid', () => {
 		const result = assessDirectoryStructure({
 			requiredDirectories: ['src/acceptance/features', 'src/acceptance/tests'],
-			existingDirectories: [
-				'src/acceptance/features',
-				'src/acceptance/tests',
-			],
+			existingDirectories: ['src/acceptance/features', 'src/acceptance/tests'],
 			repositoryPaths: [
 				'src/acceptance/features/fpsLogging.acceptance.feature',
 				'src/acceptance/tests/fpsLogging.acceptance.test.ts',

@@ -107,7 +107,9 @@ export function assessDirectoryStructure(params: {
 	repositoryPaths: readonly string[];
 }): DirectoryStructureOutcome {
 	const requiredDirectories = toUniqueSorted(params.requiredDirectories);
-	const existingDirectories = new Set(toUniqueSorted(params.existingDirectories));
+	const existingDirectories = new Set(
+		toUniqueSorted(params.existingDirectories),
+	);
 	const repositoryPaths = toUniqueSorted(params.repositoryPaths);
 
 	const missingRequiredDirectories = requiredDirectories.filter(
@@ -157,8 +159,12 @@ function buildDirectoryStructureReport(
 
 	return {
 		status,
-		missingRequiredDirectories: [...directoryStructure.missingRequiredDirectories],
-		misplacedAcceptanceArtifacts: [...directoryStructure.misplacedAcceptanceArtifacts],
+		missingRequiredDirectories: [
+			...directoryStructure.missingRequiredDirectories,
+		],
+		misplacedAcceptanceArtifacts: [
+			...directoryStructure.misplacedAcceptanceArtifacts,
+		],
 		findings: sortedFindings,
 		summary,
 	};
@@ -172,7 +178,9 @@ function buildDependencyCheckerReport(
 	const discoveredCount = toUniqueSorted(
 		dependencyChecker.findings?.discovered,
 	).length;
-	const unlistedCount = toUniqueSorted(dependencyChecker.findings?.unlisted).length;
+	const unlistedCount = toUniqueSorted(
+		dependencyChecker.findings?.unlisted,
+	).length;
 
 	return {
 		status: hasViolations ? 'failed' : 'passed',

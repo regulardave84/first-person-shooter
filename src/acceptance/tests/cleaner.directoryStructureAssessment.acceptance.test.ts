@@ -52,12 +52,16 @@ describe('Acceptance: Cleaner performs directory structure assessment before cle
 				expect.objectContaining({
 					path: 'src/acceptance/features',
 					ruleViolated: 'missing-required-directory',
-					recommendedAction: expect.stringContaining('Create required directory'),
+					recommendedAction: expect.stringContaining(
+						'Create required directory',
+					),
 				}),
 				expect.objectContaining({
 					path: 'src/playerRun.acceptance.feature',
 					ruleViolated: 'misplaced-acceptance-artifact',
-					recommendedAction: expect.stringContaining('Move acceptance artifact'),
+					recommendedAction: expect.stringContaining(
+						'Move acceptance artifact',
+					),
 				}),
 			]),
 		);
