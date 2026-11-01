@@ -107,6 +107,14 @@ const threeState = vi.hoisted(() => ({
 		background?: unknown;
 	}>,
 	meshStandardMaterialOptions: [] as unknown[],
+	meshStandardMaterials: [] as Array<{
+		color: {
+			setHex: ReturnType<typeof vi.fn>;
+			getHex: () => number;
+		};
+		map: unknown;
+		needsUpdate: boolean;
+	}>,
 	meshBasicMaterialOptions: [] as unknown[],
 	lineBasicMaterialOptions: [] as unknown[],
 	textureLoadCalls: [] as string[],
@@ -261,8 +269,31 @@ vi.mock('three', () => {
 	}
 
 	class MeshStandardMaterial {
+		private colorHex: number;
+		color: {
+			setHex: ReturnType<typeof vi.fn>;
+			getHex: () => number;
+		};
+		map: unknown = null;
+		needsUpdate = false;
+
 		constructor(options: unknown) {
 			threeState.meshStandardMaterialOptions.push(options);
+			const hexColor =
+				typeof options === 'object' &&
+				options !== null &&
+				'color' in options &&
+				typeof (options as { color?: unknown }).color === 'number'
+					? ((options as { color: number }).color ?? 0xffffff)
+					: 0xffffff;
+			this.colorHex = hexColor;
+			this.color = {
+				setHex: vi.fn((value: number) => {
+					this.colorHex = value;
+				}),
+				getHex: () => this.colorHex,
+			};
+			threeState.meshStandardMaterials.push(this);
 		}
 	}
 
@@ -369,9 +400,60 @@ vi.mock('three', () => {
 		TextureLoader,
 		BackSide: 'BackSide',
 		ClampToEdgeWrapping: 'ClampToEdgeWrapping',
+		RepeatWrapping: 'RepeatWrapping',
 		Clock,
 	};
 });
+
+function expectTextureLoadOrder(expectedFragments: string[]): void {
+	expect(threeState.textureLoadCalls).toHaveLength(expectedFragments.length);
+	for (const [index, fragment] of expectedFragments.entries()) {
+		expect(threeState.textureLoadCalls[index]).toContain(fragment);
+	}
+}
+
+function getRuntimeWarnMock(): ReturnType<typeof vi.fn> {
+	return (runtimeMocks.createRuntimeLogger.mock.results[0]?.value as {
+		warn: ReturnType<typeof vi.fn>;
+	}).warn;
+}
+
+function expectFloorAndWallTextureSuccessState(): void {
+	expect(threeState.loadedTextures[0]?.repeat.set).toHaveBeenCalledWith(1, 1);
+	expect(threeState.loadedTextures[1]?.repeat.set).toHaveBeenCalledWith(1, 1);
+	expect(threeState.loadedTextures[2]?.repeat.set).toHaveBeenCalledWith(2, 1);
+	expect(threeState.meshStandardMaterials[0]?.color.setHex).toHaveBeenCalledWith(
+		0xffffff,
+	);
+	expect(threeState.meshStandardMaterials[0]?.needsUpdate).toBe(true);
+	expect(threeState.meshStandardMaterials[1]?.color.setHex).toHaveBeenCalledWith(
+		0xffffff,
+	);
+	expect(threeState.meshStandardMaterials[1]?.needsUpdate).toBe(true);
+}
+
+function expectFloorAndWallTextureFallbackState(): void {
+	expect(threeState.meshStandardMaterials[0]?.color.setHex).toHaveBeenCalledWith(
+		0x334155,
+	);
+	expect(threeState.meshStandardMaterials[0]?.map).toBeNull();
+	expect(threeState.meshStandardMaterials[0]?.needsUpdate).toBe(true);
+	expect(threeState.meshStandardMaterials[1]?.color.setHex).toHaveBeenCalledWith(
+		0x64748b,
+	);
+	expect(threeState.meshStandardMaterials[1]?.map).toBeNull();
+	expect(threeState.meshStandardMaterials[1]?.needsUpdate).toBe(true);
+
+	const warn = getRuntimeWarnMock();
+	expect(warn).toHaveBeenCalledWith(
+		'floor.texture.load.failed',
+		expect.objectContaining({ fallbackColor: 0x334155 }),
+	);
+	expect(warn).toHaveBeenCalledWith(
+		'wall.texture.load.failed',
+		expect.objectContaining({ fallbackColor: 0x64748b }),
+	);
+}
 
 describe('bootstrap runtime wiring', () => {
 	let documentListeners: ListenerMap;
@@ -383,6 +465,7 @@ describe('bootstrap runtime wiring', () => {
 
 		threeState.scenes.length = 0;
 		threeState.meshStandardMaterialOptions.length = 0;
+		threeState.meshStandardMaterials.length = 0;
 		threeState.meshBasicMaterialOptions.length = 0;
 		threeState.lineBasicMaterialOptions.length = 0;
 		threeState.textureLoadCalls.length = 0;
@@ -489,7 +572,11 @@ describe('bootstrap runtime wiring', () => {
 			{ color: 0x334155 },
 			{ color: 0x64748b },
 		]);
-		expect(threeState.textureLoadCalls[0]).toContain('ceiling-sky.svg');
+		expectTextureLoadOrder([
+			'ceiling-sky.svg',
+			'floor-concrete.svg',
+			'wall-brick.svg',
+		]);
 		expect(threeState.meshBasicMaterialOptions).toHaveLength(6);
 		expect(
 			threeState.meshBasicMaterialOptions.every(
@@ -499,20 +586,25 @@ describe('bootstrap runtime wiring', () => {
 					'map' in (options as Record<string, unknown>),
 			),
 		).toBe(true);
-		expect(threeState.loadedTextures[0]?.repeat.set).toHaveBeenCalledWith(1, 1);
+		expectFloorAndWallTextureSuccessState();
 		expect(threeState.meshes[0]?.rotation.x).toBeCloseTo(-Math.PI / 2);
 		expect(threeState.lineBasicMaterialOptions).toEqual([{ color: 0xffffff }]);
 	});
 
-	it('keeps current ceiling color when sky texture load fails', async () => {
+	it('keeps current floor and wall colors when texture load fails', async () => {
 		threeState.failTextureLoad = true;
 
 		await import('./app/bootstrap');
 
 		const scene = threeState.scenes[0];
 		expect(scene.add).toHaveBeenCalledTimes(5);
-		expect(threeState.textureLoadCalls[0]).toContain('ceiling-sky.svg');
+		expectTextureLoadOrder([
+			'ceiling-sky.svg',
+			'floor-concrete.svg',
+			'wall-brick.svg',
+		]);
 		expect(threeState.meshBasicMaterialOptions).toHaveLength(0);
+		expectFloorAndWallTextureFallbackState();
 		expect((scene.background as { value: number }).value).toBe(0x0b1020);
 	});
 

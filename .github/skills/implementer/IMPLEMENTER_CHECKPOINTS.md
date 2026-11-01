@@ -4,6 +4,114 @@ Persistent execution log for the `implementer` skill.
 
 ---
 
+## 2026-11-01 — Dark grey concrete texture on default map floor
+
+- Timestamp: 2026-11-01
+- Feature file: src/acceptance/features/floorConcreteTexture.acceptance.feature
+- Complexity: standard
+- Current phase: P4
+- Checkpoint status: COMPLETE (`SPECIFIER_COMPLETE` -> `IMPLEMENTER_COMPLETE`) with `CLEANER_COMPLETE` and `HARDENER_COMPLETE`
+
+### Completed work
+
+- Added approved acceptance contract for dark grey concrete floor texturing in the default map.
+- Added new concrete texture asset at `src/assets/floor-concrete.svg`.
+- Added floor texture application helper at `src/app/floorTexture.ts` with stretched mapping (`x = 1`, `y = 1`) and fallback color behavior.
+- Wired floor texture initialization into bootstrap at `src/app/bootstrap.ts`.
+- Added acceptance tests in `src/acceptance/tests/floorConcreteTexture.acceptance.test.ts`.
+- Expanded bootstrap integration tests in `src/bootstrap.test.ts` to verify floor texture load, stretch repeat values, material update, and fallback warning behavior.
+
+### Files changed so far
+
+- src/acceptance/features/floorConcreteTexture.acceptance.feature
+- src/acceptance/tests/floorConcreteTexture.acceptance.test.ts
+- src/app/floorTexture.ts
+- src/app/bootstrap.ts
+- src/bootstrap.test.ts
+- src/assets/floor-concrete.svg
+
+### Scenario -> test mapping
+
+- Default map floor renders with a new dark grey concrete texture -> `src/acceptance/tests/floorConcreteTexture.acceptance.test.ts` (`Default map floor renders with a new dark grey concrete texture`) + `src/bootstrap.test.ts` (`initializes renderer and scene primitives with expected values`)
+- Concrete floor texture remains visible while looking around -> `src/acceptance/tests/floorConcreteTexture.acceptance.test.ts` (`Concrete floor texture remains visible while looking around`)
+- Floor concrete texture does not replace wall or sky rendering -> `src/acceptance/tests/floorConcreteTexture.acceptance.test.ts` (`Floor concrete texture does not replace wall or sky rendering`)
+- Texture loading failure uses a defined floor fallback appearance -> `src/acceptance/tests/floorConcreteTexture.acceptance.test.ts` (`Texture loading failure uses a defined floor fallback appearance`) + `src/bootstrap.test.ts` (`keeps current floor and wall colors when texture load fails`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Hardener: PASS (`npm run test:mutation:branch` -> `85.19%`, target `>= 80%`)
+
+### Risks / blockers
+
+- None.
+
+### Next action
+
+- Proceed to final handoff.
+
+### User review status
+
+- Approved to proceed
+
+---
+
+## 2026-11-01 — Red brick wall texture on all default map walls
+
+- Timestamp: 2026-11-01
+- Feature file: src/acceptance/features/wallBrickTexture.acceptance.feature
+- Complexity: standard
+- Current phase: P4
+- Checkpoint status: COMPLETE (`SPECIFIER_COMPLETE` -> `IMPLEMENTER_COMPLETE`) with `CLEANER_COMPLETE` and `HARDENER_COMPLETE`
+
+### Completed work
+
+- Added approved acceptance contract for applying a red brick wall texture to all default-map walls.
+- Added new brick texture asset at `src/assets/wall-brick.svg`.
+- Added wall texture application helper at `src/app/wallTexture.ts` with tiled repeat (`x = 2`, `y = 1`) and fallback color behavior.
+- Wired wall texture initialization into bootstrap at `src/app/bootstrap.ts`.
+- Added acceptance tests in `src/acceptance/tests/wallBrickTexture.acceptance.test.ts`.
+- Expanded bootstrap integration tests in `src/bootstrap.test.ts` to verify wall texture load, repeat values, material update, and fallback warning behavior.
+
+### Files changed so far
+
+- src/acceptance/features/wallBrickTexture.acceptance.feature
+- src/acceptance/tests/wallBrickTexture.acceptance.test.ts
+- src/app/wallTexture.ts
+- src/app/bootstrap.ts
+- src/bootstrap.test.ts
+- src/assets/wall-brick.svg
+
+### Scenario -> test mapping
+
+- All default map walls render with a new red brick texture -> `src/acceptance/tests/wallBrickTexture.acceptance.test.ts` (`All default map walls render with a new red brick texture`) + `src/bootstrap.test.ts` (`initializes renderer and scene primitives with expected values`)
+- Red brick texture remains visible while looking around -> `src/acceptance/tests/wallBrickTexture.acceptance.test.ts` (`Red brick texture remains visible while looking around`)
+- Wall brick texture does not replace floor or sky rendering -> `src/acceptance/tests/wallBrickTexture.acceptance.test.ts` (`Wall brick texture does not replace floor or sky rendering`)
+- Texture loading failure uses a defined wall fallback appearance -> `src/acceptance/tests/wallBrickTexture.acceptance.test.ts` (`Texture loading failure uses a defined wall fallback appearance`) + `src/bootstrap.test.ts` (`keeps current ceiling color when sky texture load fails`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Hardener: PASS (`npm run test:mutation:branch` -> `85.63%`, target `>= 80%`)
+
+### Risks / blockers
+
+- None.
+
+### Next action
+
+- Proceed to final handoff.
+
+### User review status
+
+- Approved to proceed
+
+---
+
 ## 2026-11-01 — Blue sky visible above default map walls
 
 - Timestamp: 2026-11-01

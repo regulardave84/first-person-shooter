@@ -4,6 +4,14 @@ import {
 	DEFAULT_WORLD_CEILING_COLOR,
 	applyDefaultWorldCeilingSkybox,
 } from './ceilingSkybox';
+import {
+	DEFAULT_WORLD_WALL_COLOR,
+	applyDefaultWorldWallTexture,
+} from './wallTexture';
+import {
+	DEFAULT_WORLD_FLOOR_COLOR,
+	applyDefaultWorldFloorTexture,
+} from './floorTexture';
 import { DEFAULT_MOVE_SPEED, PLAYER_HEIGHT } from '../core/gameLogic';
 import {
 	PROJECTILE_COLOR,
@@ -64,12 +72,14 @@ scene.add(sun);
 
 const floor = new THREE.Mesh(
 	new THREE.PlaneGeometry(60, 60),
-	new THREE.MeshStandardMaterial({ color: 0x334155 }),
+	new THREE.MeshStandardMaterial({ color: DEFAULT_WORLD_FLOOR_COLOR }),
 );
 floor.rotation.x = -Math.PI / 2;
 scene.add(floor);
 
-const wallMaterial = new THREE.MeshStandardMaterial({ color: 0x64748b });
+const wallMaterial = new THREE.MeshStandardMaterial({
+	color: DEFAULT_WORLD_WALL_COLOR,
+});
 
 function addWall(
 	x: number,
@@ -107,6 +117,18 @@ const runtimeLogger = createRuntimeLogger({
 });
 
 applyDefaultWorldCeilingSkybox(scene, {
+	logger: {
+		warn: (event, context) => runtimeLogger.warn(event, context),
+	},
+});
+
+applyDefaultWorldFloorTexture(floor.material as THREE.MeshStandardMaterial, {
+	logger: {
+		warn: (event, context) => runtimeLogger.warn(event, context),
+	},
+});
+
+applyDefaultWorldWallTexture(wallMaterial, {
 	logger: {
 		warn: (event, context) => runtimeLogger.warn(event, context),
 	},
