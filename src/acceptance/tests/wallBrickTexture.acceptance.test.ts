@@ -27,9 +27,7 @@ function createFailingTextureLoader(): WallTextureLoaderLike {
 		load: (
 			_textureUrl: string,
 			_onLoad?: (texture: THREE.Texture) => void,
-			_onProgress?: (
-				event: ProgressEvent<EventTarget>,
-			) => void,
+			_onProgress?: (event: ProgressEvent<EventTarget>) => void,
 			onError?: (err: unknown) => void,
 		): THREE.Texture => {
 			onError?.(new Error('texture failed'));
@@ -44,7 +42,11 @@ describe('Acceptance: Red brick wall texture on all default map walls', () => {
 			color: DEFAULT_WORLD_WALL_COLOR,
 		});
 		const walls = WORLD_WALLS.map(
-			(wall) => new THREE.Mesh(new THREE.BoxGeometry(wall.w, wall.h, wall.d), wallMaterial),
+			(wall) =>
+				new THREE.Mesh(
+					new THREE.BoxGeometry(wall.w, wall.h, wall.d),
+					wallMaterial,
+				),
 		);
 
 		applyDefaultWorldWallTexture(wallMaterial, {
@@ -56,8 +58,12 @@ describe('Acceptance: Red brick wall texture on all default map walls', () => {
 		expect(wallMaterial.map).toBeInstanceOf(THREE.Texture);
 		expect(wallMaterial.map?.wrapS).toBe(THREE.RepeatWrapping);
 		expect(wallMaterial.map?.wrapT).toBe(THREE.RepeatWrapping);
-		expect(wallMaterial.map?.repeat.x).toBe(DEFAULT_WORLD_WALL_TEXTURE_REPEAT_X);
-		expect(wallMaterial.map?.repeat.y).toBe(DEFAULT_WORLD_WALL_TEXTURE_REPEAT_Y);
+		expect(wallMaterial.map?.repeat.x).toBe(
+			DEFAULT_WORLD_WALL_TEXTURE_REPEAT_X,
+		);
+		expect(wallMaterial.map?.repeat.y).toBe(
+			DEFAULT_WORLD_WALL_TEXTURE_REPEAT_Y,
+		);
 		expect(wallMaterial.color.getHex()).toBe(0xffffff);
 	});
 
@@ -71,8 +77,12 @@ describe('Acceptance: Red brick wall texture on all default map walls', () => {
 		});
 
 		expect(wallMaterial.map).toBeInstanceOf(THREE.Texture);
-		expect(wallMaterial.map?.repeat.x).toBe(DEFAULT_WORLD_WALL_TEXTURE_REPEAT_X);
-		expect(wallMaterial.map?.repeat.y).toBe(DEFAULT_WORLD_WALL_TEXTURE_REPEAT_Y);
+		expect(wallMaterial.map?.repeat.x).toBe(
+			DEFAULT_WORLD_WALL_TEXTURE_REPEAT_X,
+		);
+		expect(wallMaterial.map?.repeat.y).toBe(
+			DEFAULT_WORLD_WALL_TEXTURE_REPEAT_Y,
+		);
 	});
 
 	it('Wall brick texture does not replace floor or sky rendering', () => {

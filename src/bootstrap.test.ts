@@ -413,34 +413,36 @@ function expectTextureLoadOrder(expectedFragments: string[]): void {
 }
 
 function getRuntimeWarnMock(): ReturnType<typeof vi.fn> {
-	return (runtimeMocks.createRuntimeLogger.mock.results[0]?.value as {
-		warn: ReturnType<typeof vi.fn>;
-	}).warn;
+	return (
+		runtimeMocks.createRuntimeLogger.mock.results[0]?.value as {
+			warn: ReturnType<typeof vi.fn>;
+		}
+	).warn;
 }
 
 function expectFloorAndWallTextureSuccessState(): void {
 	expect(threeState.loadedTextures[0]?.repeat.set).toHaveBeenCalledWith(1, 1);
 	expect(threeState.loadedTextures[1]?.repeat.set).toHaveBeenCalledWith(1, 1);
 	expect(threeState.loadedTextures[2]?.repeat.set).toHaveBeenCalledWith(2, 1);
-	expect(threeState.meshStandardMaterials[0]?.color.setHex).toHaveBeenCalledWith(
-		0xffffff,
-	);
+	expect(
+		threeState.meshStandardMaterials[0]?.color.setHex,
+	).toHaveBeenCalledWith(0xffffff);
 	expect(threeState.meshStandardMaterials[0]?.needsUpdate).toBe(true);
-	expect(threeState.meshStandardMaterials[1]?.color.setHex).toHaveBeenCalledWith(
-		0xffffff,
-	);
+	expect(
+		threeState.meshStandardMaterials[1]?.color.setHex,
+	).toHaveBeenCalledWith(0xffffff);
 	expect(threeState.meshStandardMaterials[1]?.needsUpdate).toBe(true);
 }
 
 function expectFloorAndWallTextureFallbackState(): void {
-	expect(threeState.meshStandardMaterials[0]?.color.setHex).toHaveBeenCalledWith(
-		0x334155,
-	);
+	expect(
+		threeState.meshStandardMaterials[0]?.color.setHex,
+	).toHaveBeenCalledWith(0x334155);
 	expect(threeState.meshStandardMaterials[0]?.map).toBeNull();
 	expect(threeState.meshStandardMaterials[0]?.needsUpdate).toBe(true);
-	expect(threeState.meshStandardMaterials[1]?.color.setHex).toHaveBeenCalledWith(
-		0x64748b,
-	);
+	expect(
+		threeState.meshStandardMaterials[1]?.color.setHex,
+	).toHaveBeenCalledWith(0x64748b);
 	expect(threeState.meshStandardMaterials[1]?.map).toBeNull();
 	expect(threeState.meshStandardMaterials[1]?.needsUpdate).toBe(true);
 

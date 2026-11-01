@@ -26,9 +26,7 @@ function createFailingTextureLoader(): FloorTextureLoaderLike {
 		load: (
 			_textureUrl: string,
 			_onLoad?: (texture: THREE.Texture) => void,
-			_onProgress?: (
-				event: ProgressEvent<EventTarget>,
-			) => void,
+			_onProgress?: (event: ProgressEvent<EventTarget>) => void,
 			onError?: (err: unknown) => void,
 		): THREE.Texture => {
 			onError?.(new Error('texture failed'));
@@ -50,8 +48,12 @@ describe('Acceptance: Dark grey concrete texture on default map floor', () => {
 		expect(floorMaterial.map).toBeInstanceOf(THREE.Texture);
 		expect(floorMaterial.map?.wrapS).toBe(THREE.ClampToEdgeWrapping);
 		expect(floorMaterial.map?.wrapT).toBe(THREE.ClampToEdgeWrapping);
-		expect(floorMaterial.map?.repeat.x).toBe(DEFAULT_WORLD_FLOOR_TEXTURE_REPEAT_X);
-		expect(floorMaterial.map?.repeat.y).toBe(DEFAULT_WORLD_FLOOR_TEXTURE_REPEAT_Y);
+		expect(floorMaterial.map?.repeat.x).toBe(
+			DEFAULT_WORLD_FLOOR_TEXTURE_REPEAT_X,
+		);
+		expect(floorMaterial.map?.repeat.y).toBe(
+			DEFAULT_WORLD_FLOOR_TEXTURE_REPEAT_Y,
+		);
 		expect(floorMaterial.color.getHex()).toBe(0xffffff);
 	});
 
@@ -65,8 +67,12 @@ describe('Acceptance: Dark grey concrete texture on default map floor', () => {
 		});
 
 		expect(floorMaterial.map).toBeInstanceOf(THREE.Texture);
-		expect(floorMaterial.map?.repeat.x).toBe(DEFAULT_WORLD_FLOOR_TEXTURE_REPEAT_X);
-		expect(floorMaterial.map?.repeat.y).toBe(DEFAULT_WORLD_FLOOR_TEXTURE_REPEAT_Y);
+		expect(floorMaterial.map?.repeat.x).toBe(
+			DEFAULT_WORLD_FLOOR_TEXTURE_REPEAT_X,
+		);
+		expect(floorMaterial.map?.repeat.y).toBe(
+			DEFAULT_WORLD_FLOOR_TEXTURE_REPEAT_Y,
+		);
 	});
 
 	it('Floor concrete texture does not replace wall or sky rendering', () => {
