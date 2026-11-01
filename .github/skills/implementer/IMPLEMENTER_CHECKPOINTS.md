@@ -4,6 +4,58 @@ Persistent execution log for the `implementer` skill.
 
 ---
 
+## 2026-11-01 — Ceiling skybox PNG asset migration
+
+- Timestamp: 2026-11-01
+- Feature file: src/acceptance/features/ceilingSkyPngAsset.acceptance.feature
+- Complexity: small
+- Current phase: P4
+- Checkpoint status: COMPLETE (`SPECIFIER_COMPLETE` -> `IMPLEMENTER_COMPLETE`) with `CLEANER_COMPLETE` and `HARDENER_COMPLETE`
+
+### Completed work
+
+- Promoted approved proposed contract into canonical acceptance feature for ceiling sky PNG migration.
+- Updated `DEFAULT_WORLD_CEILING_SKY_TEXTURE_PATH` in `src/app/ceilingSkybox.ts` from SVG to PNG.
+- Updated bootstrap integration expectations for sky texture load order in `src/bootstrap.test.ts`.
+- Added acceptance assertions for default PNG texture URL and explicit skybox mesh naming in `src/acceptance/tests/ceilingSkyTexture.acceptance.test.ts`.
+- Added focused unit coverage in `src/app/ceilingSkybox.test.ts` for omitted-config default behavior and logger-optional fallback safety.
+- Preserved and validated existing fallback logging behavior for sky/floor/wall texture load failures.
+- Marked the proposal feature file as superseded.
+
+### Files changed so far
+
+- src/acceptance/features/ceilingSkyPngAsset.acceptance.feature
+- src/acceptance/features/ceilingSkyPngAsset.proposed.feature
+- src/acceptance/tests/ceilingSkyTexture.acceptance.test.ts
+- src/app/ceilingSkybox.ts
+- src/app/ceilingSkybox.test.ts
+- src/bootstrap.test.ts
+
+### Scenario -> test mapping
+
+- Default skybox points to PNG asset -> `src/acceptance/tests/ceilingSkyTexture.acceptance.test.ts` (`Default skybox points to PNG asset`) + `src/bootstrap.test.ts` (`initializes renderer and scene primitives with expected values`)
+- Skybox still renders when PNG texture loads -> `src/acceptance/tests/ceilingSkyTexture.acceptance.test.ts` (`Default map renders blue sky above wall height`) + `src/bootstrap.test.ts` (`initializes renderer and scene primitives with expected values`)
+- Existing skybox fallback behavior is preserved -> `src/acceptance/tests/ceilingSkyTexture.acceptance.test.ts` (`Texture loading failure uses current fallback appearance`) + `src/bootstrap.test.ts` (`keeps current floor and wall colors when texture load fails`) + `src/app/ceilingSkybox.test.ts` (`does not throw on load failure without logger`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Hardener: PASS (`npm run test:mutation:branch` -> `94.12%`, target `>= 80%`)
+
+### Risks / blockers
+
+- None.
+
+### Next action
+
+- Proceed to final handoff.
+
+### User review status
+
+- Approved
+
 ## 2026-11-01 — Restore outer wall texture clarity
 
 - Timestamp: 2026-11-01

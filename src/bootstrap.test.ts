@@ -579,6 +579,13 @@ function expectFloorAndWallTextureFallbackState(): void {
 		'wall.texture.load.failed',
 		expect.objectContaining({ fallbackColor: 0x64748b }),
 	);
+	expect(warn).toHaveBeenCalledWith(
+		'ceiling.skybox.texture.load.failed',
+		expect.objectContaining({
+			textureUrl: expect.stringContaining('ceiling-sky.png'),
+			fallbackColor: 0x0b1020,
+		}),
+	);
 }
 
 describe('bootstrap runtime wiring', () => {
@@ -683,6 +690,14 @@ describe('bootstrap runtime wiring', () => {
 
 		const scene = threeState.scenes[0];
 		expect(scene.add).toHaveBeenCalledTimes(6);
+		const skyboxMesh = threeState.meshes.find(
+			(mesh) =>
+				typeof mesh === 'object' &&
+				mesh !== null &&
+				Array.isArray(mesh.material),
+		) as ({ name?: string } & { material: unknown[] }) | undefined;
+		expect(skyboxMesh?.name).toBe('default-world-ceiling-skybox');
+		expect(skyboxMesh?.material).toHaveLength(6);
 		expect(threeState.cameras[0].aspect).toBeCloseTo(1920 / 1080);
 		expect(threeState.meshStandardMaterialOptions).toEqual([
 			{ color: 0x334155 },
@@ -690,7 +705,7 @@ describe('bootstrap runtime wiring', () => {
 			{ color: 0x64748b },
 		]);
 		expectTextureLoadOrder([
-			'ceiling-sky.svg',
+			'ceiling-sky.png',
 			'floor-concrete.png',
 			'wall-brick.png',
 			'wall-brick.png',
@@ -721,7 +736,7 @@ describe('bootstrap runtime wiring', () => {
 		const scene = threeState.scenes[0];
 		expect(scene.add).toHaveBeenCalledTimes(5);
 		expectTextureLoadOrder([
-			'ceiling-sky.svg',
+			'ceiling-sky.png',
 			'floor-concrete.png',
 			'wall-brick.png',
 			'wall-brick.png',

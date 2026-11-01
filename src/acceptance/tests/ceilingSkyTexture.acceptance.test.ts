@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import * as THREE from 'three';
 import {
 	DEFAULT_WORLD_CEILING_COLOR,
+	DEFAULT_WORLD_CEILING_SKY_TEXTURE_PATH,
 	DEFAULT_WORLD_CEILING_SKYBOX_SIZE,
 	type TextureLoaderLike,
 	applyDefaultWorldCeilingSkybox,
@@ -60,6 +61,15 @@ function assertAllFacesUseSkyTexture(
 }
 
 describe('Acceptance: Blue sky visible above default map walls', () => {
+	it('Default skybox points to PNG asset', () => {
+		expect(DEFAULT_WORLD_CEILING_SKY_TEXTURE_PATH.endsWith('ceiling-sky.png')).toBe(
+			true,
+		);
+		expect(DEFAULT_WORLD_CEILING_SKY_TEXTURE_PATH.includes('ceiling-sky.svg')).toBe(
+			false,
+		);
+	});
+
 	it('Default map renders blue sky above wall height', () => {
 		const scene = new THREE.Scene();
 		scene.background = new THREE.Color(DEFAULT_WORLD_CEILING_COLOR);
@@ -68,6 +78,9 @@ describe('Acceptance: Blue sky visible above default map walls', () => {
 		});
 
 		expect(scene.children).toHaveLength(1);
+		expect((scene.children[0] as THREE.Mesh).name).toBe(
+			'default-world-ceiling-skybox',
+		);
 		const materials = getSkyboxMaterials(scene);
 		expect(materials).toHaveLength(6);
 		assertAllFacesUseSkyTexture(materials);

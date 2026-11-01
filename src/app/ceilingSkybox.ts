@@ -3,7 +3,7 @@ import * as THREE from 'three';
 export const DEFAULT_WORLD_CEILING_COLOR = 0x0b1020;
 export const DEFAULT_WORLD_CEILING_SKYBOX_SIZE = 400;
 export const DEFAULT_WORLD_CEILING_SKY_TEXTURE_PATH = new URL(
-	'../assets/ceiling-sky.svg',
+	'../assets/ceiling-sky.png',
 	import.meta.url,
 ).href;
 
