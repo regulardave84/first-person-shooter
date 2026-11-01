@@ -4,7 +4,7 @@ export const DEFAULT_WORLD_WALL_COLOR = 0x64748b;
 export const DEFAULT_WORLD_WALL_TEXTURE_REPEAT_X = 2;
 export const DEFAULT_WORLD_WALL_TEXTURE_REPEAT_Y = 1;
 export const DEFAULT_WORLD_WALL_TEXTURE_PATH = new URL(
-	'../assets/wall-brick.svg',
+	'../assets/wall-brick.png',
 	import.meta.url,
 ).href;
 

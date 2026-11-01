@@ -679,8 +679,8 @@ describe('bootstrap runtime wiring', () => {
 		]);
 		expectTextureLoadOrder([
 			'ceiling-sky.svg',
-			'floor-concrete.svg',
-			'wall-brick.svg',
+			'floor-concrete.png',
+			'wall-brick.png',
 		]);
 		expect(threeState.meshBasicMaterialOptions).toHaveLength(6);
 		expect(
@@ -709,8 +709,8 @@ describe('bootstrap runtime wiring', () => {
 		expect(scene.add).toHaveBeenCalledTimes(5);
 		expectTextureLoadOrder([
 			'ceiling-sky.svg',
-			'floor-concrete.svg',
-			'wall-brick.svg',
+			'floor-concrete.png',
+			'wall-brick.png',
 		]);
 		expect(threeState.meshBasicMaterialOptions).toHaveLength(0);
 		expectFloorAndWallTextureFallbackState();

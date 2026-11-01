@@ -4,7 +4,7 @@ export const DEFAULT_WORLD_FLOOR_COLOR = 0x334155;
 export const DEFAULT_WORLD_FLOOR_TEXTURE_REPEAT_X = 1;
 export const DEFAULT_WORLD_FLOOR_TEXTURE_REPEAT_Y = 1;
 export const DEFAULT_WORLD_FLOOR_TEXTURE_PATH = new URL(
-	'../assets/floor-concrete.svg',
+	'../assets/floor-concrete.png',
 	import.meta.url,
 ).href;
 

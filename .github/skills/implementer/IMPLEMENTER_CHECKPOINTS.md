@@ -4,6 +4,55 @@ Persistent execution log for the `implementer` skill.
 
 ---
 
+## 2026-11-01 — PNG texture asset compatibility defaults
+
+- Timestamp: 2026-11-01
+- Feature file: src/acceptance/features/png_texture_assets.feature
+- Complexity: small
+- Current phase: P4
+- Checkpoint status: COMPLETE (`SPECIFIER_COMPLETE` -> `IMPLEMENTER_COMPLETE`) with `CLEANER_COMPLETE` and `HARDENER_COMPLETE`
+
+### Completed work
+
+- Added approved acceptance contract ensuring default floor and wall texture constants target PNG assets.
+- Updated `src/app/floorTexture.ts` default texture path to `floor-concrete.png`.
+- Updated `src/app/wallTexture.ts` default texture path to `wall-brick.png`.
+- Updated integration expectations in `src/bootstrap.test.ts` for PNG load order.
+- Added acceptance coverage in `src/acceptance/tests/pngTextureAssets.acceptance.test.ts`.
+
+### Files changed so far
+
+- src/acceptance/features/png_texture_assets.feature
+- src/acceptance/tests/pngTextureAssets.acceptance.test.ts
+- src/app/floorTexture.ts
+- src/app/wallTexture.ts
+- src/bootstrap.test.ts
+
+### Scenario -> test mapping
+
+- Floor texture default points to PNG asset -> `src/acceptance/tests/pngTextureAssets.acceptance.test.ts` (`Floor texture default points to PNG asset`)
+- Wall texture default points to PNG asset -> `src/acceptance/tests/pngTextureAssets.acceptance.test.ts` (`Wall texture default points to PNG asset`)
+- Weapon HUD default remains PNG -> `src/acceptance/tests/pngTextureAssets.acceptance.test.ts` (`Weapon HUD default remains PNG`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Hardener: PASS (`npm run test:mutation:branch` -> `>= 80%`)
+
+### Risks / blockers
+
+- None.
+
+### Next action
+
+- Proceed to final handoff.
+
+### User review status
+
+- Approved to proceed
+
 ## 2026-11-01 — Player hand-and-gun HUD bottom alignment
 
 - Timestamp: 2026-11-01
