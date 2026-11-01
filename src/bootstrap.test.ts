@@ -104,9 +104,18 @@ const threeState = vi.hoisted(() => ({
 	scenes: [] as Array<{
 		add: ReturnType<typeof vi.fn>;
 		remove: ReturnType<typeof vi.fn>;
+		background?: unknown;
 	}>,
 	meshStandardMaterialOptions: [] as unknown[],
+	meshBasicMaterialOptions: [] as unknown[],
 	lineBasicMaterialOptions: [] as unknown[],
+	textureLoadCalls: [] as string[],
+	loadedTextures: [] as Array<{
+		wrapS?: unknown;
+		wrapT?: unknown;
+		repeat: { set: ReturnType<typeof vi.fn> };
+	}>,
+	failTextureLoad: false,
 	vectors: [] as Array<{ x: number; y: number; z: number }>,
 	bufferGeometries: [] as Array<{
 		setFromPoints: ReturnType<typeof vi.fn>;
@@ -257,6 +266,12 @@ vi.mock('three', () => {
 		}
 	}
 
+	class MeshBasicMaterial {
+		constructor(options: unknown) {
+			threeState.meshBasicMaterialOptions.push(options);
+		}
+	}
+
 	class LineBasicMaterial {
 		constructor(options: unknown) {
 			threeState.lineBasicMaterialOptions.push(options);
@@ -300,6 +315,34 @@ vi.mock('three', () => {
 		}
 	}
 
+	class TextureLoader {
+		load = vi.fn(
+			(
+				url: string,
+				onLoad?: (texture: {
+					wrapS?: unknown;
+					wrapT?: unknown;
+					repeat: { set: ReturnType<typeof vi.fn> };
+				}) => void,
+				_onProgress?: unknown,
+				onError?: () => void,
+			) => {
+				threeState.textureLoadCalls.push(url);
+				if (threeState.failTextureLoad) {
+					onError?.();
+					return undefined;
+				}
+
+				const texture = {
+					repeat: { set: vi.fn() },
+				};
+				threeState.loadedTextures.push(texture);
+				onLoad?.(texture);
+				return texture;
+			},
+		);
+	}
+
 	class Clock {
 		getDelta = vi.fn(() => 0.016);
 		constructor() {
@@ -317,11 +360,15 @@ vi.mock('three', () => {
 		PlaneGeometry,
 		BoxGeometry,
 		MeshStandardMaterial,
+		MeshBasicMaterial,
 		LineBasicMaterial,
 		Vector3,
 		BufferGeometry,
 		Line,
 		Mesh,
+		TextureLoader,
+		BackSide: 'BackSide',
+		ClampToEdgeWrapping: 'ClampToEdgeWrapping',
 		Clock,
 	};
 });
@@ -336,7 +383,11 @@ describe('bootstrap runtime wiring', () => {
 
 		threeState.scenes.length = 0;
 		threeState.meshStandardMaterialOptions.length = 0;
+		threeState.meshBasicMaterialOptions.length = 0;
 		threeState.lineBasicMaterialOptions.length = 0;
+		threeState.textureLoadCalls.length = 0;
+		threeState.loadedTextures.length = 0;
+		threeState.failTextureLoad = false;
 		threeState.vectors.length = 0;
 		threeState.bufferGeometries.length = 0;
 		threeState.meshes.length = 0;
@@ -432,14 +483,37 @@ describe('bootstrap runtime wiring', () => {
 		expect(renderer.setPixelRatio).toHaveBeenCalledWith(2);
 
 		const scene = threeState.scenes[0];
-		expect(scene.add).toHaveBeenCalledTimes(5);
+		expect(scene.add).toHaveBeenCalledTimes(6);
 		expect(threeState.cameras[0].aspect).toBeCloseTo(1920 / 1080);
 		expect(threeState.meshStandardMaterialOptions).toEqual([
 			{ color: 0x334155 },
 			{ color: 0x64748b },
 		]);
+		expect(threeState.textureLoadCalls[0]).toContain('ceiling-sky.svg');
+		expect(threeState.meshBasicMaterialOptions).toHaveLength(6);
+		expect(
+			threeState.meshBasicMaterialOptions.every(
+				(options) =>
+					typeof options === 'object' &&
+					options !== null &&
+					'map' in (options as Record<string, unknown>),
+			),
+		).toBe(true);
+		expect(threeState.loadedTextures[0]?.repeat.set).toHaveBeenCalledWith(1, 1);
 		expect(threeState.meshes[0]?.rotation.x).toBeCloseTo(-Math.PI / 2);
 		expect(threeState.lineBasicMaterialOptions).toEqual([{ color: 0xffffff }]);
+	});
+
+	it('keeps current ceiling color when sky texture load fails', async () => {
+		threeState.failTextureLoad = true;
+
+		await import('./app/bootstrap');
+
+		const scene = threeState.scenes[0];
+		expect(scene.add).toHaveBeenCalledTimes(5);
+		expect(threeState.textureLoadCalls[0]).toContain('ceiling-sky.svg');
+		expect(threeState.meshBasicMaterialOptions).toHaveLength(0);
+		expect((scene.background as { value: number }).value).toBe(0x0b1020);
 	});
 
 	it('registers click handler on renderer canvas for pointer lock request', async () => {
@@ -895,7 +969,7 @@ describe('bootstrap runtime wiring', () => {
 		).mock.calls[0]?.[0] as (() => void) | undefined;
 		animationFn?.();
 
-		expect(threeState.scenes[0].add).toHaveBeenCalledTimes(6);
+		expect(threeState.scenes[0].add).toHaveBeenCalledTimes(7);
 		expect(threeState.bufferGeometries[0].setFromPoints).toHaveBeenCalledTimes(
 			2,
 		);

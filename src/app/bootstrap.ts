@@ -1,5 +1,9 @@
 import * as THREE from 'three';
 import '../style.css';
+import {
+	DEFAULT_WORLD_CEILING_COLOR,
+	applyDefaultWorldCeilingSkybox,
+} from './ceilingSkybox';
 import { DEFAULT_MOVE_SPEED, PLAYER_HEIGHT } from '../core/gameLogic';
 import {
 	PROJECTILE_COLOR,
@@ -37,7 +41,7 @@ function isDebugLoggingEnabled(search: string): boolean {
 }
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x0b1020);
+scene.background = new THREE.Color(DEFAULT_WORLD_CEILING_COLOR);
 
 const camera = new THREE.PerspectiveCamera(
 	75,
@@ -99,6 +103,12 @@ const runtimeLogger = createRuntimeLogger({
 			return;
 		}
 		console.debug(`[runtime] ${entry.event}`, entry.context);
+	},
+});
+
+applyDefaultWorldCeilingSkybox(scene, {
+	logger: {
+		warn: (event, context) => runtimeLogger.warn(event, context),
 	},
 });
 
