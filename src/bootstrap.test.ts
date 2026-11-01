@@ -830,8 +830,8 @@ describe('bootstrap runtime wiring', () => {
 		expect(runtimeMocks.spawnProjectilesFromLook).not.toHaveBeenCalled();
 		expect(runtimeMocks.playBulletFireSounds).not.toHaveBeenCalled();
 		expect(
-			documentStub
-				.elementsById.get('weapon-hud')
+			documentStub.elementsById
+				.get('weapon-hud')
 				?.classList.contains('weapon-hud--recoil'),
 		).toBe(false);
 		expect(runtimeMocks.stepProjectiles).toHaveBeenCalledWith(
@@ -973,8 +973,8 @@ describe('bootstrap runtime wiring', () => {
 			1,
 		);
 		expect(
-			documentStub
-				.elementsById.get('weapon-hud')
+			documentStub.elementsById
+				.get('weapon-hud')
 				?.classList.contains('weapon-hud--recoil'),
 		).toBe(true);
 		expect(runtimeMocks.spawnProjectilesFromLook).toHaveBeenCalledWith(

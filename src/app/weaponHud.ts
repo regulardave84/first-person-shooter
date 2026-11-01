@@ -62,14 +62,16 @@ function createWeaponHudCanvasContext(config: {
 		return null;
 	}
 
-	const canvas = config.activeDocument.createElement('canvas') as HTMLCanvasElement;
+	const canvas = config.activeDocument.createElement(
+		'canvas',
+	) as HTMLCanvasElement;
 	if (typeof canvas.getContext !== 'function') {
 		return null;
 	}
 
 	canvas.width = width;
 	canvas.height = height;
-const context = canvas.getContext('2d', { willReadFrequently: true });
+	const context = canvas.getContext('2d', { willReadFrequently: true });
 	if (!context) {
 		return null;
 	}
@@ -132,7 +134,9 @@ function resolveDocument(config?: {
 	return document;
 }
 
-function toImageElement(candidate: HTMLElement | null): HTMLImageElement | null {
+function toImageElement(
+	candidate: HTMLElement | null,
+): HTMLImageElement | null {
 	if (!candidate) {
 		return null;
 	}

@@ -136,16 +136,7 @@ function createCanvasEnabledFakeDocument(config?: {
 	const elementById = new Map<string, FakeElement>();
 	const pixels =
 		config?.imageData ??
-		new Uint8ClampedArray([
-			255,
-			255,
-			255,
-			255,
-			180,
-			110,
-			90,
-			255,
-		]);
+		new Uint8ClampedArray([255, 255, 255, 255, 180, 110, 90, 255]);
 
 	const canvasFrame = {
 		data: pixels,
@@ -203,7 +194,9 @@ function createCanvasEnabledFakeDocument(config?: {
 			width: 0,
 			height: 0,
 			getContext,
-			toDataURL: vi.fn(() => config?.toDataUrl ?? 'data:image/png;base64,cleaned'),
+			toDataURL: vi.fn(
+				() => config?.toDataUrl ?? 'data:image/png;base64,cleaned',
+			),
 		} as FakeElement & {
 			width: number;
 			height: number;
@@ -303,7 +296,9 @@ describe('weapon HUD helpers', () => {
 
 		expect(initialized).not.toBeNull();
 		expect(initialized?.root.id).toBe(WEAPON_HUD_ROOT_ID);
-		expect(initialized?.root.classList.contains(WEAPON_HUD_ROOT_CLASS)).toBe(true);
+		expect(initialized?.root.classList.contains(WEAPON_HUD_ROOT_CLASS)).toBe(
+			true,
+		);
 		expect(initialized?.image.src).toBe(DEFAULT_WEAPON_HUD_ASSET_PATH);
 		expect(initialized?.image.classList.contains(WEAPON_HUD_IMAGE_CLASS)).toBe(
 			true,
@@ -358,9 +353,9 @@ describe('weapon HUD helpers', () => {
 		});
 		initialized?.image.onerror?.(new Event('error'));
 
-		expect(initialized?.root.classList.contains(WEAPON_HUD_FALLBACK_CLASS)).toBe(
-			true,
-		);
+		expect(
+			initialized?.root.classList.contains(WEAPON_HUD_FALLBACK_CLASS),
+		).toBe(true);
 		expect(logger.warn).toHaveBeenCalledWith(
 			'weapon.hud.asset.load.failed',
 			expect.objectContaining({
@@ -375,10 +370,12 @@ describe('weapon HUD helpers', () => {
 			documentLike: fakeDocument as unknown as Document,
 		});
 
-		expect(() => initialized?.image.onerror?.(new Event('error'))).not.toThrow();
-		expect(initialized?.root.classList.contains(WEAPON_HUD_FALLBACK_CLASS)).toBe(
-			true,
-		);
+		expect(() =>
+			initialized?.image.onerror?.(new Event('error')),
+		).not.toThrow();
+		expect(
+			initialized?.root.classList.contains(WEAPON_HUD_FALLBACK_CLASS),
+		).toBe(true);
 	});
 
 	it('removes fallback class when image load succeeds', () => {
@@ -440,34 +437,8 @@ describe('weapon HUD helpers', () => {
 
 	it('strips bright neutral checker pixels while preserving non-neutral pixels', () => {
 		const pixels = new Uint8ClampedArray([
-			255,
-			255,
-			255,
-			255,
-			216,
-			216,
-			216,
-			255,
-			220,
-			230,
-			220,
-			255,
-			120,
-			122,
-			121,
-			255,
-			230,
-			230,
-			232,
-			255,
-			180,
-			110,
-			90,
-			255,
-			90,
-			95,
-			105,
-			255,
+			255, 255, 255, 255, 216, 216, 216, 255, 220, 230, 220, 255, 120, 122, 121,
+			255, 230, 230, 232, 255, 180, 110, 90, 255, 90, 95, 105, 255,
 		]);
 
 		stripWeaponHudBackgroundPixels(pixels);
@@ -483,18 +454,7 @@ describe('weapon HUD helpers', () => {
 
 	it('processes HUD image background transparency on image load', () => {
 		const pixels = new Uint8ClampedArray([
-			255,
-			255,
-			255,
-			255,
-			226,
-			226,
-			226,
-			255,
-			180,
-			110,
-			90,
-			255,
+			255, 255, 255, 255, 226, 226, 226, 255, 180, 110, 90, 255,
 		]);
 		const { documentLike, canvasContext } = createCanvasEnabledFakeDocument({
 			imageData: pixels,
@@ -510,9 +470,9 @@ describe('weapon HUD helpers', () => {
 
 		expect(canvasContext.drawImage).toHaveBeenCalledTimes(1);
 		expect(canvasContext.putImageData).toHaveBeenCalledTimes(1);
-		expect(initialized.image.getAttribute(WEAPON_HUD_BACKGROUND_CLEANED_ATTR)).toBe(
-			'true',
-		);
+		expect(
+			initialized.image.getAttribute(WEAPON_HUD_BACKGROUND_CLEANED_ATTR),
+		).toBe('true');
 		expect(initialized.image.src).toContain('data:image/png');
 		expect(pixels[3]).toBe(0);
 		expect(pixels[7]).toBe(0);
@@ -609,9 +569,9 @@ describe('weapon HUD helpers', () => {
 		initialized.image.onload?.(new Event('load'));
 
 		expect(canvasContext.drawImage).not.toHaveBeenCalled();
-		expect(initialized.image.getAttribute(WEAPON_HUD_BACKGROUND_CLEANED_ATTR)).toBe(
-			null,
-		);
+		expect(
+			initialized.image.getAttribute(WEAPON_HUD_BACKGROUND_CLEANED_ATTR),
+		).toBe(null);
 	});
 
 	it('skips cleanup when canvas context API is unavailable', () => {
@@ -628,9 +588,9 @@ describe('weapon HUD helpers', () => {
 		initialized.image.onload?.(new Event('load'));
 
 		expect(canvasContext.drawImage).not.toHaveBeenCalled();
-		expect(initialized.image.getAttribute(WEAPON_HUD_BACKGROUND_CLEANED_ATTR)).toBe(
-			null,
-		);
+		expect(
+			initialized.image.getAttribute(WEAPON_HUD_BACKGROUND_CLEANED_ATTR),
+		).toBe(null);
 	});
 
 	it('skips cleanup when 2D context is null', () => {
@@ -647,9 +607,9 @@ describe('weapon HUD helpers', () => {
 		initialized.image.onload?.(new Event('load'));
 
 		expect(canvasContext.drawImage).not.toHaveBeenCalled();
-		expect(initialized.image.getAttribute(WEAPON_HUD_BACKGROUND_CLEANED_ATTR)).toBe(
-			null,
-		);
+		expect(
+			initialized.image.getAttribute(WEAPON_HUD_BACKGROUND_CLEANED_ATTR),
+		).toBe(null);
 	});
 
 	it('does not rewrite source when cleaned data URL is empty', () => {
@@ -667,9 +627,9 @@ describe('weapon HUD helpers', () => {
 		initialized.image.onload?.(new Event('load'));
 
 		expect(initialized.image.src).toBe(before);
-		expect(initialized.image.getAttribute(WEAPON_HUD_BACKGROUND_CLEANED_ATTR)).toBe(
-			null,
-		);
+		expect(
+			initialized.image.getAttribute(WEAPON_HUD_BACKGROUND_CLEANED_ATTR),
+		).toBe(null);
 	});
 
 	it('does not rewrite source when cleaned URL equals existing source', () => {
@@ -688,8 +648,8 @@ describe('weapon HUD helpers', () => {
 		initialized.image.onload?.(new Event('load'));
 
 		expect(initialized.image.src).toBe(original);
-		expect(initialized.image.getAttribute(WEAPON_HUD_BACKGROUND_CLEANED_ATTR)).toBe(
-			null,
-		);
+		expect(
+			initialized.image.getAttribute(WEAPON_HUD_BACKGROUND_CLEANED_ATTR),
+		).toBe(null);
 	});
 });

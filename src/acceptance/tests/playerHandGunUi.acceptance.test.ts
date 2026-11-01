@@ -185,9 +185,9 @@ describe('Acceptance: First-person right-hand gun HUD view', () => {
 		});
 		initialized?.image.onerror?.(new Event('error'));
 
-		expect(initialized?.root.classList.contains(WEAPON_HUD_FALLBACK_CLASS)).toBe(
-			true,
-		);
+		expect(
+			initialized?.root.classList.contains(WEAPON_HUD_FALLBACK_CLASS),
+		).toBe(true);
 	});
 
 	it('Project includes a created right-hand gun visual asset', () => {

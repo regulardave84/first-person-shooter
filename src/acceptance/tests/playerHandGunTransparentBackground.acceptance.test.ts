@@ -110,18 +110,7 @@ function createFakeDocument(): FakeDocument {
 describe('Acceptance: Player hand-and-gun HUD background transparency', () => {
 	it('HUD weapon image displays only hand-and-gun content', () => {
 		const pixels = new Uint8ClampedArray([
-			255,
-			255,
-			255,
-			255,
-			226,
-			226,
-			226,
-			255,
-			184,
-			113,
-			96,
-			255,
+			255, 255, 255, 255, 226, 226, 226, 255, 184, 113, 96, 255,
 		]);
 
 		stripWeaponHudBackgroundPixels(pixels);
@@ -139,9 +128,9 @@ describe('Acceptance: Player hand-and-gun HUD background transparency', () => {
 		});
 		initialized?.image.onerror?.(new Event('error'));
 
-		expect(initialized?.root.classList.contains(WEAPON_HUD_FALLBACK_CLASS)).toBe(
-			true,
-		);
+		expect(
+			initialized?.root.classList.contains(WEAPON_HUD_FALLBACK_CLASS),
+		).toBe(true);
 	});
 
 	it('Background cleanup keeps HUD anchoring and recoil behavior', () => {

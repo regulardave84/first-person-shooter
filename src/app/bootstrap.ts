@@ -12,10 +12,7 @@ import {
 	DEFAULT_WORLD_FLOOR_COLOR,
 	applyDefaultWorldFloorTexture,
 } from './floorTexture';
-import {
-	initializeWeaponHud,
-	triggerWeaponHudRecoil,
-} from './weaponHud';
+import { initializeWeaponHud, triggerWeaponHudRecoil } from './weaponHud';
 import { DEFAULT_MOVE_SPEED, PLAYER_HEIGHT } from '../core/gameLogic';
 import {
 	PROJECTILE_COLOR,
