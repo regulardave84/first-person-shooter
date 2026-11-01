@@ -4,6 +4,50 @@ Persistent execution log for the `implementer` skill.
 
 ---
 
+## 2026-11-01 — Pre-commit linter auto-fix
+
+- Timestamp: 2026-11-01
+- Feature file: src/acceptance/features/preCommitLintAutofix.acceptance.feature
+- Complexity: small
+- Current phase: P4
+- Checkpoint status: COMPLETE (`SPECIFIER_COMPLETE` -> `IMPLEMENTER_COMPLETE`) with `CLEANER_COMPLETE`; `HARDENER_BLOCKED_WITH_EVIDENCE`
+
+### Completed work
+
+- Added approved acceptance contract for pre-commit lint auto-fix behavior.
+- Updated pre-commit hook to run `npm run lint:fix`, restage tracked file updates, then run lint and tests.
+- Added acceptance coverage for hook command ordering and failure gating behavior.
+
+### Files changed so far
+
+- src/acceptance/features/preCommitLintAutofix.acceptance.feature
+- .husky/pre-commit
+- src/acceptance/tests/preCommitLintAutofix.acceptance.test.ts
+
+### Scenario -> test mapping
+
+- Pre-commit auto-fixes lint errors before validation -> `src/acceptance/tests/preCommitLintAutofix.acceptance.test.ts` (`Pre-commit auto-fixes lint errors before validation`)
+- Pre-commit still blocks on non-fixable lint failures -> `src/acceptance/tests/preCommitLintAutofix.acceptance.test.ts` (`Pre-commit still blocks on non-fixable lint failures`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Hardener: BLOCKED WITH EVIDENCE (`npm run test:mutation:branch` returned mutation scope blocked because no changed implementation source files under `src`; report written to `reports/hardener/MUTATION_SCOPE_REPORT.md`)
+
+### Risks / blockers
+
+- Mutation gate blocked by scope policy because this change only updated hook/config + acceptance coverage, not mutable implementation source.
+
+### Next action
+
+- Proceed to handoff with hardener blockage evidence.
+
+### User review status
+
+- Approved to proceed
+
 ## 2026-11-01 — Dark grey concrete texture on default map floor
 
 - Timestamp: 2026-11-01
