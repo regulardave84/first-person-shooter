@@ -51,3 +51,65 @@ canvas {
   text-shadow: 0 0 6px rgb(248 250 252 / 75%);
   pointer-events: none;
 }
+
+.weapon-hud {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  transform-origin: 50% 100%;
+  width: min(46vw, 460px);
+  z-index: 6;
+  pointer-events: none;
+}
+
+.weapon-hud__image {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 0 10px rgb(2 6 23 / 60%));
+  animation: weapon-hud-idle 2.2s ease-in-out infinite;
+}
+
+.weapon-hud.weapon-hud--recoil {
+  animation: weapon-hud-recoil 120ms ease-out;
+}
+
+.weapon-hud.weapon-hud--fallback::before {
+  content: '';
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 1px solid rgb(148 163 184 / 40%);
+  border-radius: 0.4rem;
+  background: linear-gradient(145deg, #cbd5e1, #64748b 45%, #334155 80%);
+}
+
+.weapon-hud.weapon-hud--fallback .weapon-hud__image {
+  display: none;
+}
+
+@keyframes weapon-hud-idle {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes weapon-hud-recoil {
+  0% {
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+
+  40% {
+    transform: translateX(-50%) translateY(8px) scale(0.98);
+  }
+
+  100% {
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}

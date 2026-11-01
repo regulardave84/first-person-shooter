@@ -1,0 +1,21 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run FPS game (Vite dev server)",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"dev"
+			],
+			"isBackground": true
+		},
+		{
+			"label": "Verify HUD transparency gates",
+			"type": "shell",
+			"command": "npm run lint && npm run test:all && npm run build && npm run test:mutation:branch",
+			"isBackground": false
+		}
+	]
+}

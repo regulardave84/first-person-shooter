@@ -4,6 +4,201 @@ Persistent execution log for the `implementer` skill.
 
 ---
 
+## 2026-11-01 — Player hand-and-gun HUD bottom alignment
+
+- Timestamp: 2026-11-01
+- Feature file: src/acceptance/features/playerHandGunBottomAlignment.acceptance.feature
+- Complexity: small
+- Current phase: P4
+- Checkpoint status: COMPLETE (`SPECIFIER_COMPLETE` -> `IMPLEMENTER_COMPLETE`) with `CLEANER_COMPLETE` and `HARDENER_COMPLETE`
+
+### Completed work
+
+- Added approved acceptance contract for removing the visible viewport gap below the weapon HUD sprite.
+- Updated HUD styling in `src/style.css` to align `.weapon-hud` to the viewport bottom edge.
+- Added acceptance coverage in `src/acceptance/tests/playerHandGunBottomAlignment.acceptance.test.ts` for explicit bottom-edge alignment and existing behavior compatibility.
+
+### Files changed so far
+
+- src/acceptance/features/playerHandGunBottomAlignment.acceptance.feature
+- src/acceptance/tests/playerHandGunBottomAlignment.acceptance.test.ts
+- src/style.css
+
+### Scenario -> test mapping
+
+- Weapon HUD bottom edge aligns to viewport bottom -> `src/acceptance/tests/playerHandGunBottomAlignment.acceptance.test.ts` (`Weapon HUD bottom edge aligns to viewport bottom`)
+- Bottom alignment keeps existing HUD behavior -> `src/acceptance/tests/playerHandGunBottomAlignment.acceptance.test.ts` (`Bottom alignment keeps existing HUD behavior`) + `src/bootstrap.test.ts` (`handles primary fire input, pointer-lock gating, and projectile frame updates`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Hardener: PASS (`npm run test:mutation:branch` -> `84.64%`, target `>= 80%`)
+
+### Risks / blockers
+
+- None.
+
+### Next action
+
+- Proceed to final handoff.
+
+### User review status
+
+- Approved to proceed
+
+## 2026-11-01 — Player hand-and-gun HUD background transparency
+
+- Timestamp: 2026-11-01
+- Feature file: src/acceptance/features/playerHandGunTransparentBackground.acceptance.feature
+- Complexity: standard
+- Current phase: P4
+- Checkpoint status: COMPLETE (`SPECIFIER_COMPLETE` -> `IMPLEMENTER_COMPLETE`) with `CLEANER_COMPLETE` and `HARDENER_COMPLETE`
+
+### Completed work
+
+- Added approved acceptance contract for removing visible gray/white checkerboard squares from the PNG HUD weapon background.
+- Implemented runtime PNG background cleanup in `src/app/weaponHud.ts` by stripping bright neutral checkerboard pixels to transparency on load.
+- Added acceptance coverage in `src/acceptance/tests/playerHandGunTransparentBackground.acceptance.test.ts`.
+- Hardened unit coverage in `src/app/weaponHud.test.ts` for pixel-threshold boundaries, guard branches, cleanup idempotency, and safe logger-optional behavior.
+
+### Files changed so far
+
+- src/acceptance/features/playerHandGunTransparentBackground.acceptance.feature
+- src/acceptance/tests/playerHandGunTransparentBackground.acceptance.test.ts
+- src/app/weaponHud.ts
+- src/app/weaponHud.test.ts
+- src/bootstrap.test.ts
+
+### Scenario -> test mapping
+
+- HUD weapon image displays only hand-and-gun content -> `src/acceptance/tests/playerHandGunTransparentBackground.acceptance.test.ts` (`HUD weapon image displays only hand-and-gun content`) + `src/app/weaponHud.test.ts` (`strips bright neutral checker pixels while preserving non-neutral pixels`)
+- Background cleanup does not break HUD fallback behavior -> `src/acceptance/tests/playerHandGunTransparentBackground.acceptance.test.ts` (`Background cleanup does not break HUD fallback behavior`) + `src/app/weaponHud.test.ts` (`handles image load error without logger safely`)
+- Background cleanup keeps HUD anchoring and recoil behavior -> `src/acceptance/tests/playerHandGunTransparentBackground.acceptance.test.ts` (`Background cleanup keeps HUD anchoring and recoil behavior`) + `src/bootstrap.test.ts` (`handles primary fire input, pointer-lock gating, and projectile frame updates`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Hardener: PASS (`npm run test:mutation:branch` -> `84.64%`, target `>= 80%`)
+
+### Risks / blockers
+
+- None.
+
+### Next action
+
+- Proceed to final handoff.
+
+### User review status
+
+- Approved to proceed
+
+## 2026-11-01 — Forward-pointing player hand and gun HUD asset
+
+- Timestamp: 2026-11-01
+- Feature file: src/acceptance/features/playerHandGunForwardPose.acceptance.feature
+- Complexity: small
+- Current phase: P4
+- Checkpoint status: COMPLETE (`SPECIFIER_COMPLETE` -> `IMPLEMENTER_COMPLETE`) with `CLEANER_COMPLETE` and `HARDENER_COMPLETE`
+
+### Completed work
+
+- Added approved acceptance contract for a forward-pointing, retro-inspired right-hand pistol HUD pose.
+- Replaced `src/assets/player-hand-gun.svg` with a new original forward-pointing hand-and-pistol composition.
+- Added acceptance coverage at `src/acceptance/tests/playerHandGunForwardPose.acceptance.test.ts` for forward pose visibility, HUD anchoring compatibility, and non-infringing originality assertions.
+
+### Files changed so far
+
+- src/acceptance/features/playerHandGunForwardPose.acceptance.feature
+- src/assets/player-hand-gun.svg
+- src/acceptance/tests/playerHandGunForwardPose.acceptance.test.ts
+
+### Scenario -> test mapping
+
+- Weapon HUD uses a forward-pointing hand-and-gun asset -> `src/acceptance/tests/playerHandGunForwardPose.acceptance.test.ts` (`Weapon HUD uses a forward-pointing hand-and-gun asset`)
+- Forward-pointing HUD asset remains anchored in the existing HUD region -> `src/acceptance/tests/playerHandGunForwardPose.acceptance.test.ts` (`Forward-pointing HUD asset remains anchored in the existing HUD region`)
+- Retro-inspired style is original and non-infringing -> `src/acceptance/tests/playerHandGunForwardPose.acceptance.test.ts` (`Retro-inspired style is original and non-infringing`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Hardener: PASS (`npm run test:mutation:branch` -> `87.10%`, target `>= 80%`)
+
+### Risks / blockers
+
+- None.
+
+### Next action
+
+- Proceed to final handoff.
+
+### User review status
+
+- Approved to proceed
+
+## 2026-11-01 — First-person right-hand gun HUD view
+
+- Timestamp: 2026-11-01
+- Feature file: src/acceptance/features/playerHandGunUi.acceptance.feature
+- Complexity: standard
+- Current phase: P4
+- Checkpoint status: COMPLETE (`SPECIFIER_COMPLETE` -> `IMPLEMENTER_COMPLETE`) with `CLEANER_COMPLETE` and `HARDENER_COMPLETE`
+
+### Completed work
+
+- Added approved acceptance contract for a 2D lower-center right-hand gun HUD with idle and recoil animation.
+- Added new right-hand gun HUD asset at `src/assets/player-hand-gun.svg`.
+- Added HUD initialization and recoil helpers in `src/app/weaponHud.ts` with image-load fallback logging.
+- Wired HUD initialization and recoil trigger integration into runtime bootstrap (`src/app/bootstrap.ts`).
+- Added app shell HUD markup in `index.html` and HUD positioning/animation/fallback styling in `src/style.css`.
+- Added acceptance coverage in `src/acceptance/tests/playerHandGunUi.acceptance.test.ts`.
+- Added focused HUD unit tests in `src/app/weaponHud.test.ts` and updated bootstrap integration tests in `src/bootstrap.test.ts`.
+
+### Files changed so far
+
+- src/acceptance/features/playerHandGunUi.acceptance.feature
+- src/acceptance/tests/playerHandGunUi.acceptance.test.ts
+- src/app/weaponHud.ts
+- src/app/weaponHud.test.ts
+- src/app/bootstrap.ts
+- src/bootstrap.test.ts
+- src/style.css
+- index.html
+- src/assets/player-hand-gun.svg
+
+### Scenario -> test mapping
+
+- 2D right-hand gun HUD visual is visible in lower-center during gameplay -> `src/acceptance/tests/playerHandGunUi.acceptance.test.ts` (`2D right-hand gun HUD visual is visible in lower-center during gameplay`) + `src/bootstrap.test.ts` (`initializes renderer and scene primitives with expected values`)
+- 2D right-hand gun HUD visual remains anchored while moving and looking around -> `src/acceptance/tests/playerHandGunUi.acceptance.test.ts` (`2D right-hand gun HUD visual remains anchored while moving and looking around`)
+- Right-hand gun HUD visual coexists with crosshair and firing behavior -> `src/acceptance/tests/playerHandGunUi.acceptance.test.ts` (`Right-hand gun HUD visual coexists with crosshair and firing behavior`) + `src/bootstrap.test.ts` (`handles primary fire input, pointer-lock gating, and projectile frame updates`)
+- Right-hand gun HUD visual includes idle and firing recoil animation -> `src/acceptance/tests/playerHandGunUi.acceptance.test.ts` (`Right-hand gun HUD visual includes idle and firing recoil animation`) + `src/bootstrap.test.ts` (`handles primary fire input, pointer-lock gating, and projectile frame updates`)
+- Missing right-hand gun asset falls back without runtime failure -> `src/acceptance/tests/playerHandGunUi.acceptance.test.ts` (`Missing right-hand gun asset falls back without runtime failure`) + `src/app/weaponHud.test.ts` (`uses fallback class and warning logger on image load error`)
+- Project includes a created right-hand gun visual asset -> `src/acceptance/tests/playerHandGunUi.acceptance.test.ts` (`Project includes a created right-hand gun visual asset`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Hardener: PASS (`npm run test:mutation:branch` -> `87.10%`, target `>= 80%`)
+
+### Risks / blockers
+
+- None.
+
+### Next action
+
+- Proceed to final handoff.
+
+### User review status
+
+- Approved to proceed
+
 ## 2026-11-01 — Pre-commit linter auto-fix
 
 - Timestamp: 2026-11-01

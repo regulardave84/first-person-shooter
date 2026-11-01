@@ -12,6 +12,10 @@ import {
 	DEFAULT_WORLD_FLOOR_COLOR,
 	applyDefaultWorldFloorTexture,
 } from './floorTexture';
+import {
+	initializeWeaponHud,
+	triggerWeaponHudRecoil,
+} from './weaponHud';
 import { DEFAULT_MOVE_SPEED, PLAYER_HEIGHT } from '../core/gameLogic';
 import {
 	PROJECTILE_COLOR,
@@ -134,6 +138,12 @@ applyDefaultWorldWallTexture(wallMaterial, {
 	},
 });
 
+const weaponHud = initializeWeaponHud({
+	logger: {
+		warn: (event, context) => runtimeLogger.warn(event, context),
+	},
+});
+
 let yaw = 0;
 let pitch = 0;
 let airborneRunSpeedMultiplier = 1;
@@ -141,6 +151,28 @@ const projectileVisuals = new Map<number, THREE.Line>();
 const projectileMaterial = new THREE.LineBasicMaterial({
 	color: PROJECTILE_COLOR,
 });
+
+function processPrimaryFireShots(shotCount: number): void {
+	if (shotCount <= 0) {
+		return;
+	}
+
+	triggerWeaponHudRecoil(weaponHud?.root ?? null);
+	playBulletFireSounds(bulletFireSound, shotCount);
+	const spawned = spawnProjectilesFromLook({
+		state: primaryFireState,
+		count: shotCount,
+		origin: {
+			x: camera.position.x,
+			y: camera.position.y,
+			z: camera.position.z,
+		},
+		yaw,
+		pitch,
+	});
+	primaryFireState = spawned.state;
+	activeProjectiles = [...activeProjectiles, ...spawned.projectiles];
+}
 
 function isPointerLockActive(): boolean {
 	return document.pointerLockElement === renderer.domElement;
@@ -310,23 +342,7 @@ function animate() {
 		isPointerLockActive: isPointerLockActive(),
 	});
 	primaryFireState = fireAdvance.state;
-
-	if (fireAdvance.shotsToSpawn > 0) {
-		playBulletFireSounds(bulletFireSound, fireAdvance.shotsToSpawn);
-		const spawned = spawnProjectilesFromLook({
-			state: primaryFireState,
-			count: fireAdvance.shotsToSpawn,
-			origin: {
-				x: camera.position.x,
-				y: camera.position.y,
-				z: camera.position.z,
-			},
-			yaw,
-			pitch,
-		});
-		primaryFireState = spawned.state;
-		activeProjectiles = [...activeProjectiles, ...spawned.projectiles];
-	}
+	processPrimaryFireShots(fireAdvance.shotsToSpawn);
 
 	const projectileStep = stepProjectiles({
 		projectiles: activeProjectiles,

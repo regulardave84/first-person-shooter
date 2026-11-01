@@ -9,6 +9,119 @@ type InputEventLike = {
 
 type ListenerMap = Map<string, (event?: InputEventLike) => void>;
 
+type ElementWithId = {
+	id: string;
+	tagName: string;
+	classList: {
+		add: (...tokens: string[]) => void;
+		remove: (...tokens: string[]) => void;
+		contains: (token: string) => boolean;
+	};
+	appendChild: ReturnType<typeof vi.fn>;
+	setAttribute: ReturnType<typeof vi.fn>;
+	removeAttribute: ReturnType<typeof vi.fn>;
+	getAttribute: ReturnType<typeof vi.fn>;
+	children: ElementWithId[];
+	clientWidth: number;
+	src: string;
+	alt: string;
+	decoding: 'async' | 'auto' | 'sync';
+	onload: ((event: Event) => void) | null;
+	onerror: ((event: string | Event) => void) | null;
+};
+
+type DocumentStub = {
+	pointerLockElement: unknown;
+	body: ElementWithId;
+	addEventListener: ReturnType<typeof vi.fn>;
+	createElement: ReturnType<typeof vi.fn>;
+	getElementById: ReturnType<typeof vi.fn>;
+	elementsById: Map<string, ElementWithId>;
+};
+
+function createDocumentStub(documentListeners: ListenerMap): DocumentStub {
+	const elementsById = new Map<string, ElementWithId>();
+
+	const createClassList = () => {
+		const values = new Set<string>();
+		return {
+			add: (...tokens: string[]) => {
+				for (const token of tokens) {
+					values.add(token);
+				}
+			},
+			remove: (...tokens: string[]) => {
+				for (const token of tokens) {
+					values.delete(token);
+				}
+			},
+			contains: (token: string) => values.has(token),
+		};
+	};
+
+	const createElement = vi.fn((tagName: string) => {
+		const attributes = new Map<string, string>();
+		let currentId = '';
+		const element = {
+			tagName: tagName.toUpperCase(),
+			classList: createClassList(),
+			appendChild: vi.fn((child: ElementWithId) => {
+				element.children.push(child);
+				if (child.id) {
+					elementsById.set(child.id, child);
+				}
+				return child;
+			}),
+			setAttribute: vi.fn((name: string, value: string) => {
+				attributes.set(name, value);
+				if (name === 'id') {
+					element.id = value;
+				}
+			}),
+			removeAttribute: vi.fn((name: string) => {
+				attributes.delete(name);
+			}),
+			getAttribute: vi.fn((name: string) => attributes.get(name) ?? null),
+			children: [] as ElementWithId[],
+			clientWidth: 320,
+			src: '',
+			alt: '',
+			decoding: 'auto' as const,
+			onload: null,
+			onerror: null,
+		} as ElementWithId;
+
+		Object.defineProperty(element, 'id', {
+			get: () => currentId,
+			set: (value: string) => {
+				currentId = value;
+				if (value) {
+					elementsById.set(value, element);
+				}
+			},
+			enumerable: true,
+			configurable: true,
+		});
+
+		return element;
+	});
+
+	const body = createElement('body');
+
+	return {
+		pointerLockElement: null,
+		body,
+		addEventListener: vi.fn(
+			(type: string, handler: (event?: InputEventLike) => void) => {
+				documentListeners.set(type, handler);
+			},
+		),
+		createElement,
+		getElementById: vi.fn((id: string) => elementsById.get(id) ?? null),
+		elementsById,
+	};
+}
+
 const runtimeMocks = vi.hoisted(() => ({
 	RUN_SPEED_MULTIPLIER: 2,
 	WORLD_WALLS: [
@@ -460,6 +573,7 @@ function expectFloorAndWallTextureFallbackState(): void {
 describe('bootstrap runtime wiring', () => {
 	let documentListeners: ListenerMap;
 	let windowListeners: ListenerMap;
+	let documentStub: DocumentStub;
 
 	beforeEach(() => {
 		vi.resetModules();
@@ -482,18 +596,7 @@ describe('bootstrap runtime wiring', () => {
 
 		documentListeners = new Map();
 		windowListeners = new Map();
-
-		const documentStub = {
-			pointerLockElement: null,
-			body: {
-				appendChild: vi.fn(),
-			},
-			addEventListener: vi.fn(
-				(type: string, handler: (event?: InputEventLike) => void) => {
-					documentListeners.set(type, handler);
-				},
-			),
-		};
+		documentStub = createDocumentStub(documentListeners);
 
 		const windowStub = {
 			innerWidth: 1920,
@@ -591,6 +694,10 @@ describe('bootstrap runtime wiring', () => {
 		expectFloorAndWallTextureSuccessState();
 		expect(threeState.meshes[0]?.rotation.x).toBeCloseTo(-Math.PI / 2);
 		expect(threeState.lineBasicMaterialOptions).toEqual([{ color: 0xffffff }]);
+		const weaponHudRoot = documentStub.elementsById.get('weapon-hud');
+		expect(weaponHudRoot).toBeDefined();
+		expect(weaponHudRoot?.classList.contains('weapon-hud')).toBe(true);
+		expect(documentStub.elementsById.get('weapon-hud-image')).toBeDefined();
 	});
 
 	it('keeps current floor and wall colors when texture load fails', async () => {
@@ -722,6 +829,11 @@ describe('bootstrap runtime wiring', () => {
 		);
 		expect(runtimeMocks.spawnProjectilesFromLook).not.toHaveBeenCalled();
 		expect(runtimeMocks.playBulletFireSounds).not.toHaveBeenCalled();
+		expect(
+			documentStub
+				.elementsById.get('weapon-hud')
+				?.classList.contains('weapon-hud--recoil'),
+		).toBe(false);
 		expect(runtimeMocks.stepProjectiles).toHaveBeenCalledWith(
 			expect.objectContaining({
 				projectiles: [],
@@ -860,6 +972,11 @@ describe('bootstrap runtime wiring', () => {
 			expect.any(Object),
 			1,
 		);
+		expect(
+			documentStub
+				.elementsById.get('weapon-hud')
+				?.classList.contains('weapon-hud--recoil'),
+		).toBe(true);
 		expect(runtimeMocks.spawnProjectilesFromLook).toHaveBeenCalledWith(
 			expect.objectContaining({
 				count: 1,
