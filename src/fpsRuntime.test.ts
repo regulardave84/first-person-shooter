@@ -1031,6 +1031,38 @@ describe('fpsRuntime helpers', () => {
 		).Audio = originalAudio;
 	});
 
+	it('logs a warning when bullet playback promise rejects', async () => {
+		const sink = vi.fn();
+		const logger = createRuntimeLogger({ enabled: true, sink });
+		const audioElement = {
+			loop: false,
+			volume: 1,
+			currentTime: 0,
+			play: vi.fn(() => Promise.reject(new Error('Playback denied'))),
+		};
+		const audioWindow = globalThis as typeof globalThis & {
+			Audio?: typeof Audio;
+		};
+		const originalAudio = audioWindow.Audio;
+		audioWindow.Audio = class {
+			constructor() {
+				return audioElement as unknown as HTMLAudioElement;
+			}
+		} as unknown as typeof Audio;
+
+		const player = createBulletFireSoundPlayer(logger);
+		player.play();
+		await Promise.resolve();
+
+		expect(sink).toHaveBeenCalledWith({
+			level: 'warn',
+			event: 'bullet.sound.failed',
+			context: expect.objectContaining({ error: 'Playback denied' }),
+		});
+
+		audioWindow.Audio = originalAudio;
+	});
+
 	it('creates no-op walking footstep player when Audio is unavailable', () => {
 		const sink = vi.fn();
 		const logger = createRuntimeLogger({ enabled: true, sink });
