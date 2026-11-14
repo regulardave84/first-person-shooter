@@ -63,6 +63,19 @@ canvas {
   pointer-events: none;
 }
 
+.health-hud {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 7;
+  pointer-events: none;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #ffffff;
+  text-shadow: 0 0 8px rgb(2 6 23 / 80%);
+}
+
 .weapon-hud__image {
   display: block;
   width: 100%;

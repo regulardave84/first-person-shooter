@@ -776,6 +776,14 @@ describe('bootstrap runtime wiring', () => {
 		expect(documentStub.elementsById.get('weapon-hud-image')).toBeDefined();
 	});
 
+	it('initializes bottom-right health HUD label', async () => {
+		await import('./app/bootstrap');
+
+		const healthHudRoot = documentStub.elementsById.get('health-hud');
+		expect(healthHudRoot).toBeDefined();
+		expect(healthHudRoot?.classList.contains('health-hud')).toBe(true);
+	});
+
 	it('keeps current floor and wall colors when texture load fails', async () => {
 		threeState.failTextureLoad = true;
 
