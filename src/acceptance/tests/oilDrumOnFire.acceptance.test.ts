@@ -1,8 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 import * as THREE from 'three';
 import {
+	DEFAULT_OIL_DRUM_EXPLOSION_ANIMATION_FPS,
+	DEFAULT_OIL_DRUM_EXPLOSION_ANIMATION_FRAME_COUNT,
+	DEFAULT_OIL_DRUM_EXPLOSION_FRAME_ASSET_PATHS,
 	DEFAULT_OIL_DRUM_FIRE_ANIMATION_FPS,
 	DEFAULT_OIL_DRUM_ON_FIRE_FRAME_ASSET_PATHS,
+	advanceOilDrumExplosionAnimation,
 	advanceOilDrumFireAnimation,
 	applyOilDrumHit,
 } from '../../app/oilDrumEntity';
@@ -128,10 +132,18 @@ describe('Acceptance: Oil drum fire visual below half health', () => {
 		const fireTextures = DEFAULT_OIL_DRUM_ON_FIRE_FRAME_ASSET_PATHS.map(
 			() => new THREE.Texture(),
 		);
+		const explosionTextures = DEFAULT_OIL_DRUM_EXPLOSION_FRAME_ASSET_PATHS.map(
+			() => new THREE.Texture(),
+		);
 		const destroyedTexture = new THREE.Texture();
 		const load = vi.fn((url: string) => {
 			if (url.includes('oil_drum_destroyed.png')) {
 				return destroyedTexture;
+			}
+			const explosionTextureIndex =
+				DEFAULT_OIL_DRUM_EXPLOSION_FRAME_ASSET_PATHS.indexOf(url);
+			if (explosionTextureIndex >= 0) {
+				return explosionTextures[explosionTextureIndex];
 			}
 			const textureIndex =
 				DEFAULT_OIL_DRUM_ON_FIRE_FRAME_ASSET_PATHS.indexOf(url);
@@ -150,6 +162,14 @@ describe('Acceptance: Oil drum fire visual below half health', () => {
 			source: 'bullet',
 			bulletDamage: 35,
 			sprite,
+			textureLoader: { load },
+		});
+		advanceOilDrumExplosionAnimation({
+			health: destroyed.health,
+			sprite,
+			deltaSeconds:
+				DEFAULT_OIL_DRUM_EXPLOSION_ANIMATION_FRAME_COUNT /
+				DEFAULT_OIL_DRUM_EXPLOSION_ANIMATION_FPS,
 			textureLoader: { load },
 		});
 

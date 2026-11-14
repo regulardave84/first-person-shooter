@@ -1,18 +1,42 @@
 import { describe, expect, it, vi } from 'vitest';
 import * as THREE from 'three';
-import { applyOilDrumHit } from '../../app/oilDrumEntity';
+import {
+	DEFAULT_OIL_DRUM_EXPLOSION_ANIMATION_FPS,
+	DEFAULT_OIL_DRUM_EXPLOSION_ANIMATION_FRAME_COUNT,
+	DEFAULT_OIL_DRUM_EXPLOSION_FRAME_ASSET_PATHS,
+	advanceOilDrumExplosionAnimation,
+	applyOilDrumHit,
+} from '../../app/oilDrumEntity';
 
 describe('Acceptance: Oil drum destroyed visual state', () => {
 	it('Oil drum swaps to destroyed sprite at zero health', () => {
 		const sprite = new THREE.Sprite(new THREE.SpriteMaterial());
+		const explosionTextures = DEFAULT_OIL_DRUM_EXPLOSION_FRAME_ASSET_PATHS.map(
+			() => new THREE.Texture(),
+		);
 		const destroyedTexture = new THREE.Texture();
-		const load = vi.fn(() => destroyedTexture);
+		const load = vi.fn((url: string) => {
+			if (url.includes('oil_drum_destroyed.png')) {
+				return destroyedTexture;
+			}
+			const explosionIndex =
+				DEFAULT_OIL_DRUM_EXPLOSION_FRAME_ASSET_PATHS.indexOf(url);
+			return explosionTextures[Math.max(0, explosionIndex)];
+		});
 
 		const hit = applyOilDrumHit({
 			health: { currentHealth: 35, maxHealth: 100 },
 			source: 'bullet',
 			bulletDamage: 35,
 			sprite,
+			textureLoader: { load },
+		});
+		advanceOilDrumExplosionAnimation({
+			health: hit.health,
+			sprite,
+			deltaSeconds:
+				DEFAULT_OIL_DRUM_EXPLOSION_ANIMATION_FRAME_COUNT /
+				DEFAULT_OIL_DRUM_EXPLOSION_ANIMATION_FPS,
 			textureLoader: { load },
 		});
 
@@ -61,8 +85,7 @@ describe('Acceptance: Oil drum destroyed visual state', () => {
 
 	it('Destroyed-state transition logs damage and visual swap', () => {
 		const sprite = new THREE.Sprite(new THREE.SpriteMaterial());
-		const destroyedTexture = new THREE.Texture();
-		const load = vi.fn(() => destroyedTexture);
+		const load = vi.fn(() => new THREE.Texture());
 		const info = vi.fn();
 
 		applyOilDrumHit({
@@ -79,9 +102,11 @@ describe('Acceptance: Oil drum destroyed visual state', () => {
 			expect.objectContaining({ damageApplied: 35 }),
 		);
 		expect(info).toHaveBeenCalledWith(
-			'oil.drum.destroyed.visual.updated',
+			'oil.drum.explosion.visual.updated',
 			expect.objectContaining({
-				assetUrl: expect.stringContaining('oil_drum_destroyed.png'),
+				assetUrls: expect.arrayContaining([
+					expect.stringContaining('oil_drum_explosion_01.png'),
+				]),
 			}),
 		);
 	});

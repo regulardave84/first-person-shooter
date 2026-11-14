@@ -1,9 +1,15 @@
 import { describe, expect, it, vi } from 'vitest';
 import * as THREE from 'three';
 import {
+	DEFAULT_OIL_DRUM_BURN_DAMAGE_PER_SECOND,
+	DEFAULT_OIL_DRUM_EXPLOSION_VISIBLE_COVERAGE_RATIO,
+	DEFAULT_OIL_DRUM_EXPLOSION_ANIMATION_FPS,
+	DEFAULT_OIL_DRUM_EXPLOSION_ANIMATION_FRAME_COUNT,
+	DEFAULT_OIL_DRUM_EXPLOSION_FRAME_ASSET_PATHS,
 	DEFAULT_OIL_DRUM_FIRE_ANIMATION_FPS,
 	DEFAULT_OIL_DRUM_FIRE_ANIMATION_FRAME_COUNT,
 	DEFAULT_OIL_DRUM_FIRE_THRESHOLD_RATIO,
+	DEFAULT_OIL_DRUM_SPRITE_ALPHA_TEST,
 	DEFAULT_OIL_DRUM_BULLET_DAMAGE,
 	DEFAULT_OIL_DRUM_COLLIDER_HEIGHT,
 	DEFAULT_OIL_DRUM_COLLIDER_RADIUS,
@@ -14,6 +20,8 @@ import {
 	DEFAULT_OIL_DRUM_SPRITE_ASSET_PATH,
 	DEFAULT_OIL_DRUM_SPRITE_SCALE,
 	OIL_DRUM_ENTITY_NAME,
+	advanceOilDrumBurnDamage,
+	advanceOilDrumExplosionAnimation,
 	advanceOilDrumFireAnimation,
 	applyOilDrumHit,
 	addDefaultOilDrumEntityToScene,
@@ -36,9 +44,21 @@ describe('oilDrumEntity', () => {
 		expect(DEFAULT_OIL_DRUM_ON_FIRE_FRAME_ASSET_PATHS[7]).toContain(
 			'oil_drum_burning_frames/oil_drum_burning_08.png',
 		);
+		expect(DEFAULT_OIL_DRUM_EXPLOSION_FRAME_ASSET_PATHS).toHaveLength(8);
+		expect(DEFAULT_OIL_DRUM_EXPLOSION_FRAME_ASSET_PATHS[0]).toContain(
+			'oil_drum_explosion_frames/oil_drum_explosion_01.png',
+		);
+		expect(DEFAULT_OIL_DRUM_EXPLOSION_FRAME_ASSET_PATHS[7]).toContain(
+			'oil_drum_explosion_frames/oil_drum_explosion_08.png',
+		);
 		expect(DEFAULT_OIL_DRUM_FIRE_THRESHOLD_RATIO).toBe(0.5);
 		expect(DEFAULT_OIL_DRUM_FIRE_ANIMATION_FRAME_COUNT).toBe(8);
 		expect(DEFAULT_OIL_DRUM_FIRE_ANIMATION_FPS).toBe(12);
+		expect(DEFAULT_OIL_DRUM_EXPLOSION_ANIMATION_FRAME_COUNT).toBe(8);
+		expect(DEFAULT_OIL_DRUM_EXPLOSION_ANIMATION_FPS).toBe(12);
+		expect(DEFAULT_OIL_DRUM_BURN_DAMAGE_PER_SECOND).toBe(5);
+		expect(DEFAULT_OIL_DRUM_EXPLOSION_VISIBLE_COVERAGE_RATIO).toBe(0.16);
+		expect(DEFAULT_OIL_DRUM_SPRITE_ALPHA_TEST).toBe(0.05);
 		expect(DEFAULT_OIL_DRUM_SPAWN_OFFSET).toEqual({
 			x: 1.25,
 			y: -0.6,
@@ -99,6 +119,12 @@ describe('oilDrumEntity', () => {
 		expect(sprite.name).toBe(OIL_DRUM_ENTITY_NAME);
 		expect(sprite.material).toBeInstanceOf(THREE.SpriteMaterial);
 		expect((sprite.material as THREE.SpriteMaterial).map).toBe(texture);
+		expect((sprite.material as THREE.SpriteMaterial).alphaTest).toBeCloseTo(
+			DEFAULT_OIL_DRUM_SPRITE_ALPHA_TEST,
+		);
+		expect(texture.wrapS).toBe(THREE.ClampToEdgeWrapping);
+		expect(texture.wrapT).toBe(THREE.ClampToEdgeWrapping);
+		expect(texture.generateMipmaps).toBe(false);
 		expect(sprite.scale.x).toBeCloseTo(DEFAULT_OIL_DRUM_SPRITE_SCALE.x);
 		expect(sprite.scale.y).toBeCloseTo(DEFAULT_OIL_DRUM_SPRITE_SCALE.y);
 		expect(sprite.scale.z).toBeCloseTo(DEFAULT_OIL_DRUM_SPRITE_SCALE.z);
@@ -377,7 +403,7 @@ describe('oilDrumEntity', () => {
 		expect(hit.wasRemoved).toBe(false);
 	});
 
-	it('swaps to destroyed sprite when bullet damage destroys it', () => {
+	it('starts explosion animation when bullet damage destroys it', () => {
 		const sprite = new THREE.Sprite(new THREE.SpriteMaterial());
 		sprite.position.set(0, 1, 0);
 		sprite.scale.set(
@@ -394,8 +420,12 @@ describe('oilDrumEntity', () => {
 		(
 			fireTexture.userData as { oilDrumVisibleCoverageRatio?: number }
 		).oilDrumVisibleCoverageRatio = 0.16;
+		const explosionTexture = new THREE.Texture();
 		const destroyedTexture = new THREE.Texture();
 		const load = vi.fn((url: string) => {
+			if (url.includes('oil_drum_explosion_frames')) {
+				return explosionTexture;
+			}
 			if (url.includes('oil_drum_destroyed.png')) {
 				return destroyedTexture;
 			}
@@ -422,6 +452,29 @@ describe('oilDrumEntity', () => {
 		expect(hit.health.currentHealth).toBe(0);
 		expect(hit.wasRemoved).toBe(false);
 		expect(load).toHaveBeenCalledWith(
+			expect.stringContaining('oil_drum_explosion_frames/oil_drum_explosion_01.png'),
+			expect.any(Function),
+			undefined,
+			expect.any(Function),
+		);
+		expect((sprite.userData as { oilDrumVisualState?: string }).oilDrumVisualState).toBe(
+			'exploding',
+		);
+		expect((sprite.material as THREE.SpriteMaterial).map).toBe(explosionTexture);
+		expect(sprite.position.y).toBeCloseTo(
+			1 + DEFAULT_OIL_DRUM_SPRITE_SCALE.y / 2,
+		);
+
+		advanceOilDrumExplosionAnimation({
+			health: hit.health,
+			sprite,
+			deltaSeconds:
+				DEFAULT_OIL_DRUM_EXPLOSION_ANIMATION_FRAME_COUNT /
+				DEFAULT_OIL_DRUM_EXPLOSION_ANIMATION_FPS,
+			textureLoader: { load },
+		});
+
+		expect(load).toHaveBeenCalledWith(
 			expect.stringContaining('oil_drum_destroyed.png'),
 			undefined,
 			undefined,
@@ -433,6 +486,181 @@ describe('oilDrumEntity', () => {
 		expect(sprite.scale.x).toBeCloseTo(DEFAULT_OIL_DRUM_SPRITE_SCALE.x);
 		expect(sprite.scale.y).toBeCloseTo(DEFAULT_OIL_DRUM_SPRITE_SCALE.y);
 		expect(sprite.position.y).toBeCloseTo(1);
+	});
+
+	it('applies burn damage every elapsed second while on fire', () => {
+		const sprite = new THREE.Sprite(new THREE.SpriteMaterial());
+		(sprite.userData as { oilDrumVisualState?: string }).oilDrumVisualState =
+			'fire';
+
+		const firstHalf = advanceOilDrumBurnDamage({
+			health: { currentHealth: 30, maxHealth: 100 },
+			sprite,
+			deltaSeconds: 0.5,
+		});
+		const secondHalf = advanceOilDrumBurnDamage({
+			health: firstHalf.health,
+			sprite,
+			deltaSeconds: 0.5,
+		});
+
+		expect(firstHalf.didApplyDamage).toBe(false);
+		expect(secondHalf.didApplyDamage).toBe(true);
+		expect(secondHalf.damageApplied).toBe(5);
+		expect(secondHalf.health.currentHealth).toBe(25);
+	});
+
+	it('starts explosion from burn damage at zero health and then becomes destroyed', () => {
+		const sprite = new THREE.Sprite(new THREE.SpriteMaterial());
+		(sprite.userData as { oilDrumVisualState?: string }).oilDrumVisualState =
+			'fire';
+		const explosionTextures = DEFAULT_OIL_DRUM_EXPLOSION_FRAME_ASSET_PATHS.map(
+			() => new THREE.Texture(),
+		);
+		const destroyedTexture = new THREE.Texture();
+		const load = vi.fn((url: string, onLoad?: (texture: THREE.Texture) => void) => {
+			if (url.includes('oil_drum_destroyed.png')) {
+				return destroyedTexture;
+			}
+			const textureIndex =
+				DEFAULT_OIL_DRUM_EXPLOSION_FRAME_ASSET_PATHS.indexOf(url);
+			const texture = explosionTextures[Math.max(0, textureIndex)];
+			onLoad?.(texture);
+			return texture;
+		});
+
+		const burn = advanceOilDrumBurnDamage({
+			health: { currentHealth: 5, maxHealth: 100 },
+			sprite,
+			deltaSeconds: 1,
+			textureLoader: { load },
+		});
+
+		expect(burn.health.currentHealth).toBe(0);
+		expect((sprite.userData as { oilDrumVisualState?: string }).oilDrumVisualState).toBe(
+			'exploding',
+		);
+
+		advanceOilDrumExplosionAnimation({
+			health: burn.health,
+			sprite,
+			deltaSeconds:
+				DEFAULT_OIL_DRUM_EXPLOSION_ANIMATION_FRAME_COUNT /
+				DEFAULT_OIL_DRUM_EXPLOSION_ANIMATION_FPS,
+			textureLoader: { load },
+		});
+
+		expect((sprite.userData as { oilDrumVisualState?: string }).oilDrumVisualState).toBe(
+			'destroyed',
+		);
+		expect((sprite.material as THREE.SpriteMaterial).map).toBe(destroyedTexture);
+
+		const noFurtherBurn = advanceOilDrumBurnDamage({
+			health: burn.health,
+			sprite,
+			deltaSeconds: 5,
+		});
+		expect(noFurtherBurn.health.currentHealth).toBe(0);
+		expect(noFurtherBurn.didApplyDamage).toBe(false);
+	});
+
+	it('does not loop explosion animation after final frame', () => {
+		const sprite = new THREE.Sprite(new THREE.SpriteMaterial());
+		const explosionTextures = DEFAULT_OIL_DRUM_EXPLOSION_FRAME_ASSET_PATHS.map(
+			() => new THREE.Texture(),
+		);
+		const load = vi.fn((url: string, onLoad?: (texture: THREE.Texture) => void) => {
+			const textureIndex =
+				DEFAULT_OIL_DRUM_EXPLOSION_FRAME_ASSET_PATHS.indexOf(url);
+			const texture = explosionTextures[Math.max(0, textureIndex)];
+			onLoad?.(texture);
+			return texture;
+		});
+
+		applyOilDrumHit({
+			health: { currentHealth: 5, maxHealth: 100 },
+			source: 'bullet',
+			bulletDamage: 35,
+			sprite,
+			textureLoader: { load },
+		});
+
+		advanceOilDrumExplosionAnimation({
+			health: { currentHealth: 0, maxHealth: 100 },
+			sprite,
+			deltaSeconds:
+				(2 * DEFAULT_OIL_DRUM_EXPLOSION_ANIMATION_FRAME_COUNT) /
+				DEFAULT_OIL_DRUM_EXPLOSION_ANIMATION_FPS,
+			textureLoader: { load },
+		});
+
+		expect((sprite.userData as { oilDrumVisualState?: string }).oilDrumVisualState).toBe(
+			'destroyed',
+		);
+	});
+
+	it('keeps explosion frames floor-aligned while animation advances', () => {
+		const sprite = new THREE.Sprite(new THREE.SpriteMaterial());
+		sprite.position.set(0, 1, 0);
+		sprite.scale.set(
+			DEFAULT_OIL_DRUM_SPRITE_SCALE.x,
+			DEFAULT_OIL_DRUM_SPRITE_SCALE.y,
+			DEFAULT_OIL_DRUM_SPRITE_SCALE.z,
+		);
+		const defaultTexture = new THREE.Texture();
+		(
+			defaultTexture.userData as { oilDrumVisibleCoverageRatio?: number }
+		).oilDrumVisibleCoverageRatio = 0.64;
+		(sprite.material as THREE.SpriteMaterial).map = defaultTexture;
+		const fireTexture = new THREE.Texture();
+		(
+			fireTexture.userData as { oilDrumVisibleCoverageRatio?: number }
+		).oilDrumVisibleCoverageRatio = 0.16;
+		const explosionTextures = DEFAULT_OIL_DRUM_EXPLOSION_FRAME_ASSET_PATHS.map(
+			() => new THREE.Texture(),
+		);
+		const load = vi.fn((url: string, onLoad?: (texture: THREE.Texture) => void) => {
+			if (url.includes('oil_drum_burning')) {
+				return fireTexture;
+			}
+			const index = DEFAULT_OIL_DRUM_EXPLOSION_FRAME_ASSET_PATHS.indexOf(url);
+			const texture = explosionTextures[Math.max(0, index)];
+			onLoad?.(texture);
+			return texture;
+		});
+
+		const inFire = applyOilDrumHit({
+			health: { currentHealth: 65, maxHealth: 100 },
+			source: 'bullet',
+			bulletDamage: 35,
+			sprite,
+			textureLoader: { load },
+		});
+		expect(sprite.position.y).toBeCloseTo(
+			1 + DEFAULT_OIL_DRUM_SPRITE_SCALE.y / 2,
+		);
+
+		const exploded = applyOilDrumHit({
+			health: inFire.health,
+			source: 'bullet',
+			bulletDamage: 35,
+			sprite,
+			textureLoader: { load },
+		});
+		expect(exploded.health.currentHealth).toBe(0);
+		expect(sprite.position.y).toBeCloseTo(
+			1 + DEFAULT_OIL_DRUM_SPRITE_SCALE.y / 2,
+		);
+
+		advanceOilDrumExplosionAnimation({
+			health: exploded.health,
+			sprite,
+			deltaSeconds: 1 / DEFAULT_OIL_DRUM_EXPLOSION_ANIMATION_FPS,
+			textureLoader: { load },
+		});
+		expect(sprite.position.y).toBeCloseTo(
+			1 + DEFAULT_OIL_DRUM_SPRITE_SCALE.y / 2,
+		);
 	});
 
 	it('does not apply additional bullet damage once oil drum is destroyed', () => {
@@ -605,11 +833,10 @@ describe('oilDrumEntity', () => {
 		);
 	});
 
-	it('logs damage and destroyed-visual events when destroyed by a bullet', () => {
+	it('logs damage and explosion-visual events when destroyed by a bullet', () => {
 		const sprite = new THREE.Sprite(new THREE.SpriteMaterial());
 		const info = vi.fn();
-		const destroyedTexture = new THREE.Texture();
-		const load = vi.fn(() => destroyedTexture);
+		const load = vi.fn(() => new THREE.Texture());
 
 		applyOilDrumHit({
 			health: { currentHealth: 35, maxHealth: 100 },
@@ -628,9 +855,11 @@ describe('oilDrumEntity', () => {
 			}),
 		);
 		expect(info).toHaveBeenCalledWith(
-			'oil.drum.destroyed.visual.updated',
+			'oil.drum.explosion.visual.updated',
 			expect.objectContaining({
-				assetUrl: expect.stringContaining('oil_drum_destroyed.png'),
+				assetUrls: expect.arrayContaining([
+					expect.stringContaining('oil_drum_explosion_01.png'),
+				]),
 			}),
 		);
 	});

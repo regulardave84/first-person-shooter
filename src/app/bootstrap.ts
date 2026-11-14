@@ -16,7 +16,10 @@ import {
 	applyDefaultWorldFloorTexture,
 } from './floorTexture';
 import {
+	DEFAULT_OIL_DRUM_BURN_DAMAGE_PER_SECOND,
 	DEFAULT_OIL_DRUM_BULLET_DAMAGE,
+	advanceOilDrumBurnDamage,
+	advanceOilDrumExplosionAnimation,
 	advanceOilDrumFireAnimation,
 	addDefaultOilDrumEntityToScene,
 	applyOilDrumHit,
@@ -176,6 +179,7 @@ const oilDrumEntity = addDefaultOilDrumEntityToScene({
 	},
 });
 const oilDrumBulletDamage = DEFAULT_OIL_DRUM_BULLET_DAMAGE;
+const oilDrumBurnDamagePerSecond = DEFAULT_OIL_DRUM_BURN_DAMAGE_PER_SECOND;
 let oilDrumHealth = oilDrumEntity.health;
 let isOilDrumActive = true;
 
@@ -426,6 +430,21 @@ function animate() {
 	primaryFireState = fireAdvance.state;
 	processPrimaryFireShots(fireAdvance.shotsToSpawn);
 
+	const burnDamageResult = advanceOilDrumBurnDamage({
+		health: oilDrumHealth,
+		sprite: oilDrumEntity.sprite,
+		deltaSeconds: dt,
+		damagePerSecond: oilDrumBurnDamagePerSecond,
+		logger: {
+			info: (event, context) => runtimeLogger.info(event, context),
+			warn: (event, context) => runtimeLogger.warn(event, context),
+		},
+	});
+	oilDrumHealth = burnDamageResult.health;
+	if (oilDrumHealth.currentHealth <= 0) {
+		isOilDrumActive = false;
+	}
+
 	const projectileStep = stepProjectiles({
 		projectiles: activeProjectiles,
 		dt,
@@ -438,6 +457,15 @@ function animate() {
 		health: oilDrumHealth,
 		sprite: oilDrumEntity.sprite,
 		deltaSeconds: dt,
+	});
+	advanceOilDrumExplosionAnimation({
+		health: oilDrumHealth,
+		sprite: oilDrumEntity.sprite,
+		deltaSeconds: dt,
+		logger: {
+			info: (event, context) => runtimeLogger.info(event, context),
+			warn: (event, context) => runtimeLogger.warn(event, context),
+		},
 	});
 
 	for (const projectile of activeProjectiles) {

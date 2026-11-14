@@ -4,6 +4,116 @@ Persistent execution log for the `implementer` skill.
 
 ---
 
+## 2026-11-14 — Oil drum explosion visual bug fixes
+
+- Timestamp: 2026-11-14
+- Feature file: src/acceptance/features/oil_drum_explosion_visual_bugs.acceptance.feature
+- Complexity: medium
+- Current phase: P4
+- Checkpoint status: COMPLETE (`SPECIFIER_COMPLETE` -> `IMPLEMENTER_COMPLETE`) with `CLEANER_COMPLETE` and `HARDENER_COMPLETE`
+
+### Completed work
+
+- Added alpha-safe sprite rendering defaults for oil drum textures (alpha test + clamp wrapping + mipmap-disabled filtering) to reduce rectangular border artifacts.
+- Applied the same floor-alignment compensation strategy to explosion frames as fire frames.
+- Preserved existing destroyed-baseline transition after one-shot explosion playback completes.
+- Extracted reusable animation-texture configuration/loading logic into `src/app/oilDrumAnimationTextures.ts` to keep architecture file-size guardrails passing.
+- Added targeted unit and acceptance coverage for alpha-safe rendering settings, explosion floor alignment, and destroyed-baseline completion.
+- Promoted approved Gherkin to acceptance and marked the proposed feature file as superseded.
+
+### Files changed so far
+
+- src/app/oilDrumEntity.ts
+- src/app/oilDrumAnimationTextures.ts
+- src/app/oilDrumEntity.test.ts
+- src/acceptance/features/oil_drum_explosion_visual_bugs.acceptance.feature
+- src/acceptance/features/oil_drum_explosion_visual_bugs.proposed.feature
+- src/acceptance/tests/oilDrumExplosionVisualBugs.acceptance.test.ts
+
+### Scenario -> test mapping
+
+- Oil drum sprite rendering avoids visible rectangle border artifacts -> `src/app/oilDrumEntity.test.ts` (`creates a named sprite with default scale and texture`) + `src/acceptance/tests/oilDrumExplosionVisualBugs.acceptance.test.ts` (`Oil drum sprite rendering avoids visible rectangle border artifacts`)
+- Explosion animation remains floor-aligned -> `src/app/oilDrumEntity.test.ts` (`keeps explosion frames floor-aligned while animation advances`) + `src/acceptance/tests/oilDrumExplosionVisualBugs.acceptance.test.ts` (`Explosion animation remains floor-aligned`)
+- Explosion completion still transitions to destroyed baseline -> `src/app/oilDrumEntity.test.ts` (`starts explosion animation when bullet damage destroys it`) + `src/acceptance/tests/oilDrumExplosionVisualBugs.acceptance.test.ts` (`Explosion completion still transitions to destroyed baseline`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Hardener: PASS (`npm run test:mutation:branch` -> `94.48%`, target `>= 80%`)
+
+### Risks / blockers
+
+- None currently.
+
+### Next action
+
+- Proceed to final handoff.
+
+### User review status
+
+- Approved
+
+## 2026-11-14 — Oil drum burn damage and explosion lifecycle
+
+- Timestamp: 2026-11-14
+- Feature file: src/acceptance/features/oil_drum_burn_explosion.acceptance.feature
+- Complexity: medium
+- Current phase: P4
+- Checkpoint status: COMPLETE (`SPECIFIER_COMPLETE` -> `IMPLEMENTER_COMPLETE`) with `CLEANER_COMPLETE` and `HARDENER_COMPLETE`
+
+### Completed work
+
+- Added time-based burn damage progression for on-fire oil drums (`5` damage per elapsed second with delta-time accumulation).
+- Added oil drum explosion frame assets and runtime explosion animation flow (`8` frames at `12` FPS) that plays once.
+- Implemented explosion-to-destroyed terminal transition so drums remain in destroyed state after explosion completion.
+- Wired runtime loop updates to apply burn damage and advance explosion animation while preserving existing collider behavior.
+- Added/updated unit and acceptance tests for burn tick accumulation, explosion start, non-looping explosion completion, and no post-destroyed burn damage.
+- Promoted approved Gherkin to acceptance and marked the proposed feature file as superseded.
+
+### Files changed so far
+
+- src/app/oilDrumEntity.ts
+- src/app/oilDrumEntity.test.ts
+- src/app/bootstrap.ts
+- src/bootstrap.test.ts
+- src/acceptance/features/oil_drum_burn_explosion.acceptance.feature
+- src/acceptance/features/oil_drum_burn_explosion.proposed.feature
+- src/acceptance/tests/oilDrumBurnExplosion.acceptance.test.ts
+- src/acceptance/tests/oilDrumOnFire.acceptance.test.ts
+- src/acceptance/tests/oilDrumBulletDamage.acceptance.test.ts
+- src/acceptance/tests/oilDrumDestroyedGraphic.acceptance.test.ts
+- src/acceptance/tests/oilDrumFireFloorAlignment.acceptance.test.ts
+- src/acceptance/tests/oilDrumFireFrameSize.acceptance.test.ts
+
+### Scenario -> test mapping
+
+- Burning oil drum takes `5` damage every second -> `src/app/oilDrumEntity.test.ts` (`applies burn damage every elapsed second while on fire`) + `src/acceptance/tests/oilDrumBurnExplosion.acceptance.test.ts` (`Burning oil drum takes 5 damage every second`)
+- Partial elapsed time accumulates before applying burn damage -> `src/app/oilDrumEntity.test.ts` (`applies burn damage every elapsed second while on fire`) + `src/acceptance/tests/oilDrumBurnExplosion.acceptance.test.ts` (`Partial elapsed time accumulates before applying burn damage`)
+- Burn damage triggers explosion at zero health -> `src/app/oilDrumEntity.test.ts` (`starts explosion from burn damage at zero health and then becomes destroyed`) + `src/acceptance/tests/oilDrumBurnExplosion.acceptance.test.ts` (`Burn damage triggers explosion at zero health`)
+- Explosion animation advances and then completes once -> `src/app/oilDrumEntity.test.ts` (`does not loop explosion animation after final frame`) + `src/acceptance/tests/oilDrumBurnExplosion.acceptance.test.ts` (`Explosion animation advances and then completes once`)
+- Destroyed drum no longer takes burn damage -> `src/app/oilDrumEntity.test.ts` (`starts explosion from burn damage at zero health and then becomes destroyed`) + `src/acceptance/tests/oilDrumBurnExplosion.acceptance.test.ts` (`Destroyed drum no longer takes burn damage`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Hardener: PASS (`npm run test:mutation:branch` -> `88.49%`, target `>= 80%`)
+
+### Risks / blockers
+
+- None currently.
+
+### Next action
+
+- Proceed to final handoff.
+
+### User review status
+
+- Approved
+
 ## 2026-11-14 — Oil drum fire floor alignment
 
 - Timestamp: 2026-11-14
