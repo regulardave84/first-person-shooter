@@ -16,6 +16,8 @@ import {
 	createRunningFootstepSoundPlayer,
 	createRuntimeLogger,
 	createInitialFootstepCadenceState,
+	DEFAULT_BULLET_FIRE_SOUND_PATH,
+	DEFAULT_BULLET_FIRE_VOLUME,
 	DEFAULT_WALKING_FOOTSTEP_SOUND_PATH,
 	DEFAULT_RUNNING_FOOTSTEP_SOUND_PATH,
 	DEFAULT_WALKING_FOOTSTEP_VOLUME,
@@ -915,83 +917,63 @@ describe('fpsRuntime helpers', () => {
 		).AudioContext = originalAudio;
 	});
 
-	it('plays a synthesized bullet pew tone when browser audio API is available', () => {
+	it('plays pistol shot audio when Audio API is available', () => {
 		const sink = vi.fn();
 		const logger = createRuntimeLogger({ enabled: true, sink });
-		const oscillator = {
-			type: 'sine',
-			frequency: {
-				setValueAtTime: vi.fn(),
-				exponentialRampToValueAtTime: vi.fn(),
-			},
-			connect: vi.fn(),
-			start: vi.fn(),
-			stop: vi.fn(),
-		};
-		const gain = {
-			gain: {
-				setValueAtTime: vi.fn(),
-				exponentialRampToValueAtTime: vi.fn(),
-			},
-			connect: vi.fn(),
-		};
-		const audioContext = {
-			currentTime: 3,
-			createOscillator: vi.fn(() => oscillator),
-			createGain: vi.fn(() => gain),
-			destination: {},
+		const audioCtorSpy = vi.fn();
+		const audioElement = {
+			loop: false,
+			volume: 1,
+			currentTime: 2,
+			play: vi.fn(() => Promise.resolve()),
 		};
 		const audioWindow = globalThis as typeof globalThis & {
-			AudioContext?: typeof AudioContext;
+			Audio?: typeof Audio;
 		};
-		const originalAudio = audioWindow.AudioContext;
-		audioWindow.AudioContext = class {
-			constructor() {
-				return audioContext as unknown as AudioContext;
+		const originalAudio = audioWindow.Audio;
+		class AudioMock {
+			constructor(sourceUrl?: string) {
+				audioCtorSpy(sourceUrl);
+				(
+					audioElement as typeof audioElement & {
+						sourceUrl?: string;
+					}
+				).sourceUrl = sourceUrl;
+				return audioElement as unknown as HTMLAudioElement;
 			}
-		} as typeof AudioContext;
+		}
+		audioWindow.Audio = AudioMock as unknown as typeof Audio;
 
 		const player = createBulletFireSoundPlayer(logger);
 		player.play();
 
-		expect(audioContext.createOscillator).toHaveBeenCalledTimes(1);
-		expect(oscillator.start).toHaveBeenCalledWith(3);
-		expect(oscillator.stop).toHaveBeenCalledWith(3.1);
-		expect(gain.gain.exponentialRampToValueAtTime).toHaveBeenCalledWith(
-			1,
-			3.005,
-		);
+		expect(audioCtorSpy).toHaveBeenCalledWith(DEFAULT_BULLET_FIRE_SOUND_PATH);
+		expect(audioElement.loop).toBe(false);
+		expect(audioElement.volume).toBe(DEFAULT_BULLET_FIRE_VOLUME);
+		expect(audioElement.play).toHaveBeenCalledTimes(1);
+		expect(audioElement.currentTime).toBe(0);
 		expect(sink).toHaveBeenCalledWith({
 			level: 'debug',
 			event: 'bullet.sound.played',
-			context: expect.objectContaining({ frequency: 900 }),
+			context: expect.objectContaining({
+				sourceUrl: DEFAULT_BULLET_FIRE_SOUND_PATH,
+				volume: DEFAULT_BULLET_FIRE_VOLUME,
+			}),
 		});
 
-		audioWindow.AudioContext = originalAudio;
+		audioWindow.Audio = originalAudio;
 	});
 
-	it('creates no-op bullet sound player when browser audio APIs are unavailable', () => {
+	it('creates no-op bullet sound player when Audio API is unavailable', () => {
 		const sink = vi.fn();
 		const logger = createRuntimeLogger({ enabled: true, sink });
 		const audioWindow = globalThis as typeof globalThis & {
-			AudioContext?: typeof AudioContext;
-			webkitAudioContext?: typeof AudioContext;
+			Audio?: typeof Audio;
 		};
-		const originalAudio = audioWindow.AudioContext;
-		const originalWebkit = audioWindow.webkitAudioContext;
-		const audioContextDescriptor = Object.getOwnPropertyDescriptor(
-			audioWindow,
-			'AudioContext',
-		);
-		const webkitDescriptor = Object.getOwnPropertyDescriptor(
-			audioWindow,
-			'webkitAudioContext',
-		);
-		if (audioContextDescriptor?.configurable) {
-			Reflect.deleteProperty(audioWindow, 'AudioContext');
-		}
-		if (webkitDescriptor?.configurable) {
-			Reflect.deleteProperty(audioWindow, 'webkitAudioContext');
+		const originalAudio = audioWindow.Audio;
+		const audioDescriptor = Object.getOwnPropertyDescriptor(audioWindow, 'Audio');
+		if (audioDescriptor?.configurable) {
+			Reflect.deleteProperty(audioWindow, 'Audio');
 		}
 
 		const player = createBulletFireSoundPlayer(logger);
@@ -1002,13 +984,11 @@ describe('fpsRuntime helpers', () => {
 			context: undefined,
 		});
 
-		restoreAudioApiState(
-			audioWindow,
-			originalAudio,
-			originalWebkit,
-			audioContextDescriptor,
-			webkitDescriptor,
-		);
+		if (audioDescriptor) {
+			Object.defineProperty(audioWindow, 'Audio', audioDescriptor);
+		} else if (originalAudio) {
+			audioWindow.Audio = originalAudio;
+		}
 	});
 
 	it('logs a warning when bullet sound creation fails', () => {
@@ -1016,18 +996,25 @@ describe('fpsRuntime helpers', () => {
 		const logger = createRuntimeLogger({ enabled: true, sink });
 		const originalAudio = (
 			globalThis as typeof globalThis & {
-				AudioContext?: typeof AudioContext;
+				Audio?: typeof Audio;
 			}
-		).AudioContext;
+		).Audio;
 		(
 			globalThis as typeof globalThis & {
-				AudioContext?: typeof AudioContext;
+				Audio?: typeof Audio;
 			}
-		).AudioContext = class {
+		).Audio = class {
 			constructor() {
-				throw new Error('No audio');
+				return {
+					loop: false,
+					volume: 1,
+					currentTime: 0,
+					play: () => {
+						throw new Error('No audio');
+					},
+				} as unknown as HTMLAudioElement;
 			}
-		} as typeof AudioContext;
+		} as unknown as typeof Audio;
 
 		const player = createBulletFireSoundPlayer(logger);
 		expect(() => player.play()).not.toThrow();
@@ -1039,9 +1026,9 @@ describe('fpsRuntime helpers', () => {
 
 		(
 			globalThis as typeof globalThis & {
-				AudioContext?: typeof AudioContext;
+				Audio?: typeof Audio;
 			}
-		).AudioContext = originalAudio;
+		).Audio = originalAudio;
 	});
 
 	it('creates no-op walking footstep player when Audio is unavailable', () => {

@@ -42,8 +42,14 @@ export const DEFAULT_RUNNING_FOOTSTEP_SOUND_PATH = new URL(
 	import.meta.url,
 ).href;
 
+export const DEFAULT_BULLET_FIRE_SOUND_PATH = new URL(
+	'../assets/sounds/pistol_shot.wav',
+	import.meta.url,
+).href;
+
 export const DEFAULT_WALKING_FOOTSTEP_VOLUME = 0.2;
 export const DEFAULT_RUNNING_FOOTSTEP_VOLUME = 0.2;
+export const DEFAULT_BULLET_FIRE_VOLUME = 0.4;
 
 export const DEFAULT_WALKING_FOOTSTEP_INTERVAL_SECONDS = 0.45;
 export const DEFAULT_RUNNING_FOOTSTEP_INTERVAL_SECONDS = 0.3;
@@ -267,41 +273,36 @@ export function createJumpSoundPlayer(logger?: RuntimeLogger): {
 export function createBulletFireSoundPlayer(logger?: RuntimeLogger): {
 	play: () => void;
 } {
-	const AudioCtor = resolveAudioContextCtor();
+	const AudioElementCtor = resolveAudioCtor();
 
-	if (!AudioCtor) {
+	if (!AudioElementCtor) {
 		logger?.debug('audio.unavailable');
 		return { play: () => {} };
 	}
 
-	let audioContext: AudioContext | undefined;
+	const sourceUrl = DEFAULT_BULLET_FIRE_SOUND_PATH;
+	const volume = clampVolume(DEFAULT_BULLET_FIRE_VOLUME);
+	const audio = new AudioElementCtor(sourceUrl);
+	audio.loop = false;
+	audio.volume = volume;
 
 	return {
 		play: () => {
 			try {
-				const context = audioContext ?? new AudioCtor();
-				audioContext = context;
-				const startTime = context.currentTime;
-				const oscillator = context.createOscillator();
-				const gain = context.createGain();
-
-				oscillator.type = 'square';
-				oscillator.frequency.setValueAtTime(900, startTime);
-				oscillator.frequency.exponentialRampToValueAtTime(
-					680,
-					startTime + 0.08,
-				);
-
-				gain.gain.setValueAtTime(0.0001, startTime);
-				gain.gain.exponentialRampToValueAtTime(1, startTime + 0.005);
-				gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.09);
-
-				oscillator.connect(gain);
-				gain.connect(context.destination);
-				oscillator.start(startTime);
-				oscillator.stop(startTime + 0.1);
-
-				logger?.debug('bullet.sound.played', { startTime, frequency: 900 });
+				audio.currentTime = 0;
+				const playbackResult = audio.play();
+				if (playbackResult && typeof playbackResult.catch === 'function') {
+					playbackResult.catch((error: unknown) => {
+						logger?.warn('bullet.sound.failed', {
+							error:
+								error instanceof Error ? error.message : 'unknown',
+						});
+					});
+				}
+				logger?.debug('bullet.sound.played', {
+					sourceUrl,
+					volume,
+				});
 			} catch (error) {
 				logger?.warn('bullet.sound.failed', {
 					error: error instanceof Error ? error.message : 'unknown',
