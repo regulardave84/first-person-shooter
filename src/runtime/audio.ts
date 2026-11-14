@@ -28,6 +28,16 @@ export const DEFAULT_BULLET_FIRE_SOUND_PATH = new URL(
 	import.meta.url,
 ).href;
 
+export const DEFAULT_OIL_DRUM_FIRE_SOUND_PATH = new URL(
+	'../assets/sounds/oil_drum_fire.wav',
+	import.meta.url,
+).href;
+
+export const DEFAULT_OIL_DRUM_EXPLOSION_SOUND_PATH = new URL(
+	'../assets/sounds/oil_drum_explosion.wav',
+	import.meta.url,
+).href;
+
 export const DEFAULT_JUMP_SOUND_PATH = new URL(
 	'../assets/sounds/jump_grunt.wav',
 	import.meta.url,
@@ -36,6 +46,8 @@ export const DEFAULT_JUMP_SOUND_PATH = new URL(
 export const DEFAULT_WALKING_FOOTSTEP_VOLUME = 0.2;
 export const DEFAULT_RUNNING_FOOTSTEP_VOLUME = 0.2;
 export const DEFAULT_BULLET_FIRE_VOLUME = 0.4;
+export const DEFAULT_OIL_DRUM_FIRE_SOUND_VOLUME = 0.45;
+export const DEFAULT_OIL_DRUM_EXPLOSION_SOUND_VOLUME = 0.7;
 export const DEFAULT_JUMP_SOUND_VOLUME = 1;
 export const DEFAULT_JUMP_SOUND_PLAYBACK_RATE = 1;
 
@@ -293,6 +305,99 @@ export function createBulletFireSoundPlayer(logger?: RuntimeLogger): {
 				});
 			} catch (error) {
 				logger?.warn('bullet.sound.failed', {
+					error: error instanceof Error ? error.message : 'unknown',
+				});
+			}
+		},
+	};
+}
+
+export function createOilDrumFireSoundPlayer(logger?: RuntimeLogger): {
+	play: () => void;
+	stop: () => void;
+} {
+	const AudioElementCtor = resolveAudioCtor();
+
+	if (!AudioElementCtor) {
+		logger?.debug('audio.unavailable');
+		return { play: () => {}, stop: () => {} };
+	}
+
+	const sourceUrl = DEFAULT_OIL_DRUM_FIRE_SOUND_PATH;
+	const volume = clampVolume(DEFAULT_OIL_DRUM_FIRE_SOUND_VOLUME);
+	const audio = new AudioElementCtor(sourceUrl);
+	audio.loop = false;
+	audio.volume = volume;
+
+	return {
+		play: () => {
+			try {
+				audio.currentTime = 0;
+				const playbackResult = audio.play();
+				if (playbackResult && typeof playbackResult.catch === 'function') {
+					playbackResult.catch((error: unknown) => {
+						logger?.warn('oil.drum.fire.sound.failed', {
+							error:
+								error instanceof Error ? error.message : 'unknown',
+						});
+					});
+				}
+				logger?.debug('oil.drum.fire.sound.played', {
+					sourceUrl,
+					volume,
+				});
+			} catch (error) {
+				logger?.warn('oil.drum.fire.sound.failed', {
+					error: error instanceof Error ? error.message : 'unknown',
+				});
+			}
+		},
+		stop: () => {
+			audio.pause();
+			audio.currentTime = 0;
+			logger?.debug('oil.drum.fire.sound.stopped', {
+				sourceUrl,
+				volume,
+			});
+		},
+	};
+}
+
+export function createOilDrumExplosionSoundPlayer(logger?: RuntimeLogger): {
+	play: () => void;
+} {
+	const AudioElementCtor = resolveAudioCtor();
+
+	if (!AudioElementCtor) {
+		logger?.debug('audio.unavailable');
+		return { play: () => {} };
+	}
+
+	const sourceUrl = DEFAULT_OIL_DRUM_EXPLOSION_SOUND_PATH;
+	const volume = clampVolume(DEFAULT_OIL_DRUM_EXPLOSION_SOUND_VOLUME);
+	const audio = new AudioElementCtor(sourceUrl);
+	audio.loop = false;
+	audio.volume = volume;
+
+	return {
+		play: () => {
+			try {
+				audio.currentTime = 0;
+				const playbackResult = audio.play();
+				if (playbackResult && typeof playbackResult.catch === 'function') {
+					playbackResult.catch((error: unknown) => {
+						logger?.warn('oil.drum.explosion.sound.failed', {
+							error:
+								error instanceof Error ? error.message : 'unknown',
+						});
+					});
+				}
+				logger?.debug('oil.drum.explosion.sound.played', {
+					sourceUrl,
+					volume,
+				});
+			} catch (error) {
+				logger?.warn('oil.drum.explosion.sound.failed', {
 					error: error instanceof Error ? error.message : 'unknown',
 				});
 			}

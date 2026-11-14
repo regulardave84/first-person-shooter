@@ -14,6 +14,8 @@ import {
 	createJumpSoundPlayer,
 	createWalkingFootstepSoundPlayer,
 	createRunningFootstepSoundPlayer,
+	createOilDrumFireSoundPlayer,
+	createOilDrumExplosionSoundPlayer,
 	createRuntimeLogger,
 	createInitialFootstepCadenceState,
 	DEFAULT_BULLET_FIRE_SOUND_PATH,
@@ -25,6 +27,10 @@ import {
 	DEFAULT_RUNNING_FOOTSTEP_SOUND_PATH,
 	DEFAULT_WALKING_FOOTSTEP_VOLUME,
 	DEFAULT_RUNNING_FOOTSTEP_VOLUME,
+	DEFAULT_OIL_DRUM_FIRE_SOUND_PATH,
+	DEFAULT_OIL_DRUM_FIRE_SOUND_VOLUME,
+	DEFAULT_OIL_DRUM_EXPLOSION_SOUND_PATH,
+	DEFAULT_OIL_DRUM_EXPLOSION_SOUND_VOLUME,
 	createInitialRunKeys,
 	createInitialMovementKeys,
 	getWorldLayoutSummary,
@@ -1691,5 +1697,453 @@ describe('fpsRuntime helpers', () => {
 
 		expect(next.x).toBeLessThan(0);
 		expect(next.z).toBeCloseTo(2);
+	});
+
+	it('plays oil drum fire audio when Audio API is available', () => {
+		const sink = vi.fn();
+		const logger = createRuntimeLogger({ enabled: true, sink });
+		const audioCtorSpy = vi.fn();
+		const audioElement = {
+			loop: false,
+			volume: 1,
+			currentTime: 2,
+			play: vi.fn(() => Promise.resolve()),
+		};
+		const audioWindow = globalThis as typeof globalThis & {
+			Audio?: typeof Audio;
+		};
+		const originalAudio = audioWindow.Audio;
+		class AudioMock {
+			constructor(sourceUrl?: string) {
+				audioCtorSpy(sourceUrl);
+				(
+					audioElement as typeof audioElement & {
+						sourceUrl?: string;
+					}
+				).sourceUrl = sourceUrl;
+				return audioElement as unknown as HTMLAudioElement;
+			}
+		}
+		audioWindow.Audio = AudioMock as unknown as typeof Audio;
+
+		const player = createOilDrumFireSoundPlayer(logger);
+		player.play();
+
+		expect(audioCtorSpy).toHaveBeenCalledWith(DEFAULT_OIL_DRUM_FIRE_SOUND_PATH);
+		expect(audioElement.loop).toBe(false);
+		expect(audioElement.volume).toBe(DEFAULT_OIL_DRUM_FIRE_SOUND_VOLUME);
+		expect(audioElement.play).toHaveBeenCalledTimes(1);
+		expect(audioElement.currentTime).toBe(0);
+		expect(sink).toHaveBeenCalledWith({
+			level: 'debug',
+			event: 'oil.drum.fire.sound.played',
+			context: expect.objectContaining({
+				sourceUrl: DEFAULT_OIL_DRUM_FIRE_SOUND_PATH,
+				volume: DEFAULT_OIL_DRUM_FIRE_SOUND_VOLUME,
+			}),
+		});
+
+		audioWindow.Audio = originalAudio;
+	});
+
+	it('plays oil drum explosion audio when Audio API is available', () => {
+		const sink = vi.fn();
+		const logger = createRuntimeLogger({ enabled: true, sink });
+		const audioCtorSpy = vi.fn();
+		const audioElement = {
+			loop: false,
+			volume: 1,
+			currentTime: 2,
+			play: vi.fn(() => Promise.resolve()),
+		};
+		const audioWindow = globalThis as typeof globalThis & {
+			Audio?: typeof Audio;
+		};
+		const originalAudio = audioWindow.Audio;
+		class AudioMock {
+			constructor(sourceUrl?: string) {
+				audioCtorSpy(sourceUrl);
+				(
+					audioElement as typeof audioElement & {
+						sourceUrl?: string;
+					}
+				).sourceUrl = sourceUrl;
+				return audioElement as unknown as HTMLAudioElement;
+			}
+		}
+		audioWindow.Audio = AudioMock as unknown as typeof Audio;
+
+		const player = createOilDrumExplosionSoundPlayer(logger);
+		player.play();
+
+		expect(audioCtorSpy).toHaveBeenCalledWith(
+			DEFAULT_OIL_DRUM_EXPLOSION_SOUND_PATH,
+		);
+		expect(audioElement.loop).toBe(false);
+		expect(audioElement.volume).toBe(DEFAULT_OIL_DRUM_EXPLOSION_SOUND_VOLUME);
+		expect(audioElement.play).toHaveBeenCalledTimes(1);
+		expect(audioElement.currentTime).toBe(0);
+		expect(sink).toHaveBeenCalledWith({
+			level: 'debug',
+			event: 'oil.drum.explosion.sound.played',
+			context: expect.objectContaining({
+				sourceUrl: DEFAULT_OIL_DRUM_EXPLOSION_SOUND_PATH,
+				volume: DEFAULT_OIL_DRUM_EXPLOSION_SOUND_VOLUME,
+			}),
+		});
+
+		audioWindow.Audio = originalAudio;
+	});
+
+	it('creates no-op oil drum audio players when Audio is unavailable', () => {
+		const sink = vi.fn();
+		const logger = createRuntimeLogger({ enabled: true, sink });
+		const audioWindow = globalThis as typeof globalThis & {
+			Audio?: typeof Audio;
+		};
+		const originalAudio = audioWindow.Audio;
+		const audioDescriptor = Object.getOwnPropertyDescriptor(audioWindow, 'Audio');
+		if (audioDescriptor?.configurable) {
+			Reflect.deleteProperty(audioWindow, 'Audio');
+		}
+
+		const firePlayer = createOilDrumFireSoundPlayer(logger);
+		const explosionPlayer = createOilDrumExplosionSoundPlayer(logger);
+		expect(() => {
+			firePlayer.play();
+			explosionPlayer.play();
+		}).not.toThrow();
+		expect(sink).toHaveBeenCalledWith({
+			level: 'debug',
+			event: 'audio.unavailable',
+			context: undefined,
+		});
+
+		if (audioDescriptor) {
+			Object.defineProperty(audioWindow, 'Audio', audioDescriptor);
+		} else if (originalAudio) {
+			audioWindow.Audio = originalAudio;
+		}
+	});
+
+	it('warns when audio playback rejects and clamps volume within safe bounds', async () => {
+		const sink = vi.fn();
+		const logger = createRuntimeLogger({ enabled: true, sink });
+		const originalAudio = globalThis.Audio;
+		class AudioMock {
+			loop: boolean;
+			volume: number;
+			currentTime: number;
+			play: ReturnType<typeof vi.fn>;
+			constructor(sourceUrl?: string) {
+				this.loop = false;
+				this.volume = 1;
+				this.currentTime = 0;
+				this.play = vi.fn(() => Promise.reject(new Error('playback failed')));
+				void sourceUrl;
+			}
+		}
+		(globalThis as typeof globalThis & { Audio?: typeof Audio }).Audio =
+			AudioMock as unknown as typeof Audio;
+
+		const walking = createWalkingFootstepSoundPlayer(logger, { volume: 2 });
+		const running = createRunningFootstepSoundPlayer(logger, { volume: -1 });
+		const jump = createJumpSoundPlayer(logger);
+		const bullet = createBulletFireSoundPlayer(logger);
+		const fire = createOilDrumFireSoundPlayer(logger);
+		const explosion = createOilDrumExplosionSoundPlayer(logger);
+
+		walking.play();
+		running.play();
+		jump.play();
+		bullet.play();
+		fire.play();
+		explosion.play();
+		await Promise.resolve();
+
+		expect(sink).toHaveBeenCalledWith(
+			expect.objectContaining({
+				level: 'warn',
+				event: 'footstep.sound.failed',
+			}),
+		);
+		expect(sink).toHaveBeenCalledWith(
+			expect.objectContaining({
+				level: 'warn',
+				event: 'jump.sound.failed',
+			}),
+		);
+		expect(sink).toHaveBeenCalledWith(
+			expect.objectContaining({
+				level: 'warn',
+				event: 'bullet.sound.failed',
+			}),
+		);
+		expect(sink).toHaveBeenCalledWith(
+			expect.objectContaining({
+				level: 'warn',
+				event: 'oil.drum.fire.sound.failed',
+			}),
+		);
+		expect(sink).toHaveBeenCalledWith(
+			expect.objectContaining({
+				level: 'warn',
+				event: 'oil.drum.explosion.sound.failed',
+			}),
+		);
+
+		(globalThis as typeof globalThis & { Audio?: typeof Audio }).Audio =
+			originalAudio;
+	});
+
+	it('logs unknown error context for non-Error oil drum playback failures', async () => {
+		const sink = vi.fn();
+		const logger = createRuntimeLogger({ enabled: true, sink });
+		const audioWindow = globalThis as typeof globalThis & {
+			Audio?: typeof Audio;
+		};
+		const originalAudio = audioWindow.Audio;
+
+		class AudioMock {
+			loop = false;
+			volume = 1;
+			currentTime = 0;
+			play = vi.fn(() => Promise.reject('non-error'));
+			pause = vi.fn();
+			constructor(sourceUrl?: string) {
+				void sourceUrl;
+			}
+		}
+
+		audioWindow.Audio = AudioMock as unknown as typeof Audio;
+
+		const fire = createOilDrumFireSoundPlayer(logger);
+		const explosion = createOilDrumExplosionSoundPlayer(logger);
+		fire.play();
+		explosion.play();
+		await Promise.resolve();
+
+		expect(sink).toHaveBeenCalledWith({
+			level: 'warn',
+			event: 'oil.drum.fire.sound.failed',
+			context: { error: 'unknown' },
+		});
+		expect(sink).toHaveBeenCalledWith({
+			level: 'warn',
+			event: 'oil.drum.explosion.sound.failed',
+			context: { error: 'unknown' },
+		});
+
+		audioWindow.Audio = originalAudio;
+	});
+
+	it('handles synchronous oil drum playback failures and supports stopping fire audio', () => {
+		const sink = vi.fn();
+		const logger = createRuntimeLogger({ enabled: true, sink });
+		const audioWindow = globalThis as typeof globalThis & {
+			Audio?: typeof Audio;
+		};
+		const originalAudio = audioWindow.Audio;
+		const pauseSpy = vi.fn();
+
+		class AudioMock {
+			loop = false;
+			volume = 1;
+			currentTime = 1;
+			pause = pauseSpy;
+			play = vi.fn(() => {
+				throw new Error('sync playback failed');
+			});
+			constructor(sourceUrl?: string) {
+				void sourceUrl;
+			}
+		}
+
+		audioWindow.Audio = AudioMock as unknown as typeof Audio;
+
+		const fire = createOilDrumFireSoundPlayer(logger);
+		const explosion = createOilDrumExplosionSoundPlayer(logger);
+
+		fire.play();
+		explosion.play();
+		fire.stop();
+
+		expect(sink).toHaveBeenCalledWith(
+			expect.objectContaining({
+				level: 'warn',
+				event: 'oil.drum.fire.sound.failed',
+			}),
+		);
+		expect(sink).toHaveBeenCalledWith(
+			expect.objectContaining({
+				level: 'warn',
+				event: 'oil.drum.explosion.sound.failed',
+			}),
+		);
+		expect(pauseSpy).toHaveBeenCalledTimes(1);
+		expect(sink).toHaveBeenCalledWith(
+			expect.objectContaining({
+				level: 'debug',
+				event: 'oil.drum.fire.sound.stopped',
+			}),
+		);
+
+		audioWindow.Audio = originalAudio;
+	});
+
+	it('resets cadence when movement mode changes and idle state clears both footstep loops', () => {
+		const walkingPlayer = { play: vi.fn(), stop: vi.fn() };
+		const runningPlayer = { play: vi.fn(), stop: vi.fn() };
+		let state = createInitialFootstepCadenceState();
+
+		state = advanceFootstepCadence({
+			state,
+			dt: 0.2,
+			mode: 'walking',
+			walkingPlayer,
+			runningPlayer,
+			walkingStepIntervalSeconds: 0.3,
+		});
+		expect(walkingPlayer.play).toHaveBeenCalledTimes(1);
+		expect(state).toEqual({
+			secondsUntilNextStep: 0.3,
+			lastMode: 'walking',
+		});
+
+		state = advanceFootstepCadence({
+			state,
+			dt: 0.1,
+			mode: 'running',
+			walkingPlayer,
+			runningPlayer,
+			runningStepIntervalSeconds: 0.25,
+		});
+		expect(runningPlayer.play).toHaveBeenCalledTimes(1);
+		expect(state).toEqual({
+			secondsUntilNextStep: 0.25,
+			lastMode: 'running',
+		});
+
+		state = advanceFootstepCadence({
+			state,
+			dt: 0.25,
+			mode: 'idle',
+			walkingPlayer,
+			runningPlayer,
+		});
+		expect(walkingPlayer.stop).toHaveBeenCalled();
+		expect(runningPlayer.stop).toHaveBeenCalled();
+		expect(state).toEqual({
+			secondsUntilNextStep: 0,
+			lastMode: null,
+		});
+	});
+
+	it('returns idle when grounded movement is below the epsilon threshold', () => {
+		expect(
+			resolvePlayerFootstepMode({
+				isGrounded: true,
+				horizontalMovementDelta: 0.00005,
+				runActive: true,
+				movementEpsilon: 0.0001,
+			}),
+		).toBe('idle');
+		expect(
+			resolvePlayerFootstepMode({
+				isGrounded: false,
+				horizontalMovementDelta: 9,
+				runActive: true,
+			}),
+		).toBe('idle');
+	});
+
+	it('keeps default sound assets and no-logger playback safe across browser audio edge cases', () => {
+		expect(DEFAULT_WALKING_FOOTSTEP_SOUND_PATH).toContain('footsteps_walking.wav');
+		expect(DEFAULT_RUNNING_FOOTSTEP_SOUND_PATH).toContain('footsteps_running.wav');
+		expect(DEFAULT_BULLET_FIRE_SOUND_PATH).toContain('pistol_shot.wav');
+		expect(DEFAULT_OIL_DRUM_FIRE_SOUND_PATH).toContain('oil_drum_fire.wav');
+		expect(DEFAULT_OIL_DRUM_EXPLOSION_SOUND_PATH).toContain('oil_drum_explosion.wav');
+		expect(DEFAULT_JUMP_SOUND_PATH).toContain('jump_grunt.wav');
+
+		const audioWindow = globalThis as typeof globalThis & {
+			Audio?: typeof Audio;
+		};
+		const originalAudio = audioWindow.Audio;
+		class AudioMock {
+			loop = false;
+			volume = 1;
+			currentTime = 0;
+			play = vi.fn(() => Promise.reject(new Error('playback failed')));
+			pause = vi.fn();
+		}
+		audioWindow.Audio = AudioMock as unknown as typeof Audio;
+
+		const walkingPlayer = createWalkingFootstepSoundPlayer();
+		const runningPlayer = createRunningFootstepSoundPlayer();
+		const jumpPlayer = createJumpSoundPlayer();
+		const bulletPlayer = createBulletFireSoundPlayer();
+		const firePlayer = createOilDrumFireSoundPlayer();
+		const explosionPlayer = createOilDrumExplosionSoundPlayer();
+
+		expect(() => {
+			walkingPlayer.play();
+			runningPlayer.play();
+			jumpPlayer.play();
+			bulletPlayer.play();
+			firePlayer.play();
+			explosionPlayer.play();
+			runningPlayer.stop();
+			walkingPlayer.stop();
+		}).not.toThrow();
+
+		audioWindow.Audio = originalAudio;
+	});
+
+	it('ignores non-positive or non-finite shot counts while still allowing valid positive values', () => {
+		const player = { play: vi.fn() };
+		playBulletFireSounds(player, -2);
+		playBulletFireSounds(player, 0);
+		playBulletFireSounds(player, Number.NaN);
+		playBulletFireSounds(player, Number.POSITIVE_INFINITY);
+		playBulletFireSounds(player, 2);
+		playBulletFireSounds(player, 1.9);
+
+		expect(player.play).toHaveBeenCalledTimes(3);
+	});
+
+	it('counts down footstep cadence with subtraction and resets cleanly on idle mode', () => {
+		const walkingPlayer = { play: vi.fn(), stop: vi.fn() };
+		const runningPlayer = { play: vi.fn(), stop: vi.fn() };
+		let state: ReturnType<typeof createInitialFootstepCadenceState> = {
+			secondsUntilNextStep: 0.4,
+			lastMode: 'walking',
+		};
+
+		state = advanceFootstepCadence({
+			state,
+			dt: 0.1,
+			mode: 'walking',
+			walkingPlayer,
+			runningPlayer,
+			walkingStepIntervalSeconds: 0.3,
+		});
+		expect(state).toEqual({
+			secondsUntilNextStep: 0.30000000000000004,
+			lastMode: 'walking',
+		});
+
+		state = advanceFootstepCadence({
+			state,
+			dt: 0.3,
+			mode: 'idle',
+			walkingPlayer,
+			runningPlayer,
+		});
+		expect(state).toEqual({
+			secondsUntilNextStep: 0,
+			lastMode: null,
+		});
+		expect(walkingPlayer.stop).toHaveBeenCalled();
+		expect(runningPlayer.stop).toHaveBeenCalled();
 	});
 });
