@@ -15,6 +15,7 @@ import {
 	DEFAULT_WORLD_FLOOR_COLOR,
 	applyDefaultWorldFloorTexture,
 } from './floorTexture';
+import { addDefaultOilDrumEntityToScene } from './oilDrumEntity';
 import { initializeHealthHud } from './healthHud';
 import { initializeWeaponHud, triggerWeaponHudRecoil } from './weaponHud';
 import { DEFAULT_MOVE_SPEED, PLAYER_HEIGHT } from '../core/gameLogic';
@@ -156,6 +157,18 @@ for (const wall of WORLD_WALLS) {
 		wallMaterial,
 	);
 }
+
+addDefaultOilDrumEntityToScene({
+	scene,
+	playerStartPosition: {
+		x: camera.position.x,
+		y: camera.position.y,
+		z: camera.position.z,
+	},
+	logger: {
+		warn: (event, context) => runtimeLogger.warn(event, context),
+	},
+});
 
 const weaponHud = initializeWeaponHud({
 	logger: {

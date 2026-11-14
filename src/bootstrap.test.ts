@@ -213,6 +213,10 @@ const runtimeMocks = vi.hoisted(() => ({
 	})),
 }));
 
+const oilDrumEntityMocks = vi.hoisted(() => ({
+	addDefaultOilDrumEntityToScene: vi.fn(),
+}));
+
 const threeState = vi.hoisted(() => ({
 	scenes: [] as Array<{
 		add: ReturnType<typeof vi.fn>;
@@ -294,6 +298,11 @@ vi.mock('./runtime/fpsRuntime', () => ({
 	applyFrameMovement: runtimeMocks.applyFrameMovement,
 	applyViewportResize: runtimeMocks.applyViewportResize,
 	createRuntimeLogger: runtimeMocks.createRuntimeLogger,
+}));
+
+vi.mock('./app/oilDrumEntity', () => ({
+	addDefaultOilDrumEntityToScene:
+		oilDrumEntityMocks.addDefaultOilDrumEntityToScene,
 }));
 
 vi.mock('three', () => {
@@ -774,6 +783,13 @@ describe('bootstrap runtime wiring', () => {
 		expect(weaponHudRoot).toBeDefined();
 		expect(weaponHudRoot?.classList.contains('weapon-hud')).toBe(true);
 		expect(documentStub.elementsById.get('weapon-hud-image')).toBeDefined();
+		expect(oilDrumEntityMocks.addDefaultOilDrumEntityToScene).toHaveBeenCalledWith(
+			expect.objectContaining({
+				scene,
+				playerStartPosition: { x: 0, y: 1.6, z: 6 },
+				logger: expect.objectContaining({ warn: expect.any(Function) }),
+			}),
+		);
 	});
 
 	it('initializes bottom-right health HUD label', async () => {

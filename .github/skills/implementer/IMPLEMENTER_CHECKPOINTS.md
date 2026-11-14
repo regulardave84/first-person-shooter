@@ -4,6 +4,64 @@ Persistent execution log for the `implementer` skill.
 
 ---
 
+## 2026-11-14 — Oil drum startup entity sprite
+
+- Timestamp: 2026-11-14
+- Feature file: src/acceptance/features/oil_drum_spawn.feature
+- Complexity: small
+- Current phase: P4
+- Checkpoint status: COMPLETE (`SPECIFIER_COMPLETE` -> `IMPLEMENTER_COMPLETE`) with `CLEANER_COMPLETE` and `HARDENER_COMPLETE`
+
+### Completed work
+
+- Added dedicated first-entity module in `src/app/oilDrumEntity.ts` with:
+	- default oil drum asset constant (`oil_drum.png`)
+	- default spawn offset near player start
+	- sprite creation helper
+	- scene insertion helper for bootstrap wiring
+- Wired oil drum entity initialization into `src/app/bootstrap.ts` so it spawns at game start near the camera start position.
+- Added focused unit tests in `src/app/oilDrumEntity.test.ts` for:
+	- asset constant contract
+	- spawn position math
+	- sprite construction
+	- single-entity scene insertion near player
+	- texture-load failure warning path
+- Added acceptance coverage in `src/acceptance/tests/oilDrumSpawn.acceptance.test.ts` mapped to the approved scenarios.
+- Updated bootstrap integration tests in `src/bootstrap.test.ts` to validate that bootstrap delegates oil drum scene insertion with expected start-position context.
+
+### Files changed so far
+
+- src/app/oilDrumEntity.ts
+- src/app/oilDrumEntity.test.ts
+- src/app/bootstrap.ts
+- src/bootstrap.test.ts
+- src/acceptance/tests/oilDrumSpawn.acceptance.test.ts
+
+### Scenario -> test mapping
+
+- Oil drum sprite asset path uses `oil_drum.png` -> `src/app/oilDrumEntity.test.ts` (`exports stable sprite defaults`) + `src/acceptance/tests/oilDrumSpawn.acceptance.test.ts` (`Oil drum sprite asset path uses oil_drum.png`)
+- Oil drum is added to the scene on bootstrap -> `src/bootstrap.test.ts` (`initializes renderer and scene primitives with expected values`) + `src/acceptance/tests/oilDrumSpawn.acceptance.test.ts` (`Oil drum is added to the scene on bootstrap`)
+- Oil drum starts close to the player -> `src/app/oilDrumEntity.test.ts` (`adds exactly one oil drum sprite near the starting player position`) + `src/acceptance/tests/oilDrumSpawn.acceptance.test.ts` (`Oil drum starts close to the player`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Hardener: PASS (`npm run test:mutation:branch` -> `100.00%`, target `>= 80%`)
+
+### Risks / blockers
+
+- None currently.
+
+### Next action
+
+- Proceed to final handoff.
+
+### User review status
+
+- Approved
+
 ## 2026-11-01 — Single-texture ceiling sky dome
 
 - Timestamp: 2026-11-01
