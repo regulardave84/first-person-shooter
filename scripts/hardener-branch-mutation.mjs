@@ -9,6 +9,7 @@ const SCOPED_CONFIG_PATH = path.join(ROOT, '.stryker-branch.conf.json');
 const REPORT_DIR = path.join(ROOT, 'reports', 'hardener');
 const REPORT_PATH = path.join(REPORT_DIR, 'MUTATION_SCOPE_REPORT.md');
 const FULL_TEST_SUITE_COMMAND = ['run', 'test:all'];
+const VITEST_CONFIG_PATH = 'vitest.config.ts';
 
 const IMPLEMENTATION_SOURCE_PATTERN = /^src\/.*\.ts$/;
 const IGNORED_SOURCE_PATTERNS = [
@@ -27,6 +28,15 @@ function normalizePath(filePath) {
 
 function uniqueSorted(values) {
 	return [...new Set(values)].sort((a, b) => a.localeCompare(b));
+}
+
+function quoteShellArg(value) {
+	return `'${value.replace(/'/g, `'"'"'`)}'`;
+}
+
+function buildRelatedMutationTestCommand(mutateTargets) {
+	const quotedTargets = mutateTargets.map(quoteShellArg).join(' ');
+	return `npx vitest related -c ${quoteShellArg(VITEST_CONFIG_PATH)} ${quotedTargets}`;
 }
 
 function isImplementationSourceFile(filePath) {
@@ -246,9 +256,16 @@ function main() {
 	});
 
 	const baseConfig = JSON.parse(readFileSync(STRYKER_CONFIG_PATH, 'utf8'));
+	const mutationTestCommand = buildRelatedMutationTestCommand(
+		scope.mutateTargets,
+	);
 	const scopedConfig = {
 		...baseConfig,
 		mutate: scope.mutateTargets,
+		commandRunner: {
+			...(baseConfig.commandRunner ?? {}),
+			command: mutationTestCommand,
+		},
 	};
 
 	writeFileSync(
@@ -258,6 +275,7 @@ function main() {
 	console.log(
 		`Running mutation tests with scoped config: ${path.relative(ROOT, SCOPED_CONFIG_PATH)}`,
 	);
+	console.log(`Mutation test command: ${mutationTestCommand}`);
 
 	execFileSync('npx', ['stryker', 'run', SCOPED_CONFIG_PATH], {
 		stdio: 'inherit',
