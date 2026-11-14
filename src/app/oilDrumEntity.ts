@@ -15,6 +15,10 @@ export const DEFAULT_OIL_DRUM_DESTROYED_SPRITE_ASSET_PATH = new URL(
 	'../assets/oil_drum_destroyed.png',
 	import.meta.url,
 ).href;
+export const DEFAULT_OIL_DRUM_ON_FIRE_SPRITE_ASSET_PATH = new URL(
+	'../assets/oil_drum_on_fire.png',
+	import.meta.url,
+).href;
 
 export const DEFAULT_OIL_DRUM_SPAWN_OFFSET = {
 	x: 1.25,
@@ -32,6 +36,9 @@ export const DEFAULT_OIL_DRUM_COLLIDER_RADIUS = 0.75;
 export const DEFAULT_OIL_DRUM_COLLIDER_HEIGHT = 2.25;
 export const DEFAULT_OIL_DRUM_MAX_HEALTH = DEFAULT_ENTITY_MAX_HEALTH;
 export const DEFAULT_OIL_DRUM_BULLET_DAMAGE = 35;
+export const DEFAULT_OIL_DRUM_FIRE_THRESHOLD_RATIO = 0.5;
+export const DEFAULT_OIL_DRUM_FIRE_ANIMATION_FRAME_COUNT = 8;
+export const DEFAULT_OIL_DRUM_FIRE_ANIMATION_FPS = 12;
 
 export type OilDrumPosition = {
 	x: number;
@@ -47,6 +54,8 @@ export type OilDrumLogger = {
 export type OilDrumHealthState = EntityHealthState;
 
 export type OilDrumHitSource = 'bullet' | 'non-bullet';
+
+export type OilDrumVisualState = 'default' | 'fire' | 'destroyed';
 
 export type OilDrumDamageResult = {
 	health: OilDrumHealthState;
@@ -147,6 +156,91 @@ function createNoDamageResult(health: OilDrumHealthState): OilDrumDamageResult {
 	};
 }
 
+function resolveOilDrumVisualState(health: OilDrumHealthState): OilDrumVisualState {
+	if (health.currentHealth <= 0) {
+		return 'destroyed';
+	}
+
+	if (
+		health.currentHealth > 0 &&
+		health.currentHealth < health.maxHealth * DEFAULT_OIL_DRUM_FIRE_THRESHOLD_RATIO
+	) {
+		return 'fire';
+	}
+
+	return 'default';
+}
+
+function setOilDrumVisualState(
+	sprite: THREE.Sprite,
+	state: OilDrumVisualState,
+): void {
+	(sprite.userData as { oilDrumVisualState?: OilDrumVisualState }).oilDrumVisualState =
+		state;
+}
+
+function getOilDrumVisualState(sprite: THREE.Sprite): OilDrumVisualState {
+	return (
+		(sprite.userData as { oilDrumVisualState?: OilDrumVisualState })
+			.oilDrumVisualState ?? 'default'
+	);
+}
+
+function resetOilDrumFireAnimation(sprite: THREE.Sprite): void {
+	const state = sprite.userData as {
+		oilDrumFireElapsedSeconds?: number;
+		oilDrumFireFrame?: number;
+	};
+	state.oilDrumFireElapsedSeconds = 0;
+	state.oilDrumFireFrame = 0;
+}
+
+function applyOilDrumFireSprite(params: {
+	wasOnFire: boolean;
+	sprite?: THREE.Sprite;
+	textureLoader?: OilDrumTextureLoaderLike;
+	logger?: OilDrumLogger;
+}): void {
+	if (!params.sprite) {
+		return;
+	}
+
+	if (params.wasOnFire) {
+		return;
+	}
+
+	const textureLoader = params.textureLoader ?? new THREE.TextureLoader();
+	const texture = textureLoader.load(
+		DEFAULT_OIL_DRUM_ON_FIRE_SPRITE_ASSET_PATH,
+		undefined,
+		undefined,
+		(error) => {
+			params.logger?.warn?.('oil.drum.fire.asset.load.failed', {
+				assetUrl: DEFAULT_OIL_DRUM_ON_FIRE_SPRITE_ASSET_PATH,
+				error,
+			});
+		},
+	);
+
+	texture.wrapS = THREE.RepeatWrapping;
+	texture.wrapT = THREE.ClampToEdgeWrapping;
+	texture.repeat.set(1 / DEFAULT_OIL_DRUM_FIRE_ANIMATION_FRAME_COUNT, 1);
+	texture.offset.set(0, 0);
+	texture.needsUpdate = true;
+
+	const spriteMaterial = params.sprite.material;
+	if (spriteMaterial instanceof THREE.SpriteMaterial) {
+		spriteMaterial.map = texture;
+		spriteMaterial.needsUpdate = true;
+	}
+
+	setOilDrumVisualState(params.sprite, 'fire');
+	resetOilDrumFireAnimation(params.sprite);
+	params.logger?.info?.('oil.drum.fire.visual.updated', {
+		assetUrl: DEFAULT_OIL_DRUM_ON_FIRE_SPRITE_ASSET_PATH,
+	});
+}
+
 function applyDestroyedSprite(params: {
 	wasDestroyed: boolean;
 	sprite?: THREE.Sprite;
@@ -175,6 +269,8 @@ function applyDestroyedSprite(params: {
 		spriteMaterial.map = texture;
 		spriteMaterial.needsUpdate = true;
 	}
+	setOilDrumVisualState(params.sprite, 'destroyed');
+	resetOilDrumFireAnimation(params.sprite);
 
 	params.logger?.info?.('oil.drum.destroyed.visual.updated', {
 		assetUrl: DEFAULT_OIL_DRUM_DESTROYED_SPRITE_ASSET_PATH,
@@ -203,6 +299,7 @@ export function applyOilDrumHit(params: {
 		maxHealth: params.health.maxHealth,
 	};
 	const wasDestroyed = currentHealth <= 0;
+	const nextVisualState = resolveOilDrumVisualState(nextHealth);
 
 	params.logger?.info?.('oil.drum.damaged', {
 		source: params.source,
@@ -210,6 +307,15 @@ export function applyOilDrumHit(params: {
 		currentHealth,
 		maxHealth: nextHealth.maxHealth,
 	});
+
+	if (nextVisualState === 'fire') {
+		applyOilDrumFireSprite({
+			wasOnFire: params.sprite ? getOilDrumVisualState(params.sprite) === 'fire' : false,
+			sprite: params.sprite,
+			textureLoader: params.textureLoader,
+			logger: params.logger,
+		});
+	}
 
 	applyDestroyedSprite({
 		wasDestroyed,
@@ -224,6 +330,68 @@ export function applyOilDrumHit(params: {
 		wasRemoved: false,
 		damageApplied,
 	};
+}
+
+export function advanceOilDrumFireAnimation(params: {
+	health: OilDrumHealthState;
+	sprite?: THREE.Sprite;
+	deltaSeconds: number;
+	frameCount?: number;
+	fps?: number;
+}): void {
+	if (!canAdvanceOilDrumFireAnimation(params)) {
+		return;
+	}
+
+	const sprite = params.sprite as THREE.Sprite;
+	const spriteMaterial = sprite.material as THREE.SpriteMaterial;
+
+	const frameCount = Math.max(
+		1,
+		Math.floor(
+			params.frameCount ?? DEFAULT_OIL_DRUM_FIRE_ANIMATION_FRAME_COUNT,
+		),
+	);
+	const fps = Math.max(1, params.fps ?? DEFAULT_OIL_DRUM_FIRE_ANIMATION_FPS);
+	const state = sprite.userData as {
+		oilDrumFireElapsedSeconds?: number;
+		oilDrumFireFrame?: number;
+	};
+
+	const elapsedSeconds =
+		(state.oilDrumFireElapsedSeconds ?? 0) + Math.max(0, params.deltaSeconds);
+	const frame = Math.floor(elapsedSeconds * fps) % frameCount;
+
+	state.oilDrumFireElapsedSeconds = elapsedSeconds;
+	state.oilDrumFireFrame = frame;
+
+	const texture = spriteMaterial.map as THREE.Texture;
+	texture.wrapS = THREE.RepeatWrapping;
+	texture.wrapT = THREE.ClampToEdgeWrapping;
+	texture.repeat.set(1 / frameCount, 1);
+	texture.offset.set(frame / frameCount, 0);
+	texture.needsUpdate = true;
+	spriteMaterial.needsUpdate = true;
+}
+
+function canAdvanceOilDrumFireAnimation(params: {
+	health: OilDrumHealthState;
+	sprite?: THREE.Sprite;
+}): boolean {
+	if (!params.sprite) {
+		return false;
+	}
+
+	if (resolveOilDrumVisualState(params.health) !== 'fire') {
+		return false;
+	}
+
+	if (getOilDrumVisualState(params.sprite) !== 'fire') {
+		return false;
+	}
+
+	const spriteMaterial = params.sprite.material;
+	return spriteMaterial instanceof THREE.SpriteMaterial && Boolean(spriteMaterial.map);
 }
 
 export function addDefaultOilDrumEntityToScene(config: {

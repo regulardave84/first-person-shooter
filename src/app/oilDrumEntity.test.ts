@@ -1,15 +1,20 @@
 import { describe, expect, it, vi } from 'vitest';
 import * as THREE from 'three';
 import {
+	DEFAULT_OIL_DRUM_FIRE_ANIMATION_FPS,
+	DEFAULT_OIL_DRUM_FIRE_ANIMATION_FRAME_COUNT,
+	DEFAULT_OIL_DRUM_FIRE_THRESHOLD_RATIO,
 	DEFAULT_OIL_DRUM_BULLET_DAMAGE,
 	DEFAULT_OIL_DRUM_COLLIDER_HEIGHT,
 	DEFAULT_OIL_DRUM_COLLIDER_RADIUS,
 	DEFAULT_OIL_DRUM_DESTROYED_SPRITE_ASSET_PATH,
 	DEFAULT_OIL_DRUM_MAX_HEALTH,
+	DEFAULT_OIL_DRUM_ON_FIRE_SPRITE_ASSET_PATH,
 	DEFAULT_OIL_DRUM_SPAWN_OFFSET,
 	DEFAULT_OIL_DRUM_SPRITE_ASSET_PATH,
 	DEFAULT_OIL_DRUM_SPRITE_SCALE,
 	OIL_DRUM_ENTITY_NAME,
+	advanceOilDrumFireAnimation,
 	applyOilDrumHit,
 	addDefaultOilDrumEntityToScene,
 	createOilDrumHealthState,
@@ -24,6 +29,12 @@ describe('oilDrumEntity', () => {
 		expect(DEFAULT_OIL_DRUM_DESTROYED_SPRITE_ASSET_PATH).toContain(
 			'oil_drum_destroyed.png',
 		);
+		expect(DEFAULT_OIL_DRUM_ON_FIRE_SPRITE_ASSET_PATH).toContain(
+			'oil_drum_on_fire.png',
+		);
+		expect(DEFAULT_OIL_DRUM_FIRE_THRESHOLD_RATIO).toBe(0.5);
+		expect(DEFAULT_OIL_DRUM_FIRE_ANIMATION_FRAME_COUNT).toBe(8);
+		expect(DEFAULT_OIL_DRUM_FIRE_ANIMATION_FPS).toBe(12);
 		expect(DEFAULT_OIL_DRUM_SPAWN_OFFSET).toEqual({
 			x: 1.25,
 			y: -0.6,
@@ -199,6 +210,81 @@ describe('oilDrumEntity', () => {
 		expect(hit.wasRemoved).toBe(false);
 	});
 
+	it('swaps to on-fire sprite when health drops below half but remains above zero', () => {
+		const sprite = new THREE.Sprite(new THREE.SpriteMaterial());
+		const fireTexture = new THREE.Texture();
+		const load = vi.fn(() => fireTexture);
+
+		const hit = applyOilDrumHit({
+			health: { currentHealth: 65, maxHealth: 100 },
+			source: 'bullet',
+			bulletDamage: 35,
+			sprite,
+			textureLoader: { load },
+		});
+
+		expect(hit.health.currentHealth).toBe(30);
+		expect(load).toHaveBeenCalledWith(
+			expect.stringContaining('oil_drum_on_fire.png'),
+			undefined,
+			undefined,
+			expect.any(Function),
+		);
+		expect((sprite.material as THREE.SpriteMaterial).map).toBe(fireTexture);
+		expect((sprite.userData as { oilDrumVisualState?: string }).oilDrumVisualState).toBe(
+			'fire',
+		);
+		expect(fireTexture.wrapS).toBe(THREE.RepeatWrapping);
+		expect(fireTexture.repeat.x).toBeCloseTo(
+			1 / DEFAULT_OIL_DRUM_FIRE_ANIMATION_FRAME_COUNT,
+		);
+		expect(fireTexture.offset.x).toBeCloseTo(0);
+	});
+
+	it('does not reload fire texture when oil drum is already in fire visual state', () => {
+		const sprite = new THREE.Sprite(new THREE.SpriteMaterial());
+		const fireTexture = new THREE.Texture();
+		const load = vi.fn(() => fireTexture);
+
+		const first = applyOilDrumHit({
+			health: { currentHealth: 49, maxHealth: 100 },
+			source: 'bullet',
+			bulletDamage: 5,
+			sprite,
+			textureLoader: { load },
+		});
+		const second = applyOilDrumHit({
+			health: first.health,
+			source: 'bullet',
+			bulletDamage: 5,
+			sprite,
+			textureLoader: { load },
+		});
+
+		expect(first.health.currentHealth).toBe(44);
+		expect(second.health.currentHealth).toBe(39);
+		expect(load).toHaveBeenCalledTimes(1);
+	});
+
+	it('does not switch to fire visual at exactly half health', () => {
+		const sprite = new THREE.Sprite(new THREE.SpriteMaterial());
+		const initialMap = new THREE.Texture();
+		(sprite.material as THREE.SpriteMaterial).map = initialMap;
+		const load = vi.fn(() => new THREE.Texture());
+
+		const hit = applyOilDrumHit({
+			health: { currentHealth: 100, maxHealth: 100 },
+			source: 'bullet',
+			bulletDamage: 50,
+			sprite,
+			textureLoader: { load },
+		});
+
+		expect(hit.health.currentHealth).toBe(50);
+		expect(load).not.toHaveBeenCalled();
+		expect((sprite.material as THREE.SpriteMaterial).map).toBe(initialMap);
+	});
+
 	it('falls back to default bullet damage when configured damage is not positive', () => {
 		const hit = applyOilDrumHit({
 			health: { currentHealth: 100, maxHealth: 100 },
@@ -284,6 +370,90 @@ describe('oilDrumEntity', () => {
 		expect(second.didApplyDamage).toBe(false);
 		expect(second.damageApplied).toBe(0);
 		expect(second.health.currentHealth).toBe(0);
+	});
+
+	it('advances fire animation frames in a loop while oil drum is below half health', () => {
+		const sprite = new THREE.Sprite(new THREE.SpriteMaterial());
+		const fireTexture = new THREE.Texture();
+		const load = vi.fn(() => fireTexture);
+
+		applyOilDrumHit({
+			health: { currentHealth: 65, maxHealth: 100 },
+			source: 'bullet',
+			bulletDamage: 35,
+			sprite,
+			textureLoader: { load },
+		});
+
+		advanceOilDrumFireAnimation({
+			health: { currentHealth: 30, maxHealth: 100 },
+			sprite,
+			deltaSeconds: 1 / DEFAULT_OIL_DRUM_FIRE_ANIMATION_FPS,
+		});
+
+		expect(fireTexture.repeat.x).toBeCloseTo(
+			1 / DEFAULT_OIL_DRUM_FIRE_ANIMATION_FRAME_COUNT,
+		);
+		expect(fireTexture.offset.x).toBeCloseTo(
+			1 / DEFAULT_OIL_DRUM_FIRE_ANIMATION_FRAME_COUNT,
+		);
+	});
+
+	it('does not advance fire animation when visual state is not fire', () => {
+		const sprite = new THREE.Sprite(new THREE.SpriteMaterial());
+		const texture = new THREE.Texture();
+		texture.offset.set(0.25, 0);
+		(sprite.material as THREE.SpriteMaterial).map = texture;
+		(sprite.userData as { oilDrumVisualState?: string }).oilDrumVisualState =
+			'default';
+
+		advanceOilDrumFireAnimation({
+			health: { currentHealth: 30, maxHealth: 100 },
+			sprite,
+			deltaSeconds: 0.5,
+		});
+
+		expect(texture.offset.x).toBeCloseTo(0.25);
+	});
+
+	it('does not advance fire animation when health is not in fire range', () => {
+		const sprite = new THREE.Sprite(new THREE.SpriteMaterial());
+		const texture = new THREE.Texture();
+		texture.offset.set(0.125, 0);
+		(sprite.material as THREE.SpriteMaterial).map = texture;
+		(sprite.userData as { oilDrumVisualState?: string }).oilDrumVisualState =
+			'fire';
+
+		advanceOilDrumFireAnimation({
+			health: { currentHealth: 50, maxHealth: 100 },
+			sprite,
+			deltaSeconds: 0.5,
+		});
+
+		expect(texture.offset.x).toBeCloseTo(0.125);
+	});
+
+	it('emits fire-visual update event when entering fire state', () => {
+		const sprite = new THREE.Sprite(new THREE.SpriteMaterial());
+		const fireTexture = new THREE.Texture();
+		const load = vi.fn(() => fireTexture);
+		const info = vi.fn();
+
+		applyOilDrumHit({
+			health: { currentHealth: 65, maxHealth: 100 },
+			source: 'bullet',
+			bulletDamage: 35,
+			sprite,
+			textureLoader: { load },
+			logger: { info },
+		});
+
+		expect(info).toHaveBeenCalledWith(
+			'oil.drum.fire.visual.updated',
+			expect.objectContaining({
+				assetUrl: expect.stringContaining('oil_drum_on_fire.png'),
+			}),
+		);
 	});
 
 	it('logs damage and destroyed-visual events when destroyed by a bullet', () => {

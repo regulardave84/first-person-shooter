@@ -4,6 +4,59 @@ Persistent execution log for the `implementer` skill.
 
 ---
 
+## 2026-11-14 — Oil drum on-fire visual below half health
+
+- Timestamp: 2026-11-14
+- Feature file: src/acceptance/features/oil_drum_on_fire.acceptance.feature
+- Complexity: medium
+- Current phase: P4
+- Checkpoint status: COMPLETE (`SPECIFIER_COMPLETE` -> `IMPLEMENTER_COMPLETE`) with `CLEANER_COMPLETE` and `HARDENER_COMPLETE`
+
+### Completed work
+
+- Added on-fire oil drum visual constants and thresholds in `src/app/oilDrumEntity.ts`.
+- Implemented visual transition logic so oil drums switch to on-fire sprite for `0 < health < 50%` and switch to destroyed sprite at `0` health.
+- Added looping fire sprite-sheet animation advancement utility with defaults (`8` frames, `12` FPS).
+- Wired runtime frame loop integration in `src/app/bootstrap.ts` so fire animation advances continuously while visible.
+- Added unit and acceptance coverage for threshold behavior, animation progression, and destroyed-state override.
+- Promoted approved Gherkin to acceptance and marked proposed feature as superseded.
+
+### Files changed so far
+
+- src/app/oilDrumEntity.ts
+- src/app/oilDrumEntity.test.ts
+- src/app/bootstrap.ts
+- src/bootstrap.test.ts
+- src/acceptance/features/oil_drum_on_fire.acceptance.feature
+- src/acceptance/features/oil_drum_on_fire.proposed.feature
+- src/acceptance/tests/oilDrumOnFire.acceptance.test.ts
+
+### Scenario -> test mapping
+
+- Oil drum enters fire visual state below half health -> `src/app/oilDrumEntity.test.ts` (`swaps to on-fire sprite when health drops below half but remains above zero`) + `src/acceptance/tests/oilDrumOnFire.acceptance.test.ts` (`Oil drum enters fire visual state below half health`)
+- Fire animation advances while oil drum remains below half health -> `src/app/oilDrumEntity.test.ts` (`advances fire animation frames in a loop while oil drum is below half health`) + `src/acceptance/tests/oilDrumOnFire.acceptance.test.ts` (`Fire animation advances while oil drum remains below half health`) + `src/bootstrap.test.ts` (`runs one animation frame, renders, and wires resize handling`)
+- Oil drum does not enter fire visual state at half health or above -> `src/app/oilDrumEntity.test.ts` (`does not switch to fire visual at exactly half health`) + `src/acceptance/tests/oilDrumOnFire.acceptance.test.ts` (`Oil drum does not enter fire visual state at half health`)
+- Destroyed visual overrides fire visual at zero health -> `src/acceptance/tests/oilDrumOnFire.acceptance.test.ts` (`Destroyed visual overrides fire visual at zero health`) + `src/app/oilDrumEntity.test.ts` (`swaps to destroyed sprite when bullet damage destroys it`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Hardener: PASS (`npm run test:mutation:branch` -> `100.00%`, target `>= 80%`)
+
+### Risks / blockers
+
+- None currently.
+
+### Next action
+
+- Proceed to final handoff.
+
+### User review status
+
+- Approved
+
 ## 2026-11-14 — Destroyed oil drum collision preservation
 
 - Timestamp: 2026-11-14

@@ -17,6 +17,7 @@ import {
 } from './floorTexture';
 import {
 	DEFAULT_OIL_DRUM_BULLET_DAMAGE,
+	advanceOilDrumFireAnimation,
 	addDefaultOilDrumEntityToScene,
 	applyOilDrumHit,
 } from './oilDrumEntity';
@@ -433,6 +434,11 @@ function animate() {
 	});
 	activeProjectiles = projectileStep.activeProjectiles;
 	handleProjectileImpacts(projectileStep.impacts);
+	advanceOilDrumFireAnimation({
+		health: oilDrumHealth,
+		sprite: oilDrumEntity.sprite,
+		deltaSeconds: dt,
+	});
 
 	for (const projectile of activeProjectiles) {
 		upsertProjectileVisual(projectile);

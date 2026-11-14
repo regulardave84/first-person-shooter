@@ -228,6 +228,7 @@ const runtimeMocks = vi.hoisted(() => ({
 
 const oilDrumEntityMocks = vi.hoisted(() => ({
 	DEFAULT_OIL_DRUM_BULLET_DAMAGE: 35,
+	advanceOilDrumFireAnimation: vi.fn(),
 	applyOilDrumHit: vi.fn(
 		(params: {
 			health: { currentHealth: number; maxHealth: number };
@@ -361,6 +362,7 @@ vi.mock('./runtime/fpsRuntime', () => ({
 vi.mock('./app/oilDrumEntity', () => ({
 	DEFAULT_OIL_DRUM_BULLET_DAMAGE:
 		oilDrumEntityMocks.DEFAULT_OIL_DRUM_BULLET_DAMAGE,
+	advanceOilDrumFireAnimation: oilDrumEntityMocks.advanceOilDrumFireAnimation,
 	applyOilDrumHit: oilDrumEntityMocks.applyOilDrumHit,
 	addDefaultOilDrumEntityToScene:
 		oilDrumEntityMocks.addDefaultOilDrumEntityToScene,
@@ -1008,6 +1010,15 @@ describe('bootstrap runtime wiring', () => {
 		expect(runtimeMocks.stepProjectiles).toHaveBeenCalledWith(
 			expect.objectContaining({
 				projectiles: [],
+			}),
+		);
+		expect(oilDrumEntityMocks.advanceOilDrumFireAnimation).toHaveBeenCalledWith(
+			expect.objectContaining({
+				health: expect.objectContaining({
+					currentHealth: expect.any(Number),
+					maxHealth: expect.any(Number),
+				}),
+				deltaSeconds: 0.016,
 			}),
 		);
 
