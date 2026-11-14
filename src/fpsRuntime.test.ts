@@ -1130,6 +1130,90 @@ describe('fpsRuntime helpers', () => {
 		audioWindow.Audio = originalAudio;
 	});
 
+	it('keeps walking footstep stop as a no-op before playback starts', () => {
+		const audioElement = {
+			loop: false,
+			volume: 1,
+			currentTime: 0,
+			play: vi.fn(() => Promise.resolve()),
+			pause: vi.fn(),
+		};
+		const audioWindow = globalThis as typeof globalThis & {
+			Audio?: typeof Audio;
+		};
+		const originalAudio = audioWindow.Audio;
+		class AudioMock {
+			constructor() {
+				return audioElement as unknown as HTMLAudioElement;
+			}
+		}
+		audioWindow.Audio = AudioMock as unknown as typeof Audio;
+
+		const player = createWalkingFootstepSoundPlayer();
+		player.stop();
+
+		expect(audioElement.pause).not.toHaveBeenCalled();
+
+		audioWindow.Audio = originalAudio;
+	});
+
+	it('logs warnings for walking footstep playback promise rejection and sync throw', async () => {
+		const sink = vi.fn();
+		const logger = createRuntimeLogger({ enabled: true, sink });
+		const rejectingAudioElement = {
+			loop: false,
+			volume: 1,
+			currentTime: 0,
+			play: vi.fn(() => Promise.reject(new Error('autoplay blocked'))),
+			pause: vi.fn(),
+		};
+		const throwingAudioElement = {
+			loop: false,
+			volume: 1,
+			currentTime: 0,
+			play: vi.fn(() => {
+				throw 'boom';
+			}),
+			pause: vi.fn(),
+		};
+		const audioWindow = globalThis as typeof globalThis & {
+			Audio?: typeof Audio;
+		};
+		const originalAudio = audioWindow.Audio;
+
+		class RejectingAudioMock {
+			constructor() {
+				return rejectingAudioElement as unknown as HTMLAudioElement;
+			}
+		}
+		audioWindow.Audio = RejectingAudioMock as unknown as typeof Audio;
+		const rejectingPlayer = createWalkingFootstepSoundPlayer(logger);
+		rejectingPlayer.play();
+		await Promise.resolve();
+
+		class ThrowingAudioMock {
+			constructor() {
+				return throwingAudioElement as unknown as HTMLAudioElement;
+			}
+		}
+		audioWindow.Audio = ThrowingAudioMock as unknown as typeof Audio;
+		const throwingPlayer = createWalkingFootstepSoundPlayer(logger);
+		throwingPlayer.play();
+
+		expect(sink).toHaveBeenCalledWith({
+			level: 'warn',
+			event: 'footstep.sound.failed',
+			context: expect.objectContaining({ error: 'autoplay blocked' }),
+		});
+		expect(sink).toHaveBeenCalledWith({
+			level: 'warn',
+			event: 'footstep.sound.failed',
+			context: expect.objectContaining({ error: 'unknown' }),
+		});
+
+		audioWindow.Audio = originalAudio;
+	});
+
 	it('routes walking footstep activation helper to play and stop', () => {
 		const player = {
 			play: vi.fn(),
