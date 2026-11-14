@@ -163,6 +163,13 @@ const runtimeMocks = vi.hoisted(() => ({
 		play: vi.fn(),
 		stop: vi.fn(),
 	})),
+	createOilDrumFireSoundPlayer: vi.fn(() => ({
+		play: vi.fn(),
+		stop: vi.fn(),
+	})),
+	createOilDrumExplosionSoundPlayer: vi.fn(() => ({
+		play: vi.fn(),
+	})),
 	createInitialFootstepCadenceState: vi.fn(() => ({
 		secondsUntilNextStep: 0,
 		lastMode: null,
@@ -368,6 +375,9 @@ vi.mock('./runtime/fpsRuntime', () => ({
 		runtimeMocks.createWalkingFootstepSoundPlayer,
 	createRunningFootstepSoundPlayer:
 		runtimeMocks.createRunningFootstepSoundPlayer,
+	createOilDrumFireSoundPlayer: runtimeMocks.createOilDrumFireSoundPlayer,
+	createOilDrumExplosionSoundPlayer:
+		runtimeMocks.createOilDrumExplosionSoundPlayer,
 	createInitialFootstepCadenceState:
 		runtimeMocks.createInitialFootstepCadenceState,
 	handleJumpInput: runtimeMocks.handleJumpInput,
@@ -1563,5 +1573,64 @@ describe('bootstrap runtime wiring', () => {
 		);
 		expect(threeState.vectors[0]?.z).toBeCloseTo(0.05);
 		expect(threeState.vectors[1]?.z).toBeCloseTo(-0.3);
+	});
+
+	it('plays each oil drum sound only once per state transition and resets when the state exits', async () => {
+		const fireSoundPlayer = { play: vi.fn(), stop: vi.fn() };
+		const explosionSoundPlayer = { play: vi.fn() };
+		runtimeMocks.createOilDrumFireSoundPlayer.mockReturnValueOnce(fireSoundPlayer);
+		runtimeMocks.createOilDrumExplosionSoundPlayer.mockReturnValueOnce(
+			explosionSoundPlayer,
+		);
+		oilDrumEntityMocks.addDefaultOilDrumEntityToScene.mockReturnValueOnce({
+			sprite: { name: 'oil-drum-entity' },
+			movementCollider: {
+				x: 1.25,
+				z: 2.25,
+				radius: 0.75,
+				minY: -0.1,
+				maxY: 2.1,
+			},
+			health: {
+				currentHealth: 40,
+				maxHealth: 100,
+			},
+		});
+
+		await import('./app/bootstrap');
+
+		const animationFrame = (
+			globalThis.requestAnimationFrame as ReturnType<typeof vi.fn>
+		).mock.calls[0]?.[0] as (() => void) | undefined;
+		animationFrame?.();
+		animationFrame?.();
+
+		expect(fireSoundPlayer.play).toHaveBeenCalledTimes(1);
+		expect(explosionSoundPlayer.play).not.toHaveBeenCalled();
+
+		oilDrumEntityMocks.advanceOilDrumBurnDamage.mockReturnValueOnce({
+			health: { currentHealth: 0, maxHealth: 100 },
+			didApplyDamage: true,
+			wasRemoved: false,
+			damageApplied: 40,
+		});
+		runtimeMocks.stepProjectiles.mockReturnValueOnce({
+			activeProjectiles: [],
+			impacts: [],
+		});
+		animationFrame?.();
+
+		expect(explosionSoundPlayer.play).toHaveBeenCalledTimes(1);
+		expect(fireSoundPlayer.play).toHaveBeenCalledTimes(1);
+		expect(fireSoundPlayer.stop).toHaveBeenCalledTimes(1);
+
+		oilDrumEntityMocks.advanceOilDrumBurnDamage.mockReturnValueOnce({
+			health: { currentHealth: 20, maxHealth: 100 },
+			didApplyDamage: false,
+			wasRemoved: false,
+			damageApplied: 0,
+		});
+		animationFrame?.();
+		expect(fireSoundPlayer.play).toHaveBeenCalledTimes(2);
 	});
 });

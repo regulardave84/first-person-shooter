@@ -42,6 +42,8 @@ import {
 	createJumpSoundPlayer,
 	createWalkingFootstepSoundPlayer,
 	createRunningFootstepSoundPlayer,
+	createOilDrumFireSoundPlayer,
+	createOilDrumExplosionSoundPlayer,
 	createInitialFootstepCadenceState,
 	createInitialRunKeys,
 	createRuntimeLogger,
@@ -135,7 +137,11 @@ const jumpSound = createJumpSoundPlayer();
 const bulletFireSound = createBulletFireSoundPlayer();
 const walkingFootstepSound = createWalkingFootstepSoundPlayer();
 const runningFootstepSound = createRunningFootstepSoundPlayer();
+const oilDrumFireSound = createOilDrumFireSoundPlayer();
+const oilDrumExplosionSound = createOilDrumExplosionSoundPlayer();
 let footstepCadenceState = createInitialFootstepCadenceState();
+let hasOilDrumFireSoundPlayed = false;
+let hasOilDrumExplosionSoundPlayed = false;
 
 applyDefaultWorldCeilingSkybox(scene, {
 	logger: {
@@ -311,6 +317,7 @@ function handleProjectileImpacts(
 		if (hit.health.currentHealth <= 0) {
 			isOilDrumActive = false;
 		}
+		syncOilDrumAudioState();
 	}
 }
 
@@ -402,15 +409,44 @@ document.addEventListener('mousemove', (event) => {
 
 const clock = new THREE.Clock();
 
+function syncOilDrumAudioState(): void {
+	const fireThresholdHealth = oilDrumHealth.maxHealth * 0.5;
+	const isOilDrumOnFire =
+		oilDrumHealth.currentHealth > 0 &&
+		oilDrumHealth.currentHealth < fireThresholdHealth;
+	const isOilDrumExploding = oilDrumHealth.currentHealth <= 0;
+
+	if (isOilDrumOnFire && !hasOilDrumFireSoundPlayed) {
+		oilDrumFireSound.play();
+		hasOilDrumFireSoundPlayed = true;
+	}
+	if (!isOilDrumOnFire) {
+		hasOilDrumFireSoundPlayed = false;
+	}
+
+	if (isOilDrumExploding && !hasOilDrumExplosionSoundPlayed) {
+		oilDrumFireSound.stop();
+		oilDrumExplosionSound.play();
+		hasOilDrumExplosionSoundPlayed = true;
+	}
+	if (!isOilDrumExploding) {
+		hasOilDrumExplosionSoundPlayed = false;
+	}
+}
+
+function resolveMoveSpeedMultiplier(): number {
+	if (!jumpState.isGrounded) {
+		return airborneRunSpeedMultiplier;
+	}
+
+	return isRunActive(runKeys) ? RUN_SPEED_MULTIPLIER : 1;
+}
+
 function animate() {
 	requestAnimationFrame(animate);
 
 	const dt = clock.getDelta();
-	const moveSpeedMultiplier = jumpState.isGrounded
-		? isRunActive(runKeys)
-			? RUN_SPEED_MULTIPLIER
-			: 1
-		: airborneRunSpeedMultiplier;
+	const moveSpeedMultiplier = resolveMoveSpeedMultiplier();
 	const nextPosition = applyFrameMovement({
 		position: camera.position,
 		keys,
@@ -468,6 +504,7 @@ function animate() {
 	if (oilDrumHealth.currentHealth <= 0) {
 		isOilDrumActive = false;
 	}
+	syncOilDrumAudioState();
 
 	const projectileStep = stepProjectiles({
 		projectiles: activeProjectiles,
