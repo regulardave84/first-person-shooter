@@ -63,7 +63,10 @@ describe('Acceptance: Destroyed oil drum preserves movement collision', () => {
 		);
 
 		for (const resolved of [walking, running, jumping]) {
-			const distance = Math.hypot(resolved.x - collider.x, resolved.z - collider.z);
+			const distance = Math.hypot(
+				resolved.x - collider.x,
+				resolved.z - collider.z,
+			);
 			expect(distance).toBeGreaterThanOrEqual(minAllowedDistance);
 		}
 	});

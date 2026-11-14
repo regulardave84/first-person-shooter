@@ -207,9 +207,7 @@ describe('oilDrumEntity', () => {
 		});
 
 		expect(hit.damageApplied).toBe(DEFAULT_OIL_DRUM_BULLET_DAMAGE);
-		expect(hit.health.currentHealth).toBe(
-			100 - DEFAULT_OIL_DRUM_BULLET_DAMAGE,
-		);
+		expect(hit.health.currentHealth).toBe(100 - DEFAULT_OIL_DRUM_BULLET_DAMAGE);
 	});
 
 	it('normalizes bullet damage to a floored integer', () => {
@@ -262,7 +260,9 @@ describe('oilDrumEntity', () => {
 			undefined,
 			expect.any(Function),
 		);
-		expect((sprite.material as THREE.SpriteMaterial).map).toBe(destroyedTexture);
+		expect((sprite.material as THREE.SpriteMaterial).map).toBe(
+			destroyedTexture,
+		);
 	});
 
 	it('does not apply additional bullet damage once oil drum is destroyed', () => {

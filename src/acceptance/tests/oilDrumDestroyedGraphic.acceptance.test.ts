@@ -17,7 +17,9 @@ describe('Acceptance: Oil drum destroyed visual state', () => {
 		});
 
 		expect(hit.health.currentHealth).toBe(0);
-		expect((sprite.material as THREE.SpriteMaterial).map).toBe(destroyedTexture);
+		expect((sprite.material as THREE.SpriteMaterial).map).toBe(
+			destroyedTexture,
+		);
 	});
 
 	it('Destroyed oil drum remains in scene and becomes inactive', () => {

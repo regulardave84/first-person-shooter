@@ -47,7 +47,9 @@ describe('Acceptance: Oil drum takes configurable bullet damage', () => {
 		expect(hit.health.currentHealth).toBe(0);
 		expect(hit.wasRemoved).toBe(false);
 		expect(scene.children).toContain(sprite);
-		expect((sprite.material as THREE.SpriteMaterial).map).toBe(destroyedTexture);
+		expect((sprite.material as THREE.SpriteMaterial).map).toBe(
+			destroyedTexture,
+		);
 	});
 
 	it('Bullet-only damage does not apply from non-bullet sources', () => {
