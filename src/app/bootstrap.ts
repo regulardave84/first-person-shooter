@@ -158,7 +158,7 @@ for (const wall of WORLD_WALLS) {
 	);
 }
 
-addDefaultOilDrumEntityToScene({
+const oilDrumEntity = addDefaultOilDrumEntityToScene({
 	scene,
 	playerStartPosition: {
 		x: camera.position.x,
@@ -361,6 +361,7 @@ function animate() {
 		logger: runtimeLogger,
 		jumpState,
 		groundY: PLAYER_HEIGHT,
+		entityColliders: [oilDrumEntity.movementCollider],
 	});
 	if (jumpState.isGrounded) {
 		airborneRunSpeedMultiplier = 1;

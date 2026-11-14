@@ -12,6 +12,16 @@ import type { RuntimeLogger } from './logger';
 import { PLAYER_COLLISION_RADIUS, WORLD_WALLS, type WallSpec } from './world';
 import type { Position3D } from './combat';
 
+export type EntityMovementCollider = {
+	x: number;
+	z: number;
+	radius: number;
+	minY: number;
+	maxY: number;
+};
+
+export const PLAYER_MAX_JUMP_OVER_ENTITY_HEIGHT = 2.25;
+
 export function createInitialJumpState(): JumpState {
 	return createJumpState();
 }
@@ -95,29 +105,105 @@ function collidesWithWalls(
 	);
 }
 
+function collidesWithEntity(
+	start: Position3D,
+	end: Position3D,
+	entity: EntityMovementCollider,
+	playerRadius: number,
+): boolean {
+	const entityHeight = entity.maxY - entity.minY;
+	const isJumpOverBlockedByHeight =
+		entityHeight >= PLAYER_MAX_JUMP_OVER_ENTITY_HEIGHT;
+	const minY = Math.min(start.y, end.y);
+	const maxY = Math.max(start.y, end.y);
+	if (
+		!isJumpOverBlockedByHeight &&
+		(maxY < entity.minY || minY > entity.maxY)
+	) {
+		return false;
+	}
+
+	const combinedRadius = playerRadius + entity.radius;
+	const startToEndX = end.x - start.x;
+	const startToEndZ = end.z - start.z;
+	const lengthSquared =
+		startToEndX * startToEndX + startToEndZ * startToEndZ;
+
+	let projection = 0;
+	if (lengthSquared > 0) {
+		projection =
+			((entity.x - start.x) * startToEndX +
+				(entity.z - start.z) * startToEndZ) /
+			lengthSquared;
+		projection = Math.max(0, Math.min(1, projection));
+	}
+
+	const closestX = start.x + startToEndX * projection;
+	const closestZ = start.z + startToEndZ * projection;
+	const dx = closestX - entity.x;
+	const dz = closestZ - entity.z;
+
+	return dx * dx + dz * dz <= combinedRadius * combinedRadius;
+}
+
+function collidesWithEntities(
+	start: Position3D,
+	end: Position3D,
+	entityColliders: ReadonlyArray<EntityMovementCollider>,
+	playerRadius: number,
+): boolean {
+	return entityColliders.some((entity) =>
+		collidesWithEntity(start, end, entity, playerRadius),
+	);
+}
+
+function collidesWithBlockedGeometry(
+	start: Position3D,
+	end: Position3D,
+	walls: ReadonlyArray<WallSpec>,
+	entityColliders: ReadonlyArray<EntityMovementCollider>,
+	playerRadius: number,
+): boolean {
+	return (
+		collidesWithWalls(end.x, end.z, walls, playerRadius) ||
+		collidesWithEntities(start, end, entityColliders, playerRadius)
+	);
+}
+
 export function resolveHorizontalMovement(
 	position: Position3D,
 	desired: Position3D,
 	walls: ReadonlyArray<WallSpec> = WORLD_WALLS,
 	playerRadius = PLAYER_COLLISION_RADIUS,
+	entityColliders: ReadonlyArray<EntityMovementCollider> = [],
 ): Position3D {
 	const next = { ...position, x: desired.x, y: desired.y, z: desired.z };
-	if (!collidesWithWalls(next.x, next.z, walls, playerRadius)) {
+	if (
+		!collidesWithBlockedGeometry(
+			position,
+			next,
+			walls,
+			entityColliders,
+			playerRadius,
+		)
+	) {
 		return next;
 	}
 
 	const xOnly = { ...position, x: desired.x, y: desired.y };
 	const zOnly = { ...position, z: desired.z, y: desired.y };
-	const xOnlyBlocked = collidesWithWalls(
-		xOnly.x,
-		position.z,
+	const xOnlyBlocked = collidesWithBlockedGeometry(
+		position,
+		{ ...xOnly, z: position.z },
 		walls,
+		entityColliders,
 		playerRadius,
 	);
-	const zOnlyBlocked = collidesWithWalls(
-		position.x,
-		zOnly.z,
+	const zOnlyBlocked = collidesWithBlockedGeometry(
+		position,
+		{ ...zOnly, x: position.x },
 		walls,
+		entityColliders,
 		playerRadius,
 	);
 
@@ -141,6 +227,7 @@ export function applyFrameMovement(params: {
 	logger?: RuntimeLogger;
 	jumpState?: JumpState;
 	groundY?: number;
+	entityColliders?: ReadonlyArray<EntityMovementCollider>;
 }): Position3D {
 	const safeDeltaTime = normalizeDeltaTime(params.dt, params.logger);
 	const move = getMovementDelta(
@@ -172,6 +259,7 @@ export function applyFrameMovement(params: {
 		rawNextPosition,
 		WORLD_WALLS,
 		PLAYER_COLLISION_RADIUS,
+		params.entityColliders,
 	);
 
 	params.logger?.debug('frame.movementApplied', {

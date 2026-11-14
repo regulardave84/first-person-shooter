@@ -214,7 +214,16 @@ const runtimeMocks = vi.hoisted(() => ({
 }));
 
 const oilDrumEntityMocks = vi.hoisted(() => ({
-	addDefaultOilDrumEntityToScene: vi.fn(),
+	addDefaultOilDrumEntityToScene: vi.fn(() => ({
+		sprite: { name: 'oil-drum-entity' },
+		movementCollider: {
+			x: 1.25,
+			z: 2.25,
+			radius: 0.75,
+			minY: -0.1,
+			maxY: 2.1,
+		},
+	})),
 }));
 
 const threeState = vi.hoisted(() => ({
@@ -927,6 +936,13 @@ describe('bootstrap runtime wiring', () => {
 				dt: 0.016,
 				moveSpeed: 5,
 				playerHeight: 1.6,
+				entityColliders: [
+					expect.objectContaining({
+						x: 1.25,
+						z: 2.25,
+						radius: 0.75,
+					}),
+				],
 				logger: expect.any(Object),
 			}),
 		);

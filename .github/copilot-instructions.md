@@ -39,6 +39,10 @@ Before final handoff, ensure these pass unless blocked by user-approved exceptio
 - `npm run build`
 - `npm run test:mutation:branch` (hardener target: >= 80%, only when implementation source code changed)
 
+## Terminal polling cadence for long-running tasks
+
+- When waiting for long-running terminal work (for example mutation testing), poll terminal output every 5 minutes by default unless the user requests a different cadence.
+
 ## Change-control rules
 
 - Do not modify approved acceptance Gherkin without explicit user permission.

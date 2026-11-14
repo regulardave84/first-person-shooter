@@ -1,11 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
 import * as THREE from 'three';
 import {
+	DEFAULT_OIL_DRUM_COLLIDER_HEIGHT,
+	DEFAULT_OIL_DRUM_COLLIDER_RADIUS,
 	DEFAULT_OIL_DRUM_SPAWN_OFFSET,
 	DEFAULT_OIL_DRUM_SPRITE_ASSET_PATH,
 	DEFAULT_OIL_DRUM_SPRITE_SCALE,
 	OIL_DRUM_ENTITY_NAME,
 	addDefaultOilDrumEntityToScene,
+	createOilDrumMovementCollider,
 	createOilDrumSprite,
 	resolveOilDrumSpawnPosition,
 } from './oilDrumEntity';
@@ -19,6 +22,8 @@ describe('oilDrumEntity', () => {
 			z: -3.75,
 		});
 		expect(DEFAULT_OIL_DRUM_SPRITE_SCALE).toEqual({ x: 1.8, y: 2.2, z: 1 });
+		expect(DEFAULT_OIL_DRUM_COLLIDER_RADIUS).toBeCloseTo(0.75);
+		expect(DEFAULT_OIL_DRUM_COLLIDER_HEIGHT).toBeCloseTo(2.25);
 	});
 
 	it('resolves a default spawn position in front of the player', () => {
@@ -29,6 +34,18 @@ describe('oilDrumEntity', () => {
 		expect(spawn.x).toBeCloseTo(1.25);
 		expect(spawn.y).toBeCloseTo(1);
 		expect(spawn.z).toBeCloseTo(2.25);
+	});
+
+	it('creates an oil drum movement collider with fixed radius and height span', () => {
+		const collider = createOilDrumMovementCollider({ x: 1.25, y: 1, z: 2.25 });
+
+		expect(collider).toEqual({
+			x: 1.25,
+			z: 2.25,
+			radius: DEFAULT_OIL_DRUM_COLLIDER_RADIUS,
+			minY: 1 - DEFAULT_OIL_DRUM_COLLIDER_HEIGHT / 2,
+			maxY: 1 + DEFAULT_OIL_DRUM_COLLIDER_HEIGHT / 2,
+		});
 	});
 
 	it('creates a named sprite with default scale and texture', () => {
@@ -59,16 +76,24 @@ describe('oilDrumEntity', () => {
 		const texture = new THREE.Texture();
 		const load = vi.fn(() => texture);
 
-		const sprite = addDefaultOilDrumEntityToScene({
+		const added = addDefaultOilDrumEntityToScene({
 			scene,
 			playerStartPosition,
 			textureLoader: { load },
 		});
+		const sprite = added.sprite;
 
 		expect(
 			scene.children.filter((child) => child.name === OIL_DRUM_ENTITY_NAME),
 		).toHaveLength(1);
 		expect(scene.children).toContain(sprite);
+		expect(added.movementCollider).toEqual({
+			x: 1.25,
+			z: 2.25,
+			radius: DEFAULT_OIL_DRUM_COLLIDER_RADIUS,
+			minY: 1 - DEFAULT_OIL_DRUM_COLLIDER_HEIGHT / 2,
+			maxY: 1 + DEFAULT_OIL_DRUM_COLLIDER_HEIGHT / 2,
+		});
 
 		const distanceFromPlayer = sprite.position.distanceTo(
 			new THREE.Vector3(

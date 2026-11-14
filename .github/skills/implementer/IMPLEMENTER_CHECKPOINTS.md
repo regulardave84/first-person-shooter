@@ -4,6 +4,200 @@ Persistent execution log for the `implementer` skill.
 
 ---
 
+## 2026-11-14 — Oil drum top collision blocking
+
+- Timestamp: 2026-11-14
+- Feature file: src/acceptance/features/oil_drum_top_collision_blocking.acceptance.feature
+- Complexity: small
+- Current phase: P4
+- Checkpoint status: COMPLETE (`SPECIFIER_COMPLETE` -> `IMPLEMENTER_COMPLETE`) with `CLEANER_COMPLETE` and `HARDENER_COMPLETE`
+
+### Completed work
+
+- Increased `DEFAULT_OIL_DRUM_COLLIDER_HEIGHT` in `src/app/oilDrumEntity.ts` from `2.2` to `2.25` so the oil drum is treated as non-jumpable by centralized movement rules.
+- Updated oil drum unit and acceptance contract tests for the revised collider height.
+- Added acceptance coverage in `src/acceptance/tests/oilDrumTopCollisionBlocking.acceptance.test.ts` for forward jump-over blocking and threshold alignment.
+- Updated prior oil drum jump-arc acceptance scenario to reflect current non-jumpable oil drum behavior.
+
+### Files changed so far
+
+- src/app/oilDrumEntity.ts
+- src/app/oilDrumEntity.test.ts
+- src/acceptance/features/oil_drum_top_collision_blocking.acceptance.feature
+- src/acceptance/tests/oilDrumTopCollisionBlocking.acceptance.test.ts
+- src/acceptance/features/oil_drum_jump_arc_collision.acceptance.feature
+- src/acceptance/tests/oilDrumJumpArcCollision.acceptance.test.ts
+- src/acceptance/tests/oilDrumCollision.acceptance.test.ts
+
+### Scenario -> test mapping
+
+- Oil drum blocks forward jump-over near the top section -> `src/acceptance/tests/oilDrumTopCollisionBlocking.acceptance.test.ts` (`Oil drum blocks forward jump-over near the top section`)
+- Oil drum collider height supports non-jumpable behavior -> `src/acceptance/tests/oilDrumTopCollisionBlocking.acceptance.test.ts` (`Oil drum collider height supports non-jumpable behavior`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Hardener: PASS (`npm run test:mutation:branch` -> `100.00%`, target `>= 80%`)
+
+### Risks / blockers
+
+- None currently.
+
+### Next action
+
+- Proceed to final handoff.
+
+### User review status
+
+- Approved
+
+## 2026-11-14 — Entity jump-height blocking rule
+
+- Timestamp: 2026-11-14
+- Feature file: src/acceptance/features/entity_jump_height_blocking.acceptance.feature
+- Complexity: medium
+- Current phase: P4
+- Checkpoint status: COMPLETE (`SPECIFIER_COMPLETE` -> `IMPLEMENTER_COMPLETE`) with `CLEANER_COMPLETE` and `HARDENER_COMPLETE`
+
+### Completed work
+
+- Added a fixed gameplay cap constant for jump-over eligibility in `src/runtime/movement.ts`.
+- Enforced centralized collision behavior so entities with `height >= cap` block traversal even when airborne above their top.
+- Preserved overflight for entities below the cap.
+- Added unit coverage in `src/fpsRuntime.test.ts` for equal-height, taller-than-cap, and shorter-than-cap entities.
+- Added acceptance coverage in `src/acceptance/tests/entityJumpHeightBlocking.acceptance.test.ts` mapped to approved scenarios.
+
+### Files changed so far
+
+- src/runtime/movement.ts
+- src/fpsRuntime.test.ts
+- src/acceptance/tests/entityJumpHeightBlocking.acceptance.test.ts
+
+### Scenario -> test mapping
+
+- Equal-height entity blocks jump-over traversal -> `src/fpsRuntime.test.ts` (`blocks overflight when entity height equals jump-over cap`) + `src/acceptance/tests/entityJumpHeightBlocking.acceptance.test.ts` (`Equal-height entity blocks jump-over traversal`)
+- Taller entity blocks jump-over traversal -> `src/fpsRuntime.test.ts` (`blocks overflight when entity height is taller than jump-over cap`) + `src/acceptance/tests/entityJumpHeightBlocking.acceptance.test.ts` (`Taller entity blocks jump-over traversal`)
+- Shorter entity can still be jumped over -> `src/fpsRuntime.test.ts` (`allows crossing over entity footprint when movement stays above entity top`) + `src/acceptance/tests/entityJumpHeightBlocking.acceptance.test.ts` (`Shorter entity can still be jumped over`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Hardener: PASS (`npm run test:mutation:branch`, scoped mutation run completed)
+
+### Risks / blockers
+
+- None currently.
+
+### Next action
+
+- Proceed to final handoff.
+
+### User review status
+
+- Approved
+
+## 2026-11-14 — Oil drum jump-arc collision sweep fix
+
+- Timestamp: 2026-11-14
+- Feature file: src/acceptance/features/oil_drum_jump_arc_collision.acceptance.feature
+- Complexity: medium
+- Current phase: P4
+- Checkpoint status: COMPLETE (`SPECIFIER_COMPLETE` -> `IMPLEMENTER_COMPLETE`) with `CLEANER_COMPLETE` and `HARDENER_COMPLETE`
+
+### Completed work
+
+- Updated movement/entity collision behavior in `src/runtime/movement.ts` to use swept horizontal segment checks against entity colliders.
+- Preserved vertical-span semantics so movement above entity top is allowed while body-level traversal remains blocked.
+- Added tests for tunneling prevention and overflight allowance in `src/fpsRuntime.test.ts`.
+- Added acceptance coverage for jump-arc traversal expectations in `src/acceptance/tests/oilDrumJumpArcCollision.acceptance.test.ts`.
+
+### Files changed so far
+
+- src/runtime/movement.ts
+- src/fpsRuntime.test.ts
+- src/acceptance/features/oil_drum_jump_arc_collision.acceptance.feature
+- src/acceptance/tests/oilDrumJumpArcCollision.acceptance.test.ts
+
+### Scenario -> test mapping
+
+- Player cannot pass through oil drum body at ground height -> `src/acceptance/tests/oilDrumJumpArcCollision.acceptance.test.ts` (`Player cannot pass through oil drum body at ground height`)
+- Player can pass over oil drum when fully above top height -> `src/fpsRuntime.test.ts` (`allows crossing over entity footprint when movement stays above entity top`) + `src/acceptance/tests/oilDrumJumpArcCollision.acceptance.test.ts` (`Player can pass over oil drum when fully above top height`)
+- Jump arc cannot tunnel through oil drum body in a single frame -> `src/fpsRuntime.test.ts` (`prevents tunneling through entity body when both endpoints are outside radius`) + `src/acceptance/tests/oilDrumJumpArcCollision.acceptance.test.ts` (`Jump arc cannot tunnel through oil drum body in a single frame`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Hardener: PASS (`npm run test:mutation:branch` -> `100.00%`, target `>= 80%`)
+
+### Risks / blockers
+
+- None currently.
+
+### Next action
+
+- Proceed to final handoff.
+
+### User review status
+
+- Approved
+
+## 2026-11-14 — Oil drum entity collision blocking
+
+- Timestamp: 2026-11-14
+- Feature file: src/acceptance/features/oil_drum_collision.acceptance.feature
+- Complexity: medium
+- Current phase: P4
+- Checkpoint status: COMPLETE (`SPECIFIER_COMPLETE` -> `IMPLEMENTER_COMPLETE`) with `CLEANER_COMPLETE` and `HARDENER_COMPLETE`
+
+### Completed work
+
+- Added reusable movement-level entity collision support in `src/runtime/movement.ts` via `EntityMovementCollider` and integrated it into `resolveHorizontalMovement()` and `applyFrameMovement()`.
+- Extended the oil drum entity module (`src/app/oilDrumEntity.ts`) with stable collision constants and a collider builder (`createOilDrumMovementCollider()`).
+- Updated oil drum scene insertion helper to return both sprite and movement collider so bootstrap can register gameplay collision data at startup.
+- Wired bootstrap movement calls (`src/app/bootstrap.ts`) to include oil drum colliders every frame.
+- Added/updated unit and acceptance tests for collider contracts and blocked movement behavior.
+
+### Files changed so far
+
+- src/runtime/movement.ts
+- src/app/oilDrumEntity.ts
+- src/app/bootstrap.ts
+- src/fpsRuntime.test.ts
+- src/bootstrap.test.ts
+- src/app/oilDrumEntity.test.ts
+- src/acceptance/tests/oilDrumCollision.acceptance.test.ts
+
+### Scenario -> test mapping
+
+- Oil drum exports a stable collider size contract -> `src/app/oilDrumEntity.test.ts` (`exports stable sprite defaults`, `creates an oil drum movement collider with fixed radius and height span`) + `src/acceptance/tests/oilDrumCollision.acceptance.test.ts` (`Oil drum exports a stable collider size contract`)
+- Oil drum collider is created at spawn position -> `src/app/oilDrumEntity.test.ts` (`adds exactly one oil drum sprite near the starting player position`) + `src/acceptance/tests/oilDrumCollision.acceptance.test.ts` (`Oil drum collider is created at spawn position`)
+- Player movement is blocked by the oil drum -> `src/fpsRuntime.test.ts` (`blocks movement when entering an entity collision radius`) + `src/acceptance/tests/oilDrumCollision.acceptance.test.ts` (`Player movement is blocked by the oil drum`) + `src/bootstrap.test.ts` (`runs one animation frame, renders, and wires resize handling`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Hardener: PASS (`npm run test:mutation:branch` -> `100.00%`, target `>= 80%`)
+
+### Risks / blockers
+
+- None currently.
+
+### Next action
+
+- Proceed to final handoff.
+
+### User review status
+
+- Approved
+
 ## 2026-11-14 — Oil drum startup entity sprite
 
 - Timestamp: 2026-11-14

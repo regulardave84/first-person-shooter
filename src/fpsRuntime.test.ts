@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
 	PROJECTILE_COLOR,
 	PROJECTILE_FIRE_RATE,
+	PLAYER_MAX_JUMP_OVER_ENTITY_HEIGHT,
 	WORLD_PROJECTILE_COLLIDERS,
 	applyFrameMovement,
 	applyViewportResize,
@@ -1072,5 +1073,149 @@ describe('fpsRuntime helpers', () => {
 		expect(next.x).toBeGreaterThanOrEqual(5);
 		expect(next.x).toBeLessThanOrEqual(9.5);
 		expect(next.z).toBeCloseTo(7.5);
+	});
+
+	it('blocks movement when entering an entity collision radius', () => {
+		const position = { x: 0, y: 1.6, z: 2 };
+		const entityColliders = [
+			{
+				x: 2,
+				z: 2,
+				radius: 0.75,
+				minY: 0,
+				maxY: 2.2,
+			},
+		];
+
+		const next = resolveHorizontalMovement(
+			position,
+			{ x: 2, y: 1.6, z: 2 },
+			[],
+			0.9,
+			entityColliders,
+		);
+
+		expect(next.x).toBeLessThan(2);
+		expect(next.z).toBeCloseTo(2);
+	});
+
+	it('ignores entity blockers when player is outside collider vertical span', () => {
+		const position = { x: 0, y: 3.5, z: 2 };
+		const entityColliders = [
+			{
+				x: 2,
+				z: 2,
+				radius: 0.75,
+				minY: 0,
+				maxY: 2.2,
+			},
+		];
+
+		const next = resolveHorizontalMovement(
+			position,
+			{ x: 2, y: 3.5, z: 2 },
+			[],
+			0.9,
+			entityColliders,
+		);
+
+		expect(next.x).toBeCloseTo(2);
+		expect(next.z).toBeCloseTo(2);
+	});
+
+	it('prevents tunneling through entity body when both endpoints are outside radius', () => {
+		const position = { x: -2, y: 1.6, z: 2 };
+		const entityColliders = [
+			{
+				x: 0,
+				z: 2,
+				radius: 0.75,
+				minY: 0,
+				maxY: 2.2,
+			},
+		];
+
+		const next = resolveHorizontalMovement(
+			position,
+			{ x: 2, y: 1.6, z: 2 },
+			[],
+			0.9,
+			entityColliders,
+		);
+
+		expect(next.x).toBeLessThan(0);
+		expect(next.z).toBeCloseTo(2);
+	});
+
+	it('allows crossing over entity footprint when movement stays above entity top', () => {
+		const position = { x: -2, y: 3.5, z: 2 };
+		const entityColliders = [
+			{
+				x: 0,
+				z: 2,
+				radius: 0.75,
+				minY: 0,
+				maxY: 2.2,
+			},
+		];
+
+		const next = resolveHorizontalMovement(
+			position,
+			{ x: 2, y: 3.5, z: 2 },
+			[],
+			0.9,
+			entityColliders,
+		);
+
+		expect(next.x).toBeCloseTo(2);
+		expect(next.z).toBeCloseTo(2);
+	});
+
+	it('blocks overflight when entity height equals jump-over cap', () => {
+		const position = { x: -2, y: 4.5, z: 2 };
+		const entityColliders = [
+			{
+				x: 0,
+				z: 2,
+				radius: 0.75,
+				minY: 0,
+				maxY: PLAYER_MAX_JUMP_OVER_ENTITY_HEIGHT,
+			},
+		];
+
+		const next = resolveHorizontalMovement(
+			position,
+			{ x: 2, y: 4.5, z: 2 },
+			[],
+			0.9,
+			entityColliders,
+		);
+
+		expect(next.x).toBeLessThan(0);
+		expect(next.z).toBeCloseTo(2);
+	});
+
+	it('blocks overflight when entity height is taller than jump-over cap', () => {
+		const position = { x: -2, y: 5, z: 2 };
+		const entityColliders = [
+			{
+				x: 0,
+				z: 2,
+				radius: 0.75,
+				minY: 0,
+				maxY: PLAYER_MAX_JUMP_OVER_ENTITY_HEIGHT + 0.5,
+			},
+		];
+
+		const next = resolveHorizontalMovement(
+			position,
+			{ x: 2, y: 5, z: 2 },
+			[],
+			0.9,
+			entityColliders,
+		);
+
+		expect(next.x).toBeLessThan(0);
+		expect(next.z).toBeCloseTo(2);
 	});
 });
