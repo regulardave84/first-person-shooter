@@ -159,12 +159,22 @@ const runtimeMocks = vi.hoisted(() => ({
 		play: vi.fn(),
 		stop: vi.fn(),
 	})),
+	createRunningFootstepSoundPlayer: vi.fn(() => ({
+		play: vi.fn(),
+		stop: vi.fn(),
+	})),
+	createInitialFootstepCadenceState: vi.fn(() => ({
+		secondsUntilNextStep: 0,
+		lastMode: null,
+	})),
 	handleJumpInput: vi.fn((state, code) => {
 		if (code !== 'Space' || !state.isGrounded) {
 			return state;
 		}
 		return { isGrounded: false, verticalVelocity: 5.2 };
 	}),
+	resolvePlayerFootstepMode: vi.fn(() => 'walking' as 'idle' | 'walking' | 'running'),
+	advanceFootstepCadence: vi.fn((params: { state: unknown }) => params.state),
 	setPrimaryFirePressedState: vi.fn((state) => state),
 	setWalkingFootstepSoundActive: vi.fn(),
 	playBulletFireSounds: vi.fn(),
@@ -356,7 +366,13 @@ vi.mock('./runtime/fpsRuntime', () => ({
 	createBulletFireSoundPlayer: runtimeMocks.createBulletFireSoundPlayer,
 	createWalkingFootstepSoundPlayer:
 		runtimeMocks.createWalkingFootstepSoundPlayer,
+	createRunningFootstepSoundPlayer:
+		runtimeMocks.createRunningFootstepSoundPlayer,
+	createInitialFootstepCadenceState:
+		runtimeMocks.createInitialFootstepCadenceState,
 	handleJumpInput: runtimeMocks.handleJumpInput,
+	resolvePlayerFootstepMode: runtimeMocks.resolvePlayerFootstepMode,
+	advanceFootstepCadence: runtimeMocks.advanceFootstepCadence,
 	setPrimaryFirePressedState: runtimeMocks.setPrimaryFirePressedState,
 	setWalkingFootstepSoundActive: runtimeMocks.setWalkingFootstepSoundActive,
 	playBulletFireSounds: runtimeMocks.playBulletFireSounds,
@@ -1023,9 +1039,24 @@ describe('bootstrap runtime wiring', () => {
 				logger: expect.any(Object),
 			}),
 		);
-		expect(runtimeMocks.setWalkingFootstepSoundActive).toHaveBeenCalledWith(
-			expect.any(Object),
-			true,
+		expect(runtimeMocks.resolvePlayerFootstepMode).toHaveBeenCalledWith(
+			expect.objectContaining({
+				isGrounded: true,
+				horizontalMovementDelta: expect.any(Number),
+				runActive: false,
+			}),
+		);
+		expect(runtimeMocks.advanceFootstepCadence).toHaveBeenCalledWith(
+			expect.objectContaining({
+				state: expect.objectContaining({
+					secondsUntilNextStep: 0,
+					lastMode: null,
+				}),
+				dt: 0.016,
+				mode: 'walking',
+				walkingPlayer: expect.any(Object),
+				runningPlayer: expect.any(Object),
+			}),
 		);
 		expect(runtimeMocks.spawnProjectilesFromLook).not.toHaveBeenCalled();
 		expect(runtimeMocks.playBulletFireSounds).not.toHaveBeenCalled();
@@ -1086,12 +1117,21 @@ describe('bootstrap runtime wiring', () => {
 		);
 	});
 
-	it('keeps walking footstep sound inactive when no horizontal movement occurs', async () => {
+	it('resolves idle footstep mode when no horizontal movement occurs', async () => {
+		runtimeMocks.resolvePlayerFootstepMode.mockReturnValueOnce('idle');
+
 		await import('./app/bootstrap');
 
-		expect(runtimeMocks.setWalkingFootstepSoundActive).toHaveBeenCalledWith(
-			expect.any(Object),
-			false,
+		expect(runtimeMocks.resolvePlayerFootstepMode).toHaveBeenCalledWith(
+			expect.objectContaining({
+				horizontalMovementDelta: 0,
+				runActive: false,
+			}),
+		);
+		expect(runtimeMocks.advanceFootstepCadence).toHaveBeenCalledWith(
+			expect.objectContaining({
+				mode: 'idle',
+			}),
 		);
 	});
 

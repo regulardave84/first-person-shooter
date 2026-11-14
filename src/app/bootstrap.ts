@@ -41,6 +41,8 @@ import {
 	createBulletFireSoundPlayer,
 	createJumpSoundPlayer,
 	createWalkingFootstepSoundPlayer,
+	createRunningFootstepSoundPlayer,
+	createInitialFootstepCadenceState,
 	createInitialRunKeys,
 	createRuntimeLogger,
 	createInitialMovementKeys,
@@ -48,7 +50,8 @@ import {
 	handlePointerLockChange,
 	handleMouseMoveForLook,
 	isRunActive,
-	setWalkingFootstepSoundActive,
+	resolvePlayerFootstepMode,
+	advanceFootstepCadence,
 	requestPointerLock,
 	setRunKeyState,
 	setMovementKeyState,
@@ -131,6 +134,8 @@ let activeProjectiles: Projectile[] = [];
 const jumpSound = createJumpSoundPlayer();
 const bulletFireSound = createBulletFireSoundPlayer();
 const walkingFootstepSound = createWalkingFootstepSoundPlayer();
+const runningFootstepSound = createRunningFootstepSoundPlayer();
+let footstepCadenceState = createInitialFootstepCadenceState();
 
 applyDefaultWorldCeilingSkybox(scene, {
 	logger: {
@@ -422,10 +427,18 @@ function animate() {
 		nextPosition.x - camera.position.x,
 		nextPosition.z - camera.position.z,
 	);
-	setWalkingFootstepSoundActive(
-		walkingFootstepSound,
-		jumpState.isGrounded && horizontalMovementDelta > 0.0001,
-	);
+	const footstepMode = resolvePlayerFootstepMode({
+		isGrounded: jumpState.isGrounded,
+		horizontalMovementDelta,
+		runActive: isRunActive(runKeys),
+	});
+	footstepCadenceState = advanceFootstepCadence({
+		state: footstepCadenceState,
+		dt,
+		mode: footstepMode,
+		walkingPlayer: walkingFootstepSound,
+		runningPlayer: runningFootstepSound,
+	});
 	if (jumpState.isGrounded) {
 		airborneRunSpeedMultiplier = 1;
 	}
