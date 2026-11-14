@@ -51,7 +51,9 @@ export function getOrLoadOilDrumFrameTextures(params: {
 	const textureLoader = params.textureLoader ?? new THREE.TextureLoader();
 	const shouldUseSharedCache = !params.textureLoader;
 	return [...params.assetUrls].map((assetUrl) => {
-		const cached = shouldUseSharedCache ? params.cache.get(assetUrl) : undefined;
+		const cached = shouldUseSharedCache
+			? params.cache.get(assetUrl)
+			: undefined;
 		if (cached) {
 			return cached;
 		}

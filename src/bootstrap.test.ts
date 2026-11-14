@@ -229,14 +229,14 @@ const runtimeMocks = vi.hoisted(() => ({
 const oilDrumEntityMocks = vi.hoisted(() => ({
 	DEFAULT_OIL_DRUM_BURN_DAMAGE_PER_SECOND: 5,
 	DEFAULT_OIL_DRUM_BULLET_DAMAGE: 35,
-	advanceOilDrumBurnDamage: vi.fn((params: {
-		health: { currentHealth: number; maxHealth: number };
-	}) => ({
-		health: params.health,
-		didApplyDamage: false,
-		wasRemoved: false,
-		damageApplied: 0,
-	})),
+	advanceOilDrumBurnDamage: vi.fn(
+		(params: { health: { currentHealth: number; maxHealth: number } }) => ({
+			health: params.health,
+			didApplyDamage: false,
+			wasRemoved: false,
+			damageApplied: 0,
+		}),
+	),
 	advanceOilDrumExplosionAnimation: vi.fn(),
 	advanceOilDrumFireAnimation: vi.fn(),
 	applyOilDrumHit: vi.fn(

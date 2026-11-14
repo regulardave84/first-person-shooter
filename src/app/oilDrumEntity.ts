@@ -158,7 +158,10 @@ export function createOilDrumSprite(config?: {
 	(
 		texture.userData as { oilDrumVisibleCoverageRatio?: number }
 	).oilDrumVisibleCoverageRatio = DEFAULT_OIL_DRUM_VISIBLE_COVERAGE_RATIO;
-	configureOilDrumSpriteTexture(texture, DEFAULT_OIL_DRUM_VISIBLE_COVERAGE_RATIO);
+	configureOilDrumSpriteTexture(
+		texture,
+		DEFAULT_OIL_DRUM_VISIBLE_COVERAGE_RATIO,
+	);
 
 	const material = new THREE.SpriteMaterial({
 		map: texture,
@@ -219,7 +222,10 @@ function resolveOilDrumVisualState(
 	if (health.currentHealth <= 0) {
 		return 'destroyed';
 	}
-	if (health.currentHealth < health.maxHealth * DEFAULT_OIL_DRUM_FIRE_THRESHOLD_RATIO) {
+	if (
+		health.currentHealth <
+		health.maxHealth * DEFAULT_OIL_DRUM_FIRE_THRESHOLD_RATIO
+	) {
 		return 'fire';
 	}
 	return 'default';
@@ -279,7 +285,6 @@ function resolveTextureCoverageFromUserData(
 	return null;
 }
 
-
 function applyOilDrumFireScaleCompensation(params: {
 	sprite: THREE.Sprite;
 	defaultTexture?: THREE.Texture;
@@ -292,7 +297,9 @@ function applyOilDrumFireScaleCompensation(params: {
 
 	const state = getOilDrumSpriteState(params.sprite);
 	ensureOilDrumBaseTransform(params.sprite);
-	const defaultCoverage = resolveTextureCoverageFromUserData(params.defaultTexture);
+	const defaultCoverage = resolveTextureCoverageFromUserData(
+		params.defaultTexture,
+	);
 	const fireCoverage = resolveTextureCoverageFromUserData(params.fireTexture);
 	if (!defaultCoverage || !fireCoverage) {
 		return;
@@ -408,7 +415,9 @@ function getOrLoadOilDrumExplosionFrameTextures(params: {
 	});
 }
 
-function resolveOilDrumUsableFireFrameTextures(sprite: THREE.Sprite): THREE.Texture[] {
+function resolveOilDrumUsableFireFrameTextures(
+	sprite: THREE.Sprite,
+): THREE.Texture[] {
 	return resolveOilDrumUsableFrameTextures(
 		getOilDrumSpriteState(sprite).oilDrumFireFrameTextures ?? [],
 	);
@@ -525,7 +534,10 @@ function applyDestroyedSprite(params: {
 			});
 		},
 	);
-	configureOilDrumSpriteTexture(texture, DEFAULT_OIL_DRUM_VISIBLE_COVERAGE_RATIO);
+	configureOilDrumSpriteTexture(
+		texture,
+		DEFAULT_OIL_DRUM_VISIBLE_COVERAGE_RATIO,
+	);
 
 	const spriteMaterial = params.sprite.material;
 	if (spriteMaterial instanceof THREE.SpriteMaterial) {
@@ -689,7 +701,10 @@ export function advanceOilDrumBurnDamage(params: {
 		params.damagePerSecond,
 	);
 	const requestedDamage = elapsedWholeSeconds * damagePerSecond;
-	const currentHealth = Math.max(0, params.health.currentHealth - requestedDamage);
+	const currentHealth = Math.max(
+		0,
+		params.health.currentHealth - requestedDamage,
+	);
 	const nextHealth = {
 		currentHealth,
 		maxHealth: params.health.maxHealth,
@@ -741,7 +756,7 @@ function resolveElapsedOilDrumBurnTicks(
 ): number {
 	const normalizedDelta = Math.max(0, deltaSeconds);
 	const elapsedBeforeTick = sprite
-		? getOilDrumSpriteState(sprite).oilDrumBurnElapsedSeconds ?? 0
+		? (getOilDrumSpriteState(sprite).oilDrumBurnElapsedSeconds ?? 0)
 		: 0;
 	const elapsedSeconds = elapsedBeforeTick + normalizedDelta;
 	const elapsedWholeSeconds = Math.floor(elapsedSeconds);
@@ -901,7 +916,8 @@ function resolveOilDrumExplosionAnimationState(
 	if (!(spriteMaterial instanceof THREE.SpriteMaterial)) {
 		return null;
 	}
-	const usableFrameTextures = resolveOilDrumUsableExplosionFrameTextures(sprite);
+	const usableFrameTextures =
+		resolveOilDrumUsableExplosionFrameTextures(sprite);
 	if (usableFrameTextures.length === 0) {
 		return null;
 	}

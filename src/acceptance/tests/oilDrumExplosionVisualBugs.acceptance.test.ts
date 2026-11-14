@@ -24,22 +24,25 @@ describe('Acceptance: Oil drum explosion visual bug fixes', () => {
 			() => new THREE.Texture(),
 		);
 		const destroyedTexture = new THREE.Texture();
-		const load = vi.fn((url: string, onLoad?: (texture: THREE.Texture) => void) => {
-			if (url.includes('oil_drum_destroyed.png')) {
-				return destroyedTexture;
-			}
-			const fireIndex = DEFAULT_OIL_DRUM_ON_FIRE_FRAME_ASSET_PATHS.indexOf(url);
-			if (fireIndex >= 0) {
-				return fireTextures[fireIndex];
-			}
-			const explosionIndex =
-				DEFAULT_OIL_DRUM_EXPLOSION_FRAME_ASSET_PATHS.indexOf(url);
-			if (explosionIndex >= 0) {
-				onLoad?.(explosionTextures[explosionIndex]);
-				return explosionTextures[explosionIndex];
-			}
-			return defaultTexture;
-		});
+		const load = vi.fn(
+			(url: string, onLoad?: (texture: THREE.Texture) => void) => {
+				if (url.includes('oil_drum_destroyed.png')) {
+					return destroyedTexture;
+				}
+				const fireIndex =
+					DEFAULT_OIL_DRUM_ON_FIRE_FRAME_ASSET_PATHS.indexOf(url);
+				if (fireIndex >= 0) {
+					return fireTextures[fireIndex];
+				}
+				const explosionIndex =
+					DEFAULT_OIL_DRUM_EXPLOSION_FRAME_ASSET_PATHS.indexOf(url);
+				if (explosionIndex >= 0) {
+					onLoad?.(explosionTextures[explosionIndex]);
+					return explosionTextures[explosionIndex];
+				}
+				return defaultTexture;
+			},
+		);
 		const sprite = createOilDrumSprite({ textureLoader: { load } });
 
 		applyOilDrumHit({
@@ -99,15 +102,17 @@ describe('Acceptance: Oil drum explosion visual bug fixes', () => {
 		const explosionTextures = DEFAULT_OIL_DRUM_EXPLOSION_FRAME_ASSET_PATHS.map(
 			() => new THREE.Texture(),
 		);
-		const load = vi.fn((url: string, onLoad?: (texture: THREE.Texture) => void) => {
-			if (url.includes('oil_drum_burning')) {
-				return fireTexture;
-			}
-			const index = DEFAULT_OIL_DRUM_EXPLOSION_FRAME_ASSET_PATHS.indexOf(url);
-			const texture = explosionTextures[Math.max(0, index)];
-			onLoad?.(texture);
-			return texture;
-		});
+		const load = vi.fn(
+			(url: string, onLoad?: (texture: THREE.Texture) => void) => {
+				if (url.includes('oil_drum_burning')) {
+					return fireTexture;
+				}
+				const index = DEFAULT_OIL_DRUM_EXPLOSION_FRAME_ASSET_PATHS.indexOf(url);
+				const texture = explosionTextures[Math.max(0, index)];
+				onLoad?.(texture);
+				return texture;
+			},
+		);
 
 		const fireHit = applyOilDrumHit({
 			health: { currentHealth: 65, maxHealth: 100 },
@@ -164,18 +169,20 @@ describe('Acceptance: Oil drum explosion visual bug fixes', () => {
 			() => new THREE.Texture(),
 		);
 		const destroyedTexture = new THREE.Texture();
-		const load = vi.fn((url: string, onLoad?: (texture: THREE.Texture) => void) => {
-			if (url.includes('oil_drum_destroyed.png')) {
-				return destroyedTexture;
-			}
-			if (url.includes('oil_drum_burning')) {
-				return fireTexture;
-			}
-			const index = DEFAULT_OIL_DRUM_EXPLOSION_FRAME_ASSET_PATHS.indexOf(url);
-			const texture = explosionTextures[Math.max(0, index)];
-			onLoad?.(texture);
-			return texture;
-		});
+		const load = vi.fn(
+			(url: string, onLoad?: (texture: THREE.Texture) => void) => {
+				if (url.includes('oil_drum_destroyed.png')) {
+					return destroyedTexture;
+				}
+				if (url.includes('oil_drum_burning')) {
+					return fireTexture;
+				}
+				const index = DEFAULT_OIL_DRUM_EXPLOSION_FRAME_ASSET_PATHS.indexOf(url);
+				const texture = explosionTextures[Math.max(0, index)];
+				onLoad?.(texture);
+				return texture;
+			},
+		);
 
 		const inFire = applyOilDrumHit({
 			health: { currentHealth: 65, maxHealth: 100 },
@@ -201,10 +208,12 @@ describe('Acceptance: Oil drum explosion visual bug fixes', () => {
 			textureLoader: { load },
 		});
 
-		expect((sprite.userData as { oilDrumVisualState?: string }).oilDrumVisualState).toBe(
-			'destroyed',
-		);
+		expect(
+			(sprite.userData as { oilDrumVisualState?: string }).oilDrumVisualState,
+		).toBe('destroyed');
 		expect(sprite.position.y).toBeCloseTo(1);
-		expect((sprite.material as THREE.SpriteMaterial).map).toBe(destroyedTexture);
+		expect((sprite.material as THREE.SpriteMaterial).map).toBe(
+			destroyedTexture,
+		);
 	});
 });

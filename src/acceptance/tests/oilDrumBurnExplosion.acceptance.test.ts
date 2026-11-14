@@ -51,13 +51,15 @@ describe('Acceptance: Oil drum burn damage and explosion lifecycle', () => {
 		const explosionTextures = DEFAULT_OIL_DRUM_EXPLOSION_FRAME_ASSET_PATHS.map(
 			() => new THREE.Texture(),
 		);
-		const load = vi.fn((url: string, onLoad?: (texture: THREE.Texture) => void) => {
-			const textureIndex =
-				DEFAULT_OIL_DRUM_EXPLOSION_FRAME_ASSET_PATHS.indexOf(url);
-			const texture = explosionTextures[Math.max(0, textureIndex)];
-			onLoad?.(texture);
-			return texture;
-		});
+		const load = vi.fn(
+			(url: string, onLoad?: (texture: THREE.Texture) => void) => {
+				const textureIndex =
+					DEFAULT_OIL_DRUM_EXPLOSION_FRAME_ASSET_PATHS.indexOf(url);
+				const texture = explosionTextures[Math.max(0, textureIndex)];
+				onLoad?.(texture);
+				return texture;
+			},
+		);
 
 		const burn = advanceOilDrumBurnDamage({
 			health: { currentHealth: 5, maxHealth: 100 },
@@ -67,9 +69,9 @@ describe('Acceptance: Oil drum burn damage and explosion lifecycle', () => {
 		});
 
 		expect(burn.health.currentHealth).toBe(0);
-		expect((sprite.userData as { oilDrumVisualState?: string }).oilDrumVisualState).toBe(
-			'exploding',
-		);
+		expect(
+			(sprite.userData as { oilDrumVisualState?: string }).oilDrumVisualState,
+		).toBe('exploding');
 	});
 
 	it('Explosion animation advances and then completes once', () => {
@@ -78,16 +80,18 @@ describe('Acceptance: Oil drum burn damage and explosion lifecycle', () => {
 			() => new THREE.Texture(),
 		);
 		const destroyedTexture = new THREE.Texture();
-		const load = vi.fn((url: string, onLoad?: (texture: THREE.Texture) => void) => {
-			if (url.includes('oil_drum_destroyed.png')) {
-				return destroyedTexture;
-			}
-			const textureIndex =
-				DEFAULT_OIL_DRUM_EXPLOSION_FRAME_ASSET_PATHS.indexOf(url);
-			const texture = explosionTextures[Math.max(0, textureIndex)];
-			onLoad?.(texture);
-			return texture;
-		});
+		const load = vi.fn(
+			(url: string, onLoad?: (texture: THREE.Texture) => void) => {
+				if (url.includes('oil_drum_destroyed.png')) {
+					return destroyedTexture;
+				}
+				const textureIndex =
+					DEFAULT_OIL_DRUM_EXPLOSION_FRAME_ASSET_PATHS.indexOf(url);
+				const texture = explosionTextures[Math.max(0, textureIndex)];
+				onLoad?.(texture);
+				return texture;
+			},
+		);
 
 		applyOilDrumHit({
 			health: { currentHealth: 5, maxHealth: 100 },
@@ -106,10 +110,12 @@ describe('Acceptance: Oil drum burn damage and explosion lifecycle', () => {
 			textureLoader: { load },
 		});
 
-		expect((sprite.userData as { oilDrumVisualState?: string }).oilDrumVisualState).toBe(
-			'destroyed',
+		expect(
+			(sprite.userData as { oilDrumVisualState?: string }).oilDrumVisualState,
+		).toBe('destroyed');
+		expect((sprite.material as THREE.SpriteMaterial).map).toBe(
+			destroyedTexture,
 		);
-		expect((sprite.material as THREE.SpriteMaterial).map).toBe(destroyedTexture);
 	});
 
 	it('Destroyed drum no longer takes burn damage', () => {
