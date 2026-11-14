@@ -288,7 +288,6 @@ function handleProjectileImpacts(
 			health: oilDrumHealth,
 			source: 'bullet',
 			bulletDamage: oilDrumBulletDamage,
-			scene,
 			sprite: oilDrumEntity.sprite,
 			logger: {
 				info: (event, context) => runtimeLogger.info(event, context),
@@ -296,7 +295,7 @@ function handleProjectileImpacts(
 		});
 
 		oilDrumHealth = hit.health;
-		if (hit.wasRemoved) {
+		if (hit.health.currentHealth <= 0) {
 			isOilDrumActive = false;
 		}
 	}
@@ -409,7 +408,7 @@ function animate() {
 		logger: runtimeLogger,
 		jumpState,
 		groundY: PLAYER_HEIGHT,
-		entityColliders: isOilDrumActive ? [oilDrumEntity.movementCollider] : [],
+		entityColliders: [oilDrumEntity.movementCollider],
 	});
 	if (jumpState.isGrounded) {
 		airborneRunSpeedMultiplier = 1;

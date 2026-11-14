@@ -233,7 +233,6 @@ const oilDrumEntityMocks = vi.hoisted(() => ({
 			health: { currentHealth: number; maxHealth: number };
 			source: 'bullet' | 'non-bullet';
 			bulletDamage?: number;
-			scene?: { remove: (target: unknown) => void };
 			sprite?: unknown;
 		}) => {
 			if (params.source !== 'bullet') {
@@ -250,15 +249,11 @@ const oilDrumEntityMocks = vi.hoisted(() => ({
 				currentHealth: Math.max(0, params.health.currentHealth - damage),
 				maxHealth: params.health.maxHealth,
 			};
-			const wasRemoved = nextHealth.currentHealth <= 0;
-			if (wasRemoved && params.scene && params.sprite) {
-				params.scene.remove(params.sprite);
-			}
 
 			return {
 				health: nextHealth,
 				didApplyDamage: true,
-				wasRemoved,
+				wasRemoved: false,
 				damageApplied: damage,
 			};
 		},
@@ -1169,9 +1164,47 @@ describe('bootstrap runtime wiring', () => {
 				],
 			}),
 		);
+		expect(runtimeMocks.createEntityCollider).toHaveBeenCalledWith({
+			x: 1.25,
+			y: 1,
+			z: 2.25,
+			w: 1.5,
+			h: 2.2,
+			d: 1.5,
+		});
 	});
 
-	it('removes oil drum entity after lethal bullet impacts and stops collider registration', async () => {
+	it('keeps projectile collider active after non-lethal oil drum impact', async () => {
+		runtimeMocks.stepProjectiles.mockReturnValueOnce({
+			activeProjectiles: [],
+			impacts: [
+				{
+					projectileId: 20,
+					point: { x: 1.25, y: 1, z: 2.25 },
+					colliderKind: 'entity',
+				},
+			],
+		});
+		runtimeMocks.stepProjectiles.mockReturnValueOnce({
+			activeProjectiles: [],
+			impacts: [],
+		});
+
+		await import('./app/bootstrap');
+
+		const nextFrame = (
+			globalThis.requestAnimationFrame as ReturnType<typeof vi.fn>
+		).mock.calls[0]?.[0] as (() => void) | undefined;
+		nextFrame?.();
+
+		expect(runtimeMocks.stepProjectiles).toHaveBeenLastCalledWith(
+			expect.objectContaining({
+				entityColliders: [expect.objectContaining({ kind: 'entity' })],
+			}),
+		);
+	});
+
+	it('keeps movement collider but deactivates projectile collider after lethal bullet impacts', async () => {
 		runtimeMocks.stepProjectiles.mockReturnValueOnce({
 			activeProjectiles: [],
 			impacts: [
@@ -1199,7 +1232,7 @@ describe('bootstrap runtime wiring', () => {
 
 		await import('./app/bootstrap');
 
-		expect(threeState.scenes[0].remove).toHaveBeenCalledWith(
+		expect(threeState.scenes[0].remove).not.toHaveBeenCalledWith(
 			oilDrumEntityMocks.addDefaultOilDrumEntityToScene.mock.results[0]?.value
 				.sprite,
 		);
@@ -1210,6 +1243,17 @@ describe('bootstrap runtime wiring', () => {
 		nextFrame?.();
 
 		expect(runtimeMocks.applyFrameMovement).toHaveBeenLastCalledWith(
+			expect.objectContaining({
+				entityColliders: [
+					expect.objectContaining({
+						x: 1.25,
+						z: 2.25,
+						radius: 0.75,
+					}),
+				],
+			}),
+		);
+		expect(runtimeMocks.stepProjectiles).toHaveBeenLastCalledWith(
 			expect.objectContaining({
 				entityColliders: [],
 			}),

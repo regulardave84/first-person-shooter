@@ -4,6 +4,112 @@ Persistent execution log for the `implementer` skill.
 
 ---
 
+## 2026-11-14 — Destroyed oil drum collision preservation
+
+- Timestamp: 2026-11-14
+- Feature file: src/acceptance/features/oil_drum_destroyed_collision.acceptance.feature
+- Complexity: small
+- Current phase: P4
+- Checkpoint status: COMPLETE (`SPECIFIER_COMPLETE` -> `IMPLEMENTER_COMPLETE`) with `CLEANER_COMPLETE` and `HARDENER_COMPLETE`
+
+### Completed work
+
+- Preserved oil drum movement collision after destruction by always providing the oil drum movement collider to frame movement in `src/app/bootstrap.ts`.
+- Kept projectile collision deactivated after destruction (combat inactive) while retaining world-blocking movement behavior.
+- Added acceptance coverage for preserved collider shape/registration and locomotion blocking after destruction.
+- Added targeted unit tests for projectile-collider mapping and non-lethal projectile-collider persistence.
+- Added targeted damage-normalization tests in oil drum domain logic to strengthen mutation resistance.
+- Promoted approved destroyed-collision Gherkin to acceptance and marked proposed feature as superseded.
+
+### Files changed so far
+
+- src/app/bootstrap.ts
+- src/bootstrap.test.ts
+- src/app/oilDrumEntity.test.ts
+- src/acceptance/features/oil_drum_destroyed_collision.acceptance.feature
+- src/acceptance/features/oil_drum_destroyed_collision.proposed.feature
+- src/acceptance/tests/oilDrumDestroyedCollision.acceptance.test.ts
+
+### Scenario -> test mapping
+
+- Destroyed oil drum keeps same movement collider after health reaches zero -> `src/acceptance/tests/oilDrumDestroyedCollision.acceptance.test.ts` (`Destroyed oil drum keeps same movement collider after health reaches zero`)
+- Destroyed oil drum still blocks player movement in all locomotion states -> `src/acceptance/tests/oilDrumDestroyedCollision.acceptance.test.ts` (`Destroyed oil drum still blocks player movement in walking, running, and jumping attempts`) + `src/bootstrap.test.ts` (`keeps movement collider but deactivates projectile collider after lethal bullet impacts`)
+- Destroyed oil drum no longer participates in projectile collision interactions -> `src/bootstrap.test.ts` (`keeps movement collider but deactivates projectile collider after lethal bullet impacts`) + `src/bootstrap.test.ts` (`keeps projectile collider active after non-lethal oil drum impact`) + `src/acceptance/tests/oilDrumDestroyedCollision.acceptance.test.ts` (`Destroyed oil drum receives no additional bullet damage`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Hardener: PASS (`npm run test:mutation:branch` -> `100.00%`, target `>= 80%`)
+
+### Risks / blockers
+
+- None currently.
+
+### Next action
+
+- Proceed to final handoff.
+
+### User review status
+
+- Approved
+
+## 2026-11-14 — Oil drum destroyed graphic at zero health
+
+- Timestamp: 2026-11-14
+- Feature file: src/acceptance/features/oil_drum_destroyed_graphic.acceptance.feature
+- Complexity: medium
+- Current phase: P4
+- Checkpoint status: COMPLETE (`SPECIFIER_COMPLETE` -> `IMPLEMENTER_COMPLETE`) with `CLEANER_COMPLETE` and `HARDENER_COMPLETE`
+
+### Completed work
+
+- Added destroyed oil drum sprite asset constant and destruction visual-swap behavior in `src/app/oilDrumEntity.ts`.
+- Preserved destroyed drum in-scene while deactivating combat handling by keeping collider registration gated in runtime state.
+- Added no-op behavior for additional bullet hits after drum health reaches `0`.
+- Replaced destruction removal logging with destroyed-visual logging (`oil.drum.destroyed.visual.updated`).
+- Promoted approved Gherkin to acceptance and marked proposed feature superseded.
+- Updated related oil-drum bullet-damage acceptance wording/tests to match inactive-in-scene behavior.
+
+### Files changed so far
+
+- src/app/oilDrumEntity.ts
+- src/app/oilDrumEntity.test.ts
+- src/app/bootstrap.ts
+- src/bootstrap.test.ts
+- src/acceptance/features/oil_drum_destroyed_graphic.acceptance.feature
+- src/acceptance/features/oil_drum_destroyed_graphic.proposed.feature
+- src/acceptance/tests/oilDrumDestroyedGraphic.acceptance.test.ts
+- src/acceptance/features/oil_drum_bullet_damage.acceptance.feature
+- src/acceptance/tests/oilDrumBulletDamage.acceptance.test.ts
+
+### Scenario -> test mapping
+
+- Oil drum swaps to destroyed sprite at zero health -> `src/app/oilDrumEntity.test.ts` (`swaps to destroyed sprite when bullet damage destroys it`) + `src/acceptance/tests/oilDrumDestroyedGraphic.acceptance.test.ts` (`Oil drum swaps to destroyed sprite at zero health`)
+- Destroyed oil drum remains in scene and becomes inactive -> `src/bootstrap.test.ts` (`deactivates oil drum collider after lethal bullet impacts while keeping sprite in scene`) + `src/acceptance/tests/oilDrumDestroyedGraphic.acceptance.test.ts` (`Destroyed oil drum remains in scene and becomes inactive`)
+- Additional bullet hits do not apply after destruction -> `src/app/oilDrumEntity.test.ts` (`does not apply additional bullet damage once oil drum is destroyed`) + `src/acceptance/tests/oilDrumDestroyedGraphic.acceptance.test.ts` (`Additional bullet hits do not apply after destruction`)
+- Destroyed-state transition logs damage and visual swap -> `src/app/oilDrumEntity.test.ts` (`logs damage and destroyed-visual events when destroyed by a bullet`) + `src/acceptance/tests/oilDrumDestroyedGraphic.acceptance.test.ts` (`Destroyed-state transition logs damage and visual swap`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Hardener: PASS (`npm run test:mutation:branch` -> `100.00%`, target `>= 80%`)
+
+### Risks / blockers
+
+- None currently.
+
+### Next action
+
+- Proceed to final handoff.
+
+### User review status
+
+- Approved
+
 ## 2026-11-14 — Oil drum configurable bullet damage
 
 - Timestamp: 2026-11-14

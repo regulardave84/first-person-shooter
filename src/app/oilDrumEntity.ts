@@ -11,6 +11,10 @@ export const DEFAULT_OIL_DRUM_SPRITE_ASSET_PATH = new URL(
 	'../assets/oil_drum.png',
 	import.meta.url,
 ).href;
+export const DEFAULT_OIL_DRUM_DESTROYED_SPRITE_ASSET_PATH = new URL(
+	'../assets/oil_drum_destroyed.png',
+	import.meta.url,
+).href;
 
 export const DEFAULT_OIL_DRUM_SPAWN_OFFSET = {
 	x: 1.25,
@@ -143,34 +147,49 @@ function createNoDamageResult(health: OilDrumHealthState): OilDrumDamageResult {
 	};
 }
 
-function removeOilDrumIfDestroyed(params: {
+function applyDestroyedSprite(params: {
 	wasDestroyed: boolean;
-	scene?: THREE.Scene;
 	sprite?: THREE.Sprite;
+	textureLoader?: OilDrumTextureLoaderLike;
 	logger?: OilDrumLogger;
-	source: OilDrumHitSource;
-}): boolean {
-	if (!params.wasDestroyed || !params.scene || !params.sprite) {
-		return false;
+}): void {
+	if (!params.wasDestroyed || !params.sprite) {
+		return;
 	}
 
-	params.scene.remove(params.sprite);
-	params.logger?.info?.('oil.drum.removed', {
-		reason: 'destroyed',
-		source: params.source,
+	const textureLoader = params.textureLoader ?? new THREE.TextureLoader();
+	const texture = textureLoader.load(
+		DEFAULT_OIL_DRUM_DESTROYED_SPRITE_ASSET_PATH,
+		undefined,
+		undefined,
+		(error) => {
+			params.logger?.warn?.('oil.drum.destroyed.asset.load.failed', {
+				assetUrl: DEFAULT_OIL_DRUM_DESTROYED_SPRITE_ASSET_PATH,
+				error,
+			});
+		},
+	);
+
+	const spriteMaterial = params.sprite.material;
+	if (spriteMaterial instanceof THREE.SpriteMaterial) {
+		spriteMaterial.map = texture;
+		spriteMaterial.needsUpdate = true;
+	}
+
+	params.logger?.info?.('oil.drum.destroyed.visual.updated', {
+		assetUrl: DEFAULT_OIL_DRUM_DESTROYED_SPRITE_ASSET_PATH,
 	});
-	return true;
 }
 
 export function applyOilDrumHit(params: {
 	health: OilDrumHealthState;
 	source: OilDrumHitSource;
 	bulletDamage?: number;
-	scene?: THREE.Scene;
 	sprite?: THREE.Sprite;
+	textureLoader?: OilDrumTextureLoaderLike;
 	logger?: OilDrumLogger;
 }): OilDrumDamageResult {
-	if (params.source !== 'bullet') {
+	if (params.source !== 'bullet' || params.health.currentHealth <= 0) {
 		return createNoDamageResult(params.health);
 	}
 
@@ -192,18 +211,17 @@ export function applyOilDrumHit(params: {
 		maxHealth: nextHealth.maxHealth,
 	});
 
-	const wasRemoved = removeOilDrumIfDestroyed({
+	applyDestroyedSprite({
 		wasDestroyed,
-		scene: params.scene,
 		sprite: params.sprite,
+		textureLoader: params.textureLoader,
 		logger: params.logger,
-		source: params.source,
 	});
 
 	return {
 		health: nextHealth,
 		didApplyDamage: true,
-		wasRemoved,
+		wasRemoved: false,
 		damageApplied,
 	};
 }

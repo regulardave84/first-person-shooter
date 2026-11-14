@@ -29,22 +29,25 @@ describe('Acceptance: Oil drum takes configurable bullet damage', () => {
 		expect(second.health.currentHealth).toBe(30);
 	});
 
-	it('Oil drum is removed when health reaches zero or below from bullets', () => {
+	it('Oil drum becomes inactive when health reaches zero or below from bullets', () => {
 		const scene = new THREE.Scene();
 		const sprite = new THREE.Sprite(new THREE.SpriteMaterial());
 		scene.add(sprite);
+		const destroyedTexture = new THREE.Texture();
+		const load = vi.fn(() => destroyedTexture);
 
 		const hit = applyOilDrumHit({
 			health: { currentHealth: 35, maxHealth: 100 },
 			source: 'bullet',
 			bulletDamage: 35,
-			scene,
 			sprite,
+			textureLoader: { load },
 		});
 
 		expect(hit.health.currentHealth).toBe(0);
-		expect(hit.wasRemoved).toBe(true);
-		expect(scene.children).not.toContain(sprite);
+		expect(hit.wasRemoved).toBe(false);
+		expect(scene.children).toContain(sprite);
+		expect((sprite.material as THREE.SpriteMaterial).map).toBe(destroyedTexture);
 	});
 
 	it('Bullet-only damage does not apply from non-bullet sources', () => {
@@ -58,18 +61,18 @@ describe('Acceptance: Oil drum takes configurable bullet damage', () => {
 		expect(hit.didApplyDamage).toBe(false);
 	});
 
-	it('Oil drum damage and removal events are logged', () => {
-		const scene = new THREE.Scene();
+	it('Oil drum damage and destroyed-visual events are logged', () => {
 		const sprite = new THREE.Sprite(new THREE.SpriteMaterial());
-		scene.add(sprite);
+		const destroyedTexture = new THREE.Texture();
+		const load = vi.fn(() => destroyedTexture);
 		const info = vi.fn();
 
 		applyOilDrumHit({
 			health: { currentHealth: 35, maxHealth: 100 },
 			source: 'bullet',
 			bulletDamage: 35,
-			scene,
 			sprite,
+			textureLoader: { load },
 			logger: { info },
 		});
 
@@ -78,8 +81,10 @@ describe('Acceptance: Oil drum takes configurable bullet damage', () => {
 			expect.objectContaining({ damageApplied: 35 }),
 		);
 		expect(info).toHaveBeenCalledWith(
-			'oil.drum.removed',
-			expect.objectContaining({ reason: 'destroyed' }),
+			'oil.drum.destroyed.visual.updated',
+			expect.objectContaining({
+				assetUrl: expect.stringContaining('oil_drum_destroyed.png'),
+			}),
 		);
 	});
 });
