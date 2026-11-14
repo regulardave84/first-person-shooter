@@ -171,6 +171,19 @@ const runtimeMocks = vi.hoisted(() => ({
 		state: params.state,
 		projectiles: [] as unknown[],
 	})),
+	createEntityCollider: vi.fn((params) => ({
+		min: {
+			x: params.x - params.w / 2,
+			y: params.y - params.h / 2,
+			z: params.z - params.d / 2,
+		},
+		max: {
+			x: params.x + params.w / 2,
+			y: params.y + params.h / 2,
+			z: params.z + params.d / 2,
+		},
+		kind: 'entity' as const,
+	})),
 	stepProjectiles: vi.fn(
 		() =>
 			({ activeProjectiles: [] as unknown[], impacts: [] as unknown[] }) as {
@@ -214,6 +227,42 @@ const runtimeMocks = vi.hoisted(() => ({
 }));
 
 const oilDrumEntityMocks = vi.hoisted(() => ({
+	DEFAULT_OIL_DRUM_BULLET_DAMAGE: 35,
+	applyOilDrumHit: vi.fn(
+		(params: {
+			health: { currentHealth: number; maxHealth: number };
+			source: 'bullet' | 'non-bullet';
+			bulletDamage?: number;
+			scene?: { remove: (target: unknown) => void };
+			sprite?: unknown;
+		}) => {
+			if (params.source !== 'bullet') {
+				return {
+					health: params.health,
+					didApplyDamage: false,
+					wasRemoved: false,
+					damageApplied: 0,
+				};
+			}
+
+			const damage = params.bulletDamage ?? 35;
+			const nextHealth = {
+				currentHealth: Math.max(0, params.health.currentHealth - damage),
+				maxHealth: params.health.maxHealth,
+			};
+			const wasRemoved = nextHealth.currentHealth <= 0;
+			if (wasRemoved && params.scene && params.sprite) {
+				params.scene.remove(params.sprite);
+			}
+
+			return {
+				health: nextHealth,
+				didApplyDamage: true,
+				wasRemoved,
+				damageApplied: damage,
+			};
+		},
+	),
 	addDefaultOilDrumEntityToScene: vi.fn(() => ({
 		sprite: { name: 'oil-drum-entity' },
 		movementCollider: {
@@ -222,6 +271,10 @@ const oilDrumEntityMocks = vi.hoisted(() => ({
 			radius: 0.75,
 			minY: -0.1,
 			maxY: 2.1,
+		},
+		health: {
+			currentHealth: 100,
+			maxHealth: 100,
 		},
 	})),
 }));
@@ -295,6 +348,7 @@ vi.mock('./runtime/fpsRuntime', () => ({
 	playBulletFireSounds: runtimeMocks.playBulletFireSounds,
 	advancePrimaryFireState: runtimeMocks.advancePrimaryFireState,
 	spawnProjectilesFromLook: runtimeMocks.spawnProjectilesFromLook,
+	createEntityCollider: runtimeMocks.createEntityCollider,
 	stepProjectiles: runtimeMocks.stepProjectiles,
 	WORLD_PROJECTILE_COLLIDERS: runtimeMocks.WORLD_PROJECTILE_COLLIDERS,
 	PROJECTILE_COLOR: runtimeMocks.PROJECTILE_COLOR,
@@ -310,6 +364,9 @@ vi.mock('./runtime/fpsRuntime', () => ({
 }));
 
 vi.mock('./app/oilDrumEntity', () => ({
+	DEFAULT_OIL_DRUM_BULLET_DAMAGE:
+		oilDrumEntityMocks.DEFAULT_OIL_DRUM_BULLET_DAMAGE,
+	applyOilDrumHit: oilDrumEntityMocks.applyOilDrumHit,
 	addDefaultOilDrumEntityToScene:
 		oilDrumEntityMocks.addDefaultOilDrumEntityToScene,
 }));
@@ -1105,6 +1162,55 @@ describe('bootstrap runtime wiring', () => {
 		expect(runtimeMocks.stepProjectiles).toHaveBeenCalledWith(
 			expect.objectContaining({
 				worldColliders: runtimeMocks.WORLD_PROJECTILE_COLLIDERS,
+				entityColliders: [
+					expect.objectContaining({
+						kind: 'entity',
+					}),
+				],
+			}),
+		);
+	});
+
+	it('removes oil drum entity after lethal bullet impacts and stops collider registration', async () => {
+		runtimeMocks.stepProjectiles.mockReturnValueOnce({
+			activeProjectiles: [],
+			impacts: [
+				{
+					projectileId: 10,
+					point: { x: 1.25, y: 1, z: 2.25 },
+					colliderKind: 'entity',
+				},
+				{
+					projectileId: 11,
+					point: { x: 1.25, y: 1, z: 2.25 },
+					colliderKind: 'entity',
+				},
+				{
+					projectileId: 12,
+					point: { x: 1.25, y: 1, z: 2.25 },
+					colliderKind: 'entity',
+				},
+			],
+		});
+		runtimeMocks.stepProjectiles.mockReturnValueOnce({
+			activeProjectiles: [],
+			impacts: [],
+		});
+
+		await import('./app/bootstrap');
+
+		expect(threeState.scenes[0].remove).toHaveBeenCalledWith(
+			oilDrumEntityMocks.addDefaultOilDrumEntityToScene.mock.results[0]?.value
+				.sprite,
+		);
+
+		const nextFrame = (
+			globalThis.requestAnimationFrame as ReturnType<typeof vi.fn>
+		).mock.calls[0]?.[0] as (() => void) | undefined;
+		nextFrame?.();
+
+		expect(runtimeMocks.applyFrameMovement).toHaveBeenLastCalledWith(
+			expect.objectContaining({
 				entityColliders: [],
 			}),
 		);

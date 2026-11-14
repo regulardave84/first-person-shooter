@@ -27,6 +27,7 @@ export const DEFAULT_OIL_DRUM_SPRITE_SCALE = {
 export const DEFAULT_OIL_DRUM_COLLIDER_RADIUS = 0.75;
 export const DEFAULT_OIL_DRUM_COLLIDER_HEIGHT = 2.25;
 export const DEFAULT_OIL_DRUM_MAX_HEALTH = DEFAULT_ENTITY_MAX_HEALTH;
+export const DEFAULT_OIL_DRUM_BULLET_DAMAGE = 35;
 
 export type OilDrumPosition = {
 	x: number;
@@ -35,10 +36,20 @@ export type OilDrumPosition = {
 };
 
 export type OilDrumLogger = {
+	info?: (event: string, context?: Record<string, unknown>) => void;
 	warn?: (event: string, context?: Record<string, unknown>) => void;
 };
 
 export type OilDrumHealthState = EntityHealthState;
+
+export type OilDrumHitSource = 'bullet' | 'non-bullet';
+
+export type OilDrumDamageResult = {
+	health: OilDrumHealthState;
+	didApplyDamage: boolean;
+	wasRemoved: boolean;
+	damageApplied: number;
+};
 
 export type OilDrumTextureLoaderLike = {
 	load: (
@@ -111,6 +122,90 @@ export function createOilDrumHealthState(): OilDrumHealthState {
 	return createEntityHealthState({
 		maxHealth: DEFAULT_OIL_DRUM_MAX_HEALTH,
 	});
+}
+
+function normalizeOilDrumBulletDamage(damage: number | undefined): number {
+	if (!Number.isFinite(damage) || (damage ?? 0) <= 0) {
+		return DEFAULT_OIL_DRUM_BULLET_DAMAGE;
+	}
+	return Math.floor(damage as number);
+}
+
+function createNoDamageResult(health: OilDrumHealthState): OilDrumDamageResult {
+	return {
+		health: {
+			currentHealth: health.currentHealth,
+			maxHealth: health.maxHealth,
+		},
+		didApplyDamage: false,
+		wasRemoved: false,
+		damageApplied: 0,
+	};
+}
+
+function removeOilDrumIfDestroyed(params: {
+	wasDestroyed: boolean;
+	scene?: THREE.Scene;
+	sprite?: THREE.Sprite;
+	logger?: OilDrumLogger;
+	source: OilDrumHitSource;
+}): boolean {
+	if (!params.wasDestroyed || !params.scene || !params.sprite) {
+		return false;
+	}
+
+	params.scene.remove(params.sprite);
+	params.logger?.info?.('oil.drum.removed', {
+		reason: 'destroyed',
+		source: params.source,
+	});
+	return true;
+}
+
+export function applyOilDrumHit(params: {
+	health: OilDrumHealthState;
+	source: OilDrumHitSource;
+	bulletDamage?: number;
+	scene?: THREE.Scene;
+	sprite?: THREE.Sprite;
+	logger?: OilDrumLogger;
+}): OilDrumDamageResult {
+	if (params.source !== 'bullet') {
+		return createNoDamageResult(params.health);
+	}
+
+	const damageApplied = normalizeOilDrumBulletDamage(params.bulletDamage);
+	const currentHealth = Math.max(
+		0,
+		params.health.currentHealth - damageApplied,
+	);
+	const nextHealth = {
+		currentHealth,
+		maxHealth: params.health.maxHealth,
+	};
+	const wasDestroyed = currentHealth <= 0;
+
+	params.logger?.info?.('oil.drum.damaged', {
+		source: params.source,
+		damageApplied,
+		currentHealth,
+		maxHealth: nextHealth.maxHealth,
+	});
+
+	const wasRemoved = removeOilDrumIfDestroyed({
+		wasDestroyed,
+		scene: params.scene,
+		sprite: params.sprite,
+		logger: params.logger,
+		source: params.source,
+	});
+
+	return {
+		health: nextHealth,
+		didApplyDamage: true,
+		wasRemoved,
+		damageApplied,
+	};
 }
 
 export function addDefaultOilDrumEntityToScene(config: {

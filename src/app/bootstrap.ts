@@ -15,7 +15,11 @@ import {
 	DEFAULT_WORLD_FLOOR_COLOR,
 	applyDefaultWorldFloorTexture,
 } from './floorTexture';
-import { addDefaultOilDrumEntityToScene } from './oilDrumEntity';
+import {
+	DEFAULT_OIL_DRUM_BULLET_DAMAGE,
+	addDefaultOilDrumEntityToScene,
+	applyOilDrumHit,
+} from './oilDrumEntity';
 import { initializeHealthHud } from './healthHud';
 import { initializeWeaponHud, triggerWeaponHudRecoil } from './weaponHud';
 import { DEFAULT_MOVE_SPEED, PLAYER_HEIGHT } from '../core/gameLogic';
@@ -27,6 +31,7 @@ import {
 	advancePrimaryFireState,
 	applyFrameMovement,
 	applyViewportResize,
+	createEntityCollider,
 	createInitialPrimaryFireState,
 	createInitialJumpState,
 	createBulletFireSoundPlayer,
@@ -169,6 +174,9 @@ const oilDrumEntity = addDefaultOilDrumEntityToScene({
 		warn: (event, context) => runtimeLogger.warn(event, context),
 	},
 });
+const oilDrumBulletDamage = DEFAULT_OIL_DRUM_BULLET_DAMAGE;
+let oilDrumHealth = oilDrumEntity.health;
+let isOilDrumActive = true;
 
 const weaponHud = initializeWeaponHud({
 	logger: {
@@ -252,6 +260,46 @@ function removeProjectileVisual(projectileId: number): void {
 	projectileVisuals.delete(projectileId);
 	scene.remove(visual);
 	(visual.geometry as THREE.BufferGeometry).dispose();
+}
+
+function toOilDrumProjectileCollider() {
+	const collider = oilDrumEntity.movementCollider;
+	return createEntityCollider({
+		x: collider.x,
+		y: (collider.minY + collider.maxY) / 2,
+		z: collider.z,
+		w: collider.radius * 2,
+		h: collider.maxY - collider.minY,
+		d: collider.radius * 2,
+	});
+}
+
+function handleProjectileImpacts(
+	impacts: ReadonlyArray<{ projectileId: number; colliderKind: string }>,
+): void {
+	for (const impact of impacts) {
+		removeProjectileVisual(impact.projectileId);
+
+		if (!isOilDrumActive || impact.colliderKind !== 'entity') {
+			continue;
+		}
+
+		const hit = applyOilDrumHit({
+			health: oilDrumHealth,
+			source: 'bullet',
+			bulletDamage: oilDrumBulletDamage,
+			scene,
+			sprite: oilDrumEntity.sprite,
+			logger: {
+				info: (event, context) => runtimeLogger.info(event, context),
+			},
+		});
+
+		oilDrumHealth = hit.health;
+		if (hit.wasRemoved) {
+			isOilDrumActive = false;
+		}
+	}
 }
 
 document.addEventListener('keydown', (event) => {
@@ -361,7 +409,7 @@ function animate() {
 		logger: runtimeLogger,
 		jumpState,
 		groundY: PLAYER_HEIGHT,
-		entityColliders: [oilDrumEntity.movementCollider],
+		entityColliders: isOilDrumActive ? [oilDrumEntity.movementCollider] : [],
 	});
 	if (jumpState.isGrounded) {
 		airborneRunSpeedMultiplier = 1;
@@ -382,13 +430,10 @@ function animate() {
 		projectiles: activeProjectiles,
 		dt,
 		worldColliders: WORLD_PROJECTILE_COLLIDERS,
-		entityColliders: [],
+		entityColliders: isOilDrumActive ? [toOilDrumProjectileCollider()] : [],
 	});
 	activeProjectiles = projectileStep.activeProjectiles;
-
-	for (const impact of projectileStep.impacts) {
-		removeProjectileVisual(impact.projectileId);
-	}
+	handleProjectileImpacts(projectileStep.impacts);
 
 	for (const projectile of activeProjectiles) {
 		upsertProjectileVisual(projectile);

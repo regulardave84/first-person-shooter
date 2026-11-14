@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import * as THREE from 'three';
 import {
+	DEFAULT_OIL_DRUM_BULLET_DAMAGE,
 	DEFAULT_OIL_DRUM_COLLIDER_HEIGHT,
 	DEFAULT_OIL_DRUM_COLLIDER_RADIUS,
 	DEFAULT_OIL_DRUM_MAX_HEALTH,
@@ -8,6 +9,7 @@ import {
 	DEFAULT_OIL_DRUM_SPRITE_ASSET_PATH,
 	DEFAULT_OIL_DRUM_SPRITE_SCALE,
 	OIL_DRUM_ENTITY_NAME,
+	applyOilDrumHit,
 	addDefaultOilDrumEntityToScene,
 	createOilDrumHealthState,
 	createOilDrumMovementCollider,
@@ -27,6 +29,7 @@ describe('oilDrumEntity', () => {
 		expect(DEFAULT_OIL_DRUM_COLLIDER_RADIUS).toBeCloseTo(0.75);
 		expect(DEFAULT_OIL_DRUM_COLLIDER_HEIGHT).toBeCloseTo(2.25);
 		expect(DEFAULT_OIL_DRUM_MAX_HEALTH).toBe(100);
+		expect(DEFAULT_OIL_DRUM_BULLET_DAMAGE).toBe(35);
 	});
 
 	it('creates default health state as 100/100', () => {
@@ -172,6 +175,86 @@ describe('oilDrumEntity', () => {
 			'oil.drum.asset.load.failed',
 			expect.objectContaining({
 				assetUrl: expect.stringContaining('oil_drum.png'),
+			}),
+		);
+	});
+
+	it('applies configurable bullet damage to oil drum health', () => {
+		const hit = applyOilDrumHit({
+			health: { currentHealth: 100, maxHealth: 100 },
+			source: 'bullet',
+			bulletDamage: 35,
+		});
+
+		expect(hit.health).toEqual({
+			currentHealth: 65,
+			maxHealth: 100,
+		});
+		expect(hit.didApplyDamage).toBe(true);
+		expect(hit.damageApplied).toBe(35);
+		expect(hit.wasRemoved).toBe(false);
+	});
+
+	it('does not apply non-bullet interactions', () => {
+		const hit = applyOilDrumHit({
+			health: { currentHealth: 100, maxHealth: 100 },
+			source: 'non-bullet',
+			bulletDamage: 35,
+		});
+
+		expect(hit.health).toEqual({
+			currentHealth: 100,
+			maxHealth: 100,
+		});
+		expect(hit.didApplyDamage).toBe(false);
+		expect(hit.damageApplied).toBe(0);
+		expect(hit.wasRemoved).toBe(false);
+	});
+
+	it('removes oil drum sprite when bullet damage destroys it', () => {
+		const scene = new THREE.Scene();
+		const sprite = new THREE.Sprite(new THREE.SpriteMaterial());
+		scene.add(sprite);
+
+		const hit = applyOilDrumHit({
+			health: { currentHealth: 35, maxHealth: 100 },
+			source: 'bullet',
+			bulletDamage: 35,
+			scene,
+			sprite,
+		});
+
+		expect(hit.health.currentHealth).toBe(0);
+		expect(hit.wasRemoved).toBe(true);
+		expect(scene.children).not.toContain(sprite);
+	});
+
+	it('logs damage and removal events when destroyed by a bullet', () => {
+		const scene = new THREE.Scene();
+		const sprite = new THREE.Sprite(new THREE.SpriteMaterial());
+		scene.add(sprite);
+		const info = vi.fn();
+
+		applyOilDrumHit({
+			health: { currentHealth: 35, maxHealth: 100 },
+			source: 'bullet',
+			bulletDamage: 35,
+			scene,
+			sprite,
+			logger: { info },
+		});
+
+		expect(info).toHaveBeenCalledWith(
+			'oil.drum.damaged',
+			expect.objectContaining({
+				damageApplied: 35,
+				currentHealth: 0,
+			}),
+		);
+		expect(info).toHaveBeenCalledWith(
+			'oil.drum.removed',
+			expect.objectContaining({
+				reason: 'destroyed',
 			}),
 		);
 	});

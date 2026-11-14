@@ -4,6 +4,60 @@ Persistent execution log for the `implementer` skill.
 
 ---
 
+## 2026-11-14 — Oil drum configurable bullet damage
+
+- Timestamp: 2026-11-14
+- Feature file: src/acceptance/features/oil_drum_bullet_damage.acceptance.feature
+- Complexity: medium
+- Current phase: P4
+- Checkpoint status: COMPLETE (`SPECIFIER_COMPLETE` -> `IMPLEMENTER_COMPLETE`) with `CLEANER_COMPLETE` and `HARDENER_COMPLETE`
+
+### Completed work
+
+- Added configurable bullet-damage behavior for oil drums in `src/app/oilDrumEntity.ts` with `DEFAULT_OIL_DRUM_BULLET_DAMAGE` and `applyOilDrumHit()`.
+- Added bullet-only source gating, health clamping, and destruction-triggered scene removal in oil drum domain logic.
+- Added damage/removal logging events (`oil.drum.damaged`, `oil.drum.removed`).
+- Wired bootstrap projectile impacts to oil drum damage handling and entity removal state in `src/app/bootstrap.ts`.
+- Added unit and acceptance tests for damage amount, repeated-hit stacking, non-bullet no-op behavior, destruction removal, and logging.
+- Promoted approved Gherkin to acceptance and marked proposed file superseded.
+
+### Files changed so far
+
+- src/app/oilDrumEntity.ts
+- src/app/oilDrumEntity.test.ts
+- src/app/bootstrap.ts
+- src/bootstrap.test.ts
+- src/acceptance/features/oil_drum_bullet_damage.acceptance.feature
+- src/acceptance/features/oil_drum_bullet_damage.proposed.feature
+- src/acceptance/tests/oilDrumBulletDamage.acceptance.test.ts
+
+### Scenario -> test mapping
+
+- Bullet hit applies configured damage to oil drum health -> `src/app/oilDrumEntity.test.ts` (`applies configurable bullet damage to oil drum health`) + `src/acceptance/tests/oilDrumBulletDamage.acceptance.test.ts` (`Bullet hit applies configured damage to oil drum health`)
+- Repeated bullet hits stack damage independently -> `src/acceptance/tests/oilDrumBulletDamage.acceptance.test.ts` (`Repeated bullet hits stack damage independently`)
+- Oil drum is removed when health reaches zero or below from bullets -> `src/app/oilDrumEntity.test.ts` (`removes oil drum sprite when bullet damage destroys it`) + `src/acceptance/tests/oilDrumBulletDamage.acceptance.test.ts` (`Oil drum is removed when health reaches zero or below from bullets`) + `src/bootstrap.test.ts` (`removes oil drum entity after lethal bullet impacts and stops collider registration`)
+- Bullet-only damage does not apply from non-bullet sources -> `src/app/oilDrumEntity.test.ts` (`does not apply non-bullet interactions`) + `src/acceptance/tests/oilDrumBulletDamage.acceptance.test.ts` (`Bullet-only damage does not apply from non-bullet sources`)
+- Oil drum damage and removal events are logged -> `src/app/oilDrumEntity.test.ts` (`logs damage and removal events when destroyed by a bullet`) + `src/acceptance/tests/oilDrumBulletDamage.acceptance.test.ts` (`Oil drum damage and removal events are logged`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Hardener: PASS (`npm run test:mutation:branch` -> `98.04%`, target `>= 80%`)
+
+### Risks / blockers
+
+- None currently.
+
+### Next action
+
+- Proceed to final handoff.
+
+### User review status
+
+- Approved
+
 ## 2026-11-14 — Oil drum default health component
 
 - Timestamp: 2026-11-14
