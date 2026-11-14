@@ -1,24 +1,5 @@
 import type { RuntimeLogger } from './logger';
 
-type AudioContextCtor = typeof AudioContext;
-
-function resolveAudioContextCtor(): AudioContextCtor | undefined {
-	return (
-		(
-			globalThis as typeof globalThis & {
-				AudioContext?: AudioContextCtor;
-				webkitAudioContext?: AudioContextCtor;
-			}
-		).AudioContext ??
-		(
-			globalThis as typeof globalThis & {
-				AudioContext?: AudioContextCtor;
-				webkitAudioContext?: AudioContextCtor;
-			}
-		).webkitAudioContext
-	);
-}
-
 type AudioCtor = typeof Audio;
 
 function resolveAudioCtor(): AudioCtor | undefined {
@@ -47,9 +28,16 @@ export const DEFAULT_BULLET_FIRE_SOUND_PATH = new URL(
 	import.meta.url,
 ).href;
 
+export const DEFAULT_JUMP_SOUND_PATH = new URL(
+	'../assets/sounds/jump_grunt.wav',
+	import.meta.url,
+).href;
+
 export const DEFAULT_WALKING_FOOTSTEP_VOLUME = 0.2;
 export const DEFAULT_RUNNING_FOOTSTEP_VOLUME = 0.2;
 export const DEFAULT_BULLET_FIRE_VOLUME = 0.4;
+export const DEFAULT_JUMP_SOUND_VOLUME = 1;
+export const DEFAULT_JUMP_SOUND_PLAYBACK_RATE = 1;
 
 export const DEFAULT_WALKING_FOOTSTEP_INTERVAL_SECONDS = 0.45;
 export const DEFAULT_RUNNING_FOOTSTEP_INTERVAL_SECONDS = 0.3;
@@ -226,41 +214,41 @@ export function advanceFootstepCadence(params: {
 export function createJumpSoundPlayer(logger?: RuntimeLogger): {
 	play: () => void;
 } {
-	const AudioCtor = resolveAudioContextCtor();
+	const AudioElementCtor = resolveAudioCtor();
 
-	if (!AudioCtor) {
+	if (!AudioElementCtor) {
 		logger?.debug('audio.unavailable');
 		return { play: () => {} };
 	}
 
-	let audioContext: AudioContext | undefined;
+	const sourceUrl = DEFAULT_JUMP_SOUND_PATH;
+	const volume = clampVolume(DEFAULT_JUMP_SOUND_VOLUME);
+	const playbackRate = DEFAULT_JUMP_SOUND_PLAYBACK_RATE;
+	const audio = new AudioElementCtor(sourceUrl);
+	audio.loop = false;
+	audio.volume = volume;
+	audio.playbackRate = playbackRate;
 
 	return {
 		play: () => {
 			try {
-				const context = audioContext ?? new AudioCtor();
-				audioContext = context;
-				const startTime = context.currentTime;
-				const oscillator = context.createOscillator();
-				const gain = context.createGain();
+				audio.currentTime = 0;
+				audio.playbackRate = playbackRate;
+				const playbackResult = audio.play();
+				if (playbackResult && typeof playbackResult.catch === 'function') {
+					playbackResult.catch((error: unknown) => {
+						logger?.warn('jump.sound.failed', {
+							error:
+								error instanceof Error ? error.message : 'unknown',
+						});
+					});
+				}
 
-				oscillator.type = 'square';
-				oscillator.frequency.setValueAtTime(420, startTime);
-				oscillator.frequency.exponentialRampToValueAtTime(
-					180,
-					startTime + 0.12,
-				);
-
-				gain.gain.setValueAtTime(0.0001, startTime);
-				gain.gain.exponentialRampToValueAtTime(0.18, startTime + 0.01);
-				gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.15);
-
-				oscillator.connect(gain);
-				gain.connect(context.destination);
-				oscillator.start(startTime);
-				oscillator.stop(startTime + 0.16);
-
-				logger?.debug('jump.sound.played', { startTime, frequency: 420 });
+				logger?.debug('jump.sound.played', {
+					sourceUrl,
+					volume,
+					playbackRate,
+				});
 			} catch (error) {
 				logger?.warn('jump.sound.failed', {
 					error: error instanceof Error ? error.message : 'unknown',

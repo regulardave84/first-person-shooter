@@ -4,6 +4,54 @@ Persistent execution log for the `implementer` skill.
 
 ---
 
+## 2026-11-14 — Player jump_grunt sound replacement
+
+- Timestamp: 2026-11-14
+- Feature file: src/acceptance/features/playerJumpGruntSound.acceptance.feature
+- Complexity: low
+- Current phase: P2
+- Checkpoint status: IN_PROGRESS (`SPECIFIER_COMPLETE` -> `IMPLEMENTER_COMPLETE` pending cleaner/hardener)
+
+### Completed work
+
+- Replaced jump audio implementation in `src/runtime/audio.ts` from synthesized `AudioContext` tone generation to `jump_grunt.wav` playback via `Audio` element.
+- Added exported jump audio defaults (`DEFAULT_JUMP_SOUND_PATH`, `DEFAULT_JUMP_SOUND_VOLUME`, `DEFAULT_JUMP_SOUND_PLAYBACK_RATE`) and wired playback/reset behavior.
+- Preserved jump trigger semantics in gameplay integration (`src/app/bootstrap.ts`) so audio only plays when jump input transitions to a new valid jump state.
+- Added/updated runtime and acceptance tests for grounded trigger behavior, airborne suppression, default volume/playback rate usage, and silent fallback on playback failure.
+
+### Files changed so far
+
+- src/acceptance/features/playerJumpGruntSound.acceptance.feature
+- src/acceptance/tests/playerJumpGruntSound.acceptance.test.ts
+- src/runtime/audio.ts
+- src/fpsRuntime.test.ts
+
+### Scenario -> test mapping
+
+- Successful jump initiation plays jump_grunt once -> `src/acceptance/tests/playerJumpGruntSound.acceptance.test.ts` (`Successful jump initiation plays jump_grunt once`) + `src/bootstrap.test.ts` (`routes Space key through jump flow only and ignores jump on keyup`)
+- Airborne jump input does not replay jump sound -> `src/acceptance/tests/playerJumpGruntSound.acceptance.test.ts` (`Airborne jump input does not replay jump sound`) + `src/bootstrap.test.ts` (`does not play jump sound when jump input returns the same state`)
+- jump_grunt uses existing playback defaults -> `src/acceptance/tests/playerJumpGruntSound.acceptance.test.ts` (`jump_grunt uses existing playback defaults`) + `src/fpsRuntime.test.ts` (`plays jump_grunt audio when browser Audio is available`)
+- Missing or failed jump_grunt playback falls back silently -> `src/acceptance/tests/playerJumpGruntSound.acceptance.test.ts` (`Missing or failed jump_grunt playback falls back silently`) + `src/fpsRuntime.test.ts` (`logs a warning when jump sound playback fails`)
+
+### Verification status
+
+- Lint: PENDING
+- Build: PENDING
+- Tests: PENDING
+- Hardener: PENDING
+
+### Risks / blockers
+
+- None currently.
+
+### Next action
+
+- Run cleaner/hardener quality gates and finalize status.
+
+### User review status
+
+- Approved
+
 ## 2026-11-14 — Player running footsteps sound
 
 - Timestamp: 2026-11-14

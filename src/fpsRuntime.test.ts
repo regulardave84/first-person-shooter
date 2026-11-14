@@ -18,6 +18,9 @@ import {
 	createInitialFootstepCadenceState,
 	DEFAULT_BULLET_FIRE_SOUND_PATH,
 	DEFAULT_BULLET_FIRE_VOLUME,
+	DEFAULT_JUMP_SOUND_PATH,
+	DEFAULT_JUMP_SOUND_PLAYBACK_RATE,
+	DEFAULT_JUMP_SOUND_VOLUME,
 	DEFAULT_WALKING_FOOTSTEP_SOUND_PATH,
 	DEFAULT_RUNNING_FOOTSTEP_SOUND_PATH,
 	DEFAULT_WALKING_FOOTSTEP_VOLUME,
@@ -728,58 +731,16 @@ describe('fpsRuntime helpers', () => {
 		expect(jumpState.verticalVelocity).toBeGreaterThan(0);
 	});
 
-	function restoreAudioApiState(
-		audioWindow: typeof globalThis & {
-			AudioContext?: typeof AudioContext;
-			webkitAudioContext?: typeof AudioContext;
-		},
-		originalAudio: typeof AudioContext | undefined,
-		originalWebkit: typeof AudioContext | undefined,
-		originalAudioDescriptor?: PropertyDescriptor,
-		originalWebkitDescriptor?: PropertyDescriptor,
-	): void {
-		if (originalAudioDescriptor) {
-			Object.defineProperty(
-				audioWindow,
-				'AudioContext',
-				originalAudioDescriptor,
-			);
-		} else if (originalAudio) {
-			audioWindow.AudioContext = originalAudio;
-		}
-		if (originalWebkitDescriptor) {
-			Object.defineProperty(
-				audioWindow,
-				'webkitAudioContext',
-				originalWebkitDescriptor,
-			);
-		} else if (originalWebkit) {
-			audioWindow.webkitAudioContext = originalWebkit;
-		}
-	}
-
-	it('creates a no-op audio player when browser audio APIs are unavailable', () => {
+	it('creates a no-op jump audio player when browser Audio is unavailable', () => {
 		const sink = vi.fn();
 		const logger = createRuntimeLogger({ enabled: true, sink });
 		const audioWindow = globalThis as typeof globalThis & {
-			AudioContext?: typeof AudioContext;
-			webkitAudioContext?: typeof AudioContext;
+			Audio?: typeof Audio;
 		};
-		const originalAudio = audioWindow.AudioContext;
-		const originalWebkit = audioWindow.webkitAudioContext;
-		const audioContextDescriptor = Object.getOwnPropertyDescriptor(
-			audioWindow,
-			'AudioContext',
-		);
-		const webkitDescriptor = Object.getOwnPropertyDescriptor(
-			audioWindow,
-			'webkitAudioContext',
-		);
-		if (audioContextDescriptor?.configurable) {
-			Reflect.deleteProperty(audioWindow, 'AudioContext');
-		}
-		if (webkitDescriptor?.configurable) {
-			Reflect.deleteProperty(audioWindow, 'webkitAudioContext');
+		const originalAudio = audioWindow.Audio;
+		const audioDescriptor = Object.getOwnPropertyDescriptor(audioWindow, 'Audio');
+		if (audioDescriptor?.configurable) {
+			Reflect.deleteProperty(audioWindow, 'Audio');
 		}
 
 		const player = createJumpSoundPlayer(logger);
@@ -790,117 +751,104 @@ describe('fpsRuntime helpers', () => {
 			context: undefined,
 		});
 
-		restoreAudioApiState(
-			audioWindow,
-			originalAudio,
-			originalWebkit,
-			audioContextDescriptor,
-			webkitDescriptor,
-		);
+		if (audioDescriptor) {
+			Object.defineProperty(audioWindow, 'Audio', audioDescriptor);
+		} else {
+			audioWindow.Audio = originalAudio;
+		}
 	});
 
-	it('creates a no-op audio player when browser audio APIs are unavailable and logger is omitted', () => {
+	it('creates a no-op jump audio player when browser Audio is unavailable and logger is omitted', () => {
 		const audioWindow = globalThis as typeof globalThis & {
-			AudioContext?: typeof AudioContext;
-			webkitAudioContext?: typeof AudioContext;
+			Audio?: typeof Audio;
 		};
-		const originalAudio = audioWindow.AudioContext;
-		const originalWebkit = audioWindow.webkitAudioContext;
-		const audioContextDescriptor = Object.getOwnPropertyDescriptor(
-			audioWindow,
-			'AudioContext',
-		);
-		const webkitDescriptor = Object.getOwnPropertyDescriptor(
-			audioWindow,
-			'webkitAudioContext',
-		);
-		if (audioContextDescriptor?.configurable) {
-			Reflect.deleteProperty(audioWindow, 'AudioContext');
-		}
-		if (webkitDescriptor?.configurable) {
-			Reflect.deleteProperty(audioWindow, 'webkitAudioContext');
+		const originalAudio = audioWindow.Audio;
+		const audioDescriptor = Object.getOwnPropertyDescriptor(audioWindow, 'Audio');
+		if (audioDescriptor?.configurable) {
+			Reflect.deleteProperty(audioWindow, 'Audio');
 		}
 
 		const player = createJumpSoundPlayer();
 		expect(() => player.play()).not.toThrow();
 
-		restoreAudioApiState(
-			audioWindow,
-			originalAudio,
-			originalWebkit,
-			audioContextDescriptor,
-			webkitDescriptor,
-		);
+		if (audioDescriptor) {
+			Object.defineProperty(audioWindow, 'Audio', audioDescriptor);
+		} else {
+			audioWindow.Audio = originalAudio;
+		}
 	});
 
-	it('plays a synthesized jump tone when the browser audio API is available', () => {
+	it('plays jump_grunt audio when browser Audio is available', () => {
 		const sink = vi.fn();
 		const logger = createRuntimeLogger({ enabled: true, sink });
-		const oscillator = {
-			type: 'sine',
-			frequency: {
-				setValueAtTime: vi.fn(),
-				exponentialRampToValueAtTime: vi.fn(),
-			},
-			connect: vi.fn(),
-			start: vi.fn(),
-			stop: vi.fn(),
-		};
-		const gain = {
-			gain: {
-				setValueAtTime: vi.fn(),
-				exponentialRampToValueAtTime: vi.fn(),
-			},
-			connect: vi.fn(),
-		};
-		const audioContext = {
-			currentTime: 1.5,
-			createOscillator: vi.fn(() => oscillator),
-			createGain: vi.fn(() => gain),
-			destination: {},
+		const audioCtorSpy = vi.fn();
+		const audioElement = {
+			loop: false,
+			volume: 0,
+			playbackRate: 0,
+			currentTime: 2,
+			play: vi.fn(() => Promise.resolve()),
 		};
 		const audioWindow = globalThis as typeof globalThis & {
-			AudioContext?: typeof AudioContext;
+			Audio?: typeof Audio;
 		};
-		const originalAudio = audioWindow.AudioContext;
-		audioWindow.AudioContext = class {
-			constructor() {
-				return audioContext as unknown as AudioContext;
+		const originalAudio = audioWindow.Audio;
+		class AudioMock {
+			constructor(sourceUrl?: string) {
+				audioCtorSpy(sourceUrl);
+				(
+					audioElement as typeof audioElement & {
+						sourceUrl?: string;
+					}
+				).sourceUrl = sourceUrl;
+				return audioElement as unknown as HTMLAudioElement;
 			}
-		} as typeof AudioContext;
+		}
+		audioWindow.Audio = AudioMock as unknown as typeof Audio;
 
 		const player = createJumpSoundPlayer(logger);
 		player.play();
 
-		expect(audioContext.createOscillator).toHaveBeenCalledTimes(1);
-		expect(oscillator.start).toHaveBeenCalledWith(1.5);
-		expect(oscillator.stop).toHaveBeenCalledWith(1.66);
+		expect(audioCtorSpy).toHaveBeenCalledWith(DEFAULT_JUMP_SOUND_PATH);
+		expect(audioElement.loop).toBe(false);
+		expect(audioElement.volume).toBe(DEFAULT_JUMP_SOUND_VOLUME);
+		expect(audioElement.playbackRate).toBe(DEFAULT_JUMP_SOUND_PLAYBACK_RATE);
+		expect(audioElement.currentTime).toBe(0);
+		expect(audioElement.play).toHaveBeenCalledTimes(1);
 		expect(sink).toHaveBeenCalledWith({
 			level: 'debug',
 			event: 'jump.sound.played',
-			context: expect.objectContaining({ frequency: 420 }),
+			context: expect.objectContaining({
+				sourceUrl: DEFAULT_JUMP_SOUND_PATH,
+				volume: DEFAULT_JUMP_SOUND_VOLUME,
+				playbackRate: DEFAULT_JUMP_SOUND_PLAYBACK_RATE,
+			}),
 		});
 
-		audioWindow.AudioContext = originalAudio;
+		audioWindow.Audio = originalAudio;
 	});
 
-	it('logs a warning when jump sound creation fails', () => {
+	it('logs a warning when jump sound playback fails', () => {
 		const sink = vi.fn();
 		const logger = createRuntimeLogger({ enabled: true, sink });
-		const originalAudio = (
-			globalThis as typeof globalThis & {
-				AudioContext?: typeof AudioContext;
-			}
-		).AudioContext;
-		(
-			globalThis as typeof globalThis & {
-				AudioContext?: typeof AudioContext;
-			}
-		).AudioContext = class {
+		const audioWindow = globalThis as typeof globalThis & {
+			Audio?: typeof Audio;
+		};
+		const originalAudio = audioWindow.Audio;
+		class AudioMock {
 			constructor() {
-				throw new Error('No audio');
+				return {
+					play: () => {
+						throw new Error('No audio');
+					},
+					loop: false,
+					volume: 1,
+					playbackRate: 1,
+					currentTime: 0,
+				} as unknown as HTMLAudioElement;
 			}
-		} as typeof AudioContext;
+		}
+		audioWindow.Audio = AudioMock as unknown as typeof Audio;
 
 		const player = createJumpSoundPlayer(logger);
 		expect(() => player.play()).not.toThrow();
@@ -910,11 +858,112 @@ describe('fpsRuntime helpers', () => {
 			context: expect.objectContaining({ error: 'No audio' }),
 		});
 
-		(
-			globalThis as typeof globalThis & {
-				AudioContext?: typeof AudioContext;
+		audioWindow.Audio = originalAudio;
+	});
+
+	it('logs unknown warning when jump sound throws a non-Error value', () => {
+		const sink = vi.fn();
+		const logger = createRuntimeLogger({ enabled: true, sink });
+		const audioWindow = globalThis as typeof globalThis & {
+			Audio?: typeof Audio;
+		};
+		const originalAudio = audioWindow.Audio;
+		class AudioMock {
+			constructor() {
+				return {
+					play: () => {
+						throw 'boom';
+					},
+					loop: false,
+					volume: 1,
+					playbackRate: 1,
+					currentTime: 0,
+				} as unknown as HTMLAudioElement;
 			}
-		).AudioContext = originalAudio;
+		}
+		audioWindow.Audio = AudioMock as unknown as typeof Audio;
+
+		const player = createJumpSoundPlayer(logger);
+		expect(() => player.play()).not.toThrow();
+		expect(sink).toHaveBeenCalledWith({
+			level: 'warn',
+			event: 'jump.sound.failed',
+			context: expect.objectContaining({ error: 'unknown' }),
+		});
+
+		audioWindow.Audio = originalAudio;
+	});
+
+	it('handles jump playback when Audio.play does not return a promise', () => {
+		const sink = vi.fn();
+		const logger = createRuntimeLogger({ enabled: true, sink });
+		const audioElement = {
+			loop: false,
+			volume: 0,
+			playbackRate: 0,
+			currentTime: 1,
+			play: vi.fn(() => undefined),
+		};
+		const audioWindow = globalThis as typeof globalThis & {
+			Audio?: typeof Audio;
+		};
+		const originalAudio = audioWindow.Audio;
+		class AudioMock {
+			constructor() {
+				return audioElement as unknown as HTMLAudioElement;
+			}
+		}
+		audioWindow.Audio = AudioMock as unknown as typeof Audio;
+
+		const player = createJumpSoundPlayer(logger);
+		expect(() => player.play()).not.toThrow();
+		expect(audioElement.play).toHaveBeenCalledTimes(1);
+		expect(sink).toHaveBeenCalledWith({
+			level: 'debug',
+			event: 'jump.sound.played',
+			context: expect.objectContaining({
+				sourceUrl: DEFAULT_JUMP_SOUND_PATH,
+			}),
+		});
+
+		audioWindow.Audio = originalAudio;
+	});
+
+	it('logs a warning when jump playback promise rejects', () => {
+		const sink = vi.fn();
+		const logger = createRuntimeLogger({ enabled: true, sink });
+		const audioElement = {
+			loop: false,
+			volume: 0,
+			playbackRate: 0,
+			currentTime: 0,
+			play: vi.fn(() => ({
+				catch: (handler: (error: unknown) => void) => {
+					handler(new Error('play blocked'));
+					return Promise.resolve();
+				},
+			})),
+		};
+		const audioWindow = globalThis as typeof globalThis & {
+			Audio?: typeof Audio;
+		};
+		const originalAudio = audioWindow.Audio;
+		class AudioMock {
+			constructor() {
+				return audioElement as unknown as HTMLAudioElement;
+			}
+		}
+		audioWindow.Audio = AudioMock as unknown as typeof Audio;
+
+		const player = createJumpSoundPlayer(logger);
+		expect(() => player.play()).not.toThrow();
+		expect(sink).toHaveBeenCalledWith({
+			level: 'warn',
+			event: 'jump.sound.failed',
+			context: expect.objectContaining({ error: 'play blocked' }),
+		});
+
+		audioWindow.Audio = originalAudio;
 	});
 
 	it('plays pistol shot audio when Audio API is available', () => {
@@ -1022,6 +1071,46 @@ describe('fpsRuntime helpers', () => {
 			level: 'warn',
 			event: 'bullet.sound.failed',
 			context: expect.objectContaining({ error: 'No audio' }),
+		});
+
+		(
+			globalThis as typeof globalThis & {
+				Audio?: typeof Audio;
+			}
+		).Audio = originalAudio;
+	});
+
+	it('logs unknown warning when bullet sound throws a non-Error value', () => {
+		const sink = vi.fn();
+		const logger = createRuntimeLogger({ enabled: true, sink });
+		const originalAudio = (
+			globalThis as typeof globalThis & {
+				Audio?: typeof Audio;
+			}
+		).Audio;
+		(
+			globalThis as typeof globalThis & {
+				Audio?: typeof Audio;
+			}
+		).Audio = class {
+			constructor() {
+				return {
+					loop: false,
+					volume: 1,
+					currentTime: 0,
+					play: () => {
+						throw 'blocked';
+					},
+				} as unknown as HTMLAudioElement;
+			}
+		} as unknown as typeof Audio;
+
+		const player = createBulletFireSoundPlayer(logger);
+		expect(() => player.play()).not.toThrow();
+		expect(sink).toHaveBeenCalledWith({
+			level: 'warn',
+			event: 'bullet.sound.failed',
+			context: expect.objectContaining({ error: 'unknown' }),
 		});
 
 		(
