@@ -4,6 +4,58 @@ Persistent execution log for the `implementer` skill.
 
 ---
 
+## 2026-11-14 — Oil drum default health component
+
+- Timestamp: 2026-11-14
+- Feature file: src/acceptance/features/oil_drum_health.acceptance.feature
+- Complexity: small
+- Current phase: P4
+- Checkpoint status: COMPLETE (`SPECIFIER_COMPLETE` -> `IMPLEMENTER_COMPLETE`) with `CLEANER_COMPLETE` and `HARDENER_COMPLETE`
+
+### Completed work
+
+- Added a shared entity-health component at `src/app/entityHealth.ts` to support future health-bearing entities.
+- Integrated oil drum health defaults into `src/app/oilDrumEntity.ts` via `createOilDrumHealthState()` with max/current defaulting to `100`.
+- Extended oil drum scene insertion result to include per-instance health state.
+- Added unit coverage in `src/app/entityHealth.test.ts` and `src/app/oilDrumEntity.test.ts`.
+- Added acceptance coverage in `src/acceptance/tests/oilDrumHealth.acceptance.test.ts`.
+- Promoted approved Gherkin to `src/acceptance/features/oil_drum_health.acceptance.feature` and marked proposed feature as superseded.
+
+### Files changed so far
+
+- src/app/entityHealth.ts
+- src/app/entityHealth.test.ts
+- src/app/oilDrumEntity.ts
+- src/app/oilDrumEntity.test.ts
+- src/acceptance/features/oil_drum_health.acceptance.feature
+- src/acceptance/features/oil_drum_health.proposed.feature
+- src/acceptance/tests/oilDrumHealth.acceptance.test.ts
+
+### Scenario -> test mapping
+
+- Oil drum defaults to 100 health -> `src/app/oilDrumEntity.test.ts` (`creates default health state as 100/100`) + `src/acceptance/tests/oilDrumHealth.acceptance.test.ts` (`Oil drum defaults to 100 health`)
+- Oil drum health is represented as current and maximum values -> `src/app/oilDrumEntity.test.ts` (`creates default health state as 100/100`) + `src/acceptance/tests/oilDrumHealth.acceptance.test.ts` (`Oil drum health is represented as current and maximum values`)
+- Oil drum health defaults are deterministic across spawns -> `src/app/oilDrumEntity.test.ts` (`applies deterministic default health across multiple oil drum spawns`) + `src/acceptance/tests/oilDrumHealth.acceptance.test.ts` (`Oil drum health defaults are deterministic across spawns`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Hardener: PASS (`npm run test:mutation:branch` -> `100.00%`, target `>= 80%`)
+
+### Risks / blockers
+
+- None currently.
+
+### Next action
+
+- Proceed to final handoff.
+
+### User review status
+
+- Approved
+
 ## 2026-11-14 — Oil drum top collision blocking
 
 - Timestamp: 2026-11-14

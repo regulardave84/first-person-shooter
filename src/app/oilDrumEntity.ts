@@ -1,5 +1,10 @@
 import * as THREE from 'three';
 import type { EntityMovementCollider } from '../runtime/fpsRuntime';
+import {
+	DEFAULT_ENTITY_MAX_HEALTH,
+	createEntityHealthState,
+	type EntityHealthState,
+} from './entityHealth';
 
 export const OIL_DRUM_ENTITY_NAME = 'oil-drum-entity';
 export const DEFAULT_OIL_DRUM_SPRITE_ASSET_PATH = new URL(
@@ -21,6 +26,7 @@ export const DEFAULT_OIL_DRUM_SPRITE_SCALE = {
 
 export const DEFAULT_OIL_DRUM_COLLIDER_RADIUS = 0.75;
 export const DEFAULT_OIL_DRUM_COLLIDER_HEIGHT = 2.25;
+export const DEFAULT_OIL_DRUM_MAX_HEALTH = DEFAULT_ENTITY_MAX_HEALTH;
 
 export type OilDrumPosition = {
 	x: number;
@@ -31,6 +37,8 @@ export type OilDrumPosition = {
 export type OilDrumLogger = {
 	warn?: (event: string, context?: Record<string, unknown>) => void;
 };
+
+export type OilDrumHealthState = EntityHealthState;
 
 export type OilDrumTextureLoaderLike = {
 	load: (
@@ -99,6 +107,12 @@ export function createOilDrumMovementCollider(
 	};
 }
 
+export function createOilDrumHealthState(): OilDrumHealthState {
+	return createEntityHealthState({
+		maxHealth: DEFAULT_OIL_DRUM_MAX_HEALTH,
+	});
+}
+
 export function addDefaultOilDrumEntityToScene(config: {
 	scene: THREE.Scene;
 	playerStartPosition: OilDrumPosition;
@@ -108,6 +122,7 @@ export function addDefaultOilDrumEntityToScene(config: {
 }): {
 	sprite: THREE.Sprite;
 	movementCollider: EntityMovementCollider;
+	health: OilDrumHealthState;
 } {
 	const sprite = createOilDrumSprite({
 		assetUrl: config.assetUrl,
@@ -116,10 +131,12 @@ export function addDefaultOilDrumEntityToScene(config: {
 	});
 	const spawn = resolveOilDrumSpawnPosition(config.playerStartPosition);
 	const movementCollider = createOilDrumMovementCollider(spawn);
+	const health = createOilDrumHealthState();
 	sprite.position.set(spawn.x, spawn.y, spawn.z);
 	config.scene.add(sprite);
 	return {
 		sprite,
 		movementCollider,
+		health,
 	};
 }

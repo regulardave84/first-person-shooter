@@ -3,11 +3,13 @@ import * as THREE from 'three';
 import {
 	DEFAULT_OIL_DRUM_COLLIDER_HEIGHT,
 	DEFAULT_OIL_DRUM_COLLIDER_RADIUS,
+	DEFAULT_OIL_DRUM_MAX_HEALTH,
 	DEFAULT_OIL_DRUM_SPAWN_OFFSET,
 	DEFAULT_OIL_DRUM_SPRITE_ASSET_PATH,
 	DEFAULT_OIL_DRUM_SPRITE_SCALE,
 	OIL_DRUM_ENTITY_NAME,
 	addDefaultOilDrumEntityToScene,
+	createOilDrumHealthState,
 	createOilDrumMovementCollider,
 	createOilDrumSprite,
 	resolveOilDrumSpawnPosition,
@@ -24,6 +26,16 @@ describe('oilDrumEntity', () => {
 		expect(DEFAULT_OIL_DRUM_SPRITE_SCALE).toEqual({ x: 1.8, y: 2.2, z: 1 });
 		expect(DEFAULT_OIL_DRUM_COLLIDER_RADIUS).toBeCloseTo(0.75);
 		expect(DEFAULT_OIL_DRUM_COLLIDER_HEIGHT).toBeCloseTo(2.25);
+		expect(DEFAULT_OIL_DRUM_MAX_HEALTH).toBe(100);
+	});
+
+	it('creates default health state as 100/100', () => {
+		const health = createOilDrumHealthState();
+
+		expect(health).toEqual({
+			currentHealth: 100,
+			maxHealth: 100,
+		});
 	});
 
 	it('resolves a default spawn position in front of the player', () => {
@@ -94,6 +106,10 @@ describe('oilDrumEntity', () => {
 			minY: 1 - DEFAULT_OIL_DRUM_COLLIDER_HEIGHT / 2,
 			maxY: 1 + DEFAULT_OIL_DRUM_COLLIDER_HEIGHT / 2,
 		});
+		expect(added.health).toEqual({
+			currentHealth: 100,
+			maxHealth: 100,
+		});
 
 		const distanceFromPlayer = sprite.position.distanceTo(
 			new THREE.Vector3(
@@ -104,6 +120,33 @@ describe('oilDrumEntity', () => {
 		);
 		expect(distanceFromPlayer).toBeLessThanOrEqual(6);
 		expect(sprite.position.z).toBeLessThan(playerStartPosition.z);
+	});
+
+	it('applies deterministic default health across multiple oil drum spawns', () => {
+		const scene = new THREE.Scene();
+		const texture = new THREE.Texture();
+		const load = vi.fn(() => texture);
+
+		const first = addDefaultOilDrumEntityToScene({
+			scene,
+			playerStartPosition: { x: 0, y: 1.6, z: 6 },
+			textureLoader: { load },
+		});
+		const second = addDefaultOilDrumEntityToScene({
+			scene,
+			playerStartPosition: { x: 4, y: 1.6, z: 8 },
+			textureLoader: { load },
+		});
+
+		expect(first.health).toEqual({
+			currentHealth: 100,
+			maxHealth: 100,
+		});
+		expect(second.health).toEqual({
+			currentHealth: 100,
+			maxHealth: 100,
+		});
+		expect(first.health).not.toBe(second.health);
 	});
 
 	it('logs a warning when sprite texture fails to load', () => {
