@@ -25,7 +25,9 @@ describe('Acceptance: Oil drum collision blocks player movement', () => {
 
 		expect(added.movementCollider.x).toBeCloseTo(added.sprite.position.x);
 		expect(added.movementCollider.z).toBeCloseTo(added.sprite.position.z);
-		expect(added.movementCollider.minY).toBeLessThan(added.movementCollider.maxY);
+		expect(added.movementCollider.minY).toBeLessThan(
+			added.movementCollider.maxY,
+		);
 	});
 
 	it('Player movement is blocked by the oil drum', () => {

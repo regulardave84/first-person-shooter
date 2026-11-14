@@ -126,8 +126,7 @@ function collidesWithEntity(
 	const combinedRadius = playerRadius + entity.radius;
 	const startToEndX = end.x - start.x;
 	const startToEndZ = end.z - start.z;
-	const lengthSquared =
-		startToEndX * startToEndX + startToEndZ * startToEndZ;
+	const lengthSquared = startToEndX * startToEndX + startToEndZ * startToEndZ;
 
 	let projection = 0;
 	if (lengthSquared > 0) {
