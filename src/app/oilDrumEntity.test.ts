@@ -65,7 +65,9 @@ describe('oilDrumEntity', () => {
 			textureLoader: { load },
 		});
 
-		expect(scene.children.filter((child) => child.name === OIL_DRUM_ENTITY_NAME)).toHaveLength(1);
+		expect(
+			scene.children.filter((child) => child.name === OIL_DRUM_ENTITY_NAME),
+		).toHaveLength(1);
 		expect(scene.children).toContain(sprite);
 
 		const distanceFromPlayer = sprite.position.distanceTo(

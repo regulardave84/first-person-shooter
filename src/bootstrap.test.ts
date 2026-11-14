@@ -783,7 +783,9 @@ describe('bootstrap runtime wiring', () => {
 		expect(weaponHudRoot).toBeDefined();
 		expect(weaponHudRoot?.classList.contains('weapon-hud')).toBe(true);
 		expect(documentStub.elementsById.get('weapon-hud-image')).toBeDefined();
-		expect(oilDrumEntityMocks.addDefaultOilDrumEntityToScene).toHaveBeenCalledWith(
+		expect(
+			oilDrumEntityMocks.addDefaultOilDrumEntityToScene,
+		).toHaveBeenCalledWith(
 			expect.objectContaining({
 				scene,
 				playerStartPosition: { x: 0, y: 1.6, z: 6 },
