@@ -12,7 +12,10 @@ import {
 	createInitialPrimaryFireState,
 	createBulletFireSoundPlayer,
 	createJumpSoundPlayer,
+	createWalkingFootstepSoundPlayer,
 	createRuntimeLogger,
+	DEFAULT_WALKING_FOOTSTEP_SOUND_PATH,
+	DEFAULT_WALKING_FOOTSTEP_VOLUME,
 	createInitialRunKeys,
 	createInitialMovementKeys,
 	getWorldLayoutSummary,
@@ -26,6 +29,7 @@ import {
 	RUN_SPEED_MULTIPLIER,
 	resolveHorizontalMovement,
 	playBulletFireSounds,
+	setWalkingFootstepSoundActive,
 	setRunKeyState,
 	setMovementKeyState,
 	setPrimaryFirePressedState,
@@ -1032,6 +1036,111 @@ describe('fpsRuntime helpers', () => {
 				AudioContext?: typeof AudioContext;
 			}
 		).AudioContext = originalAudio;
+	});
+
+	it('creates no-op walking footstep player when Audio is unavailable', () => {
+		const sink = vi.fn();
+		const logger = createRuntimeLogger({ enabled: true, sink });
+		const audioWindow = globalThis as typeof globalThis & {
+			Audio?: typeof Audio;
+		};
+		const originalAudio = audioWindow.Audio;
+		const audioDescriptor = Object.getOwnPropertyDescriptor(audioWindow, 'Audio');
+		if (audioDescriptor?.configurable) {
+			Reflect.deleteProperty(audioWindow, 'Audio');
+		}
+
+		const player = createWalkingFootstepSoundPlayer(logger);
+		expect(() => {
+			player.play();
+			player.stop();
+		}).not.toThrow();
+		expect(sink).toHaveBeenCalledWith({
+			level: 'debug',
+			event: 'audio.unavailable',
+			context: undefined,
+		});
+
+		if (audioDescriptor) {
+			Object.defineProperty(audioWindow, 'Audio', audioDescriptor);
+		} else if (originalAudio) {
+			audioWindow.Audio = originalAudio;
+		}
+	});
+
+	it('creates looping walking footstep player and avoids duplicate play calls', () => {
+		const sink = vi.fn();
+		const logger = createRuntimeLogger({ enabled: true, sink });
+		const audioCtorSpy = vi.fn();
+		const audioElement = {
+			loop: false,
+			volume: 1,
+			currentTime: 2,
+			play: vi.fn(() => Promise.resolve()),
+			pause: vi.fn(),
+		};
+		const audioWindow = globalThis as typeof globalThis & {
+			Audio?: typeof Audio;
+		};
+		const originalAudio = audioWindow.Audio;
+		class AudioMock {
+			constructor(sourceUrl?: string) {
+				audioCtorSpy(sourceUrl);
+				(
+					audioElement as typeof audioElement & {
+						sourceUrl?: string;
+					}
+				).sourceUrl = sourceUrl;
+				return audioElement as unknown as HTMLAudioElement;
+			}
+		}
+		audioWindow.Audio = AudioMock as unknown as typeof Audio;
+
+		const player = createWalkingFootstepSoundPlayer(logger);
+
+		expect(audioCtorSpy).toHaveBeenCalledWith(
+			DEFAULT_WALKING_FOOTSTEP_SOUND_PATH,
+		);
+		expect(audioElement.loop).toBe(true);
+		expect(audioElement.volume).toBe(DEFAULT_WALKING_FOOTSTEP_VOLUME);
+
+		player.play();
+		player.play();
+		expect(audioElement.play).toHaveBeenCalledTimes(1);
+
+		player.stop();
+		expect(audioElement.pause).toHaveBeenCalledTimes(1);
+		expect(audioElement.currentTime).toBe(0);
+		expect(sink).toHaveBeenCalledWith({
+			level: 'debug',
+			event: 'footstep.sound.played',
+			context: expect.objectContaining({
+				sourceUrl: DEFAULT_WALKING_FOOTSTEP_SOUND_PATH,
+				volume: DEFAULT_WALKING_FOOTSTEP_VOLUME,
+			}),
+		});
+		expect(sink).toHaveBeenCalledWith({
+			level: 'debug',
+			event: 'footstep.sound.stopped',
+			context: expect.objectContaining({
+				sourceUrl: DEFAULT_WALKING_FOOTSTEP_SOUND_PATH,
+			}),
+		});
+
+		audioWindow.Audio = originalAudio;
+	});
+
+	it('routes walking footstep activation helper to play and stop', () => {
+		const player = {
+			play: vi.fn(),
+			stop: vi.fn(),
+		};
+
+		setWalkingFootstepSoundActive(player, true);
+		setWalkingFootstepSoundActive(player, false);
+
+		expect(player.play).toHaveBeenCalledTimes(1);
+		expect(player.stop).toHaveBeenCalledTimes(1);
 	});
 
 	it('plays exactly one firing sound per emitted bullet', () => {

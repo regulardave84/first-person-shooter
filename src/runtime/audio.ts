@@ -19,6 +19,108 @@ function resolveAudioContextCtor(): AudioContextCtor | undefined {
 	);
 }
 
+type AudioCtor = typeof Audio;
+
+function resolveAudioCtor(): AudioCtor | undefined {
+	return (globalThis as typeof globalThis & { Audio?: AudioCtor }).Audio;
+}
+
+function clampVolume(volume: number): number {
+	if (!Number.isFinite(volume)) {
+		return 0;
+	}
+	return Math.max(0, Math.min(1, volume));
+}
+
+export const DEFAULT_WALKING_FOOTSTEP_SOUND_PATH = new URL(
+	'../assets/sounds/footsteps_walking.wav',
+	import.meta.url,
+).href;
+
+export const DEFAULT_WALKING_FOOTSTEP_VOLUME = 0.2;
+
+export type WalkingFootstepSoundPlayer = {
+	play: () => void;
+	stop: () => void;
+};
+
+export function createWalkingFootstepSoundPlayer(
+	logger?: RuntimeLogger,
+	config?: {
+		sourceUrl?: string;
+		volume?: number;
+	},
+): WalkingFootstepSoundPlayer {
+	const AudioElementCtor = resolveAudioCtor();
+
+	if (!AudioElementCtor) {
+		logger?.debug('audio.unavailable');
+		return { play: () => {}, stop: () => {} };
+	}
+
+	const sourceUrl = config?.sourceUrl ?? DEFAULT_WALKING_FOOTSTEP_SOUND_PATH;
+	const volume = clampVolume(
+		config?.volume ?? DEFAULT_WALKING_FOOTSTEP_VOLUME,
+	);
+	const audio = new AudioElementCtor(sourceUrl);
+	audio.loop = true;
+	audio.volume = volume;
+	let isPlaying = false;
+
+	return {
+		play: () => {
+			if (isPlaying) {
+				return;
+			}
+
+			try {
+				isPlaying = true;
+				const playbackResult = audio.play();
+				if (playbackResult && typeof playbackResult.catch === 'function') {
+					playbackResult.catch((error: unknown) => {
+						isPlaying = false;
+						logger?.warn('footstep.sound.failed', {
+							error:
+								error instanceof Error ? error.message : 'unknown',
+						});
+					});
+				}
+				logger?.debug('footstep.sound.played', {
+					sourceUrl,
+					volume,
+				});
+			} catch (error) {
+				isPlaying = false;
+				logger?.warn('footstep.sound.failed', {
+					error: error instanceof Error ? error.message : 'unknown',
+				});
+			}
+		},
+		stop: () => {
+			if (!isPlaying) {
+				return;
+			}
+
+			audio.pause();
+			audio.currentTime = 0;
+			isPlaying = false;
+			logger?.debug('footstep.sound.stopped', { sourceUrl });
+		},
+	};
+}
+
+export function setWalkingFootstepSoundActive(
+	player: WalkingFootstepSoundPlayer,
+	isWalking: boolean,
+): void {
+	if (isWalking) {
+		player.play();
+		return;
+	}
+
+	player.stop();
+}
+
 export function createJumpSoundPlayer(logger?: RuntimeLogger): {
 	play: () => void;
 } {

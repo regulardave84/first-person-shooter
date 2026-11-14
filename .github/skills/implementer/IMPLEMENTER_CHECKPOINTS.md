@@ -4,6 +4,57 @@ Persistent execution log for the `implementer` skill.
 
 ---
 
+## 2026-11-14 — Player walking footstep sound
+
+- Timestamp: 2026-11-14
+- Feature file: src/acceptance/features/playerFootstepWalkingSound.acceptance.feature
+- Complexity: medium
+- Current phase: P4
+- Checkpoint status: COMPLETE (`SPECIFIER_COMPLETE` -> `IMPLEMENTER_COMPLETE`) with `CLEANER_COMPLETE` and `HARDENER_COMPLETE`
+
+### Completed work
+
+- Added runtime walking footstep audio support in `src/runtime/audio.ts` with a dedicated `footsteps_walking.wav` asset path, low-volume defaults, and safe no-op fallback when `Audio` is unavailable.
+- Added `play`/`stop` walking footstep controls with looped playback, duplicate-play suppression, and reset-on-stop behavior for clean restart.
+- Added `setWalkingFootstepSoundActive` helper to centralize walking-state to audio-state transitions.
+- Wired gameplay integration in `src/app/bootstrap.ts` to enable footsteps only when grounded and horizontal movement is non-zero, and to stop footsteps while stationary.
+- Extended unit coverage in `src/fpsRuntime.test.ts` and integration coverage in `src/bootstrap.test.ts` for walking audio lifecycle and frame-trigger behavior.
+
+### Files changed so far
+
+- src/acceptance/features/playerFootstepWalkingSound.acceptance.feature
+- src/runtime/audio.ts
+- src/app/bootstrap.ts
+- src/fpsRuntime.test.ts
+- src/bootstrap.test.ts
+
+### Scenario -> test mapping
+
+- Footstep audio starts when walking begins -> `src/bootstrap.test.ts` (`runs one animation frame, renders, and wires resize handling`) + `src/fpsRuntime.test.ts` (`creates looping walking footstep player and avoids duplicate play calls`)
+- Footstep audio remains playing while movement continues -> `src/fpsRuntime.test.ts` (`creates looping walking footstep player and avoids duplicate play calls`)
+- Footstep audio stops when walking ends -> `src/fpsRuntime.test.ts` (`creates looping walking footstep player and avoids duplicate play calls`) + `src/fpsRuntime.test.ts` (`routes walking footstep activation helper to play and stop`)
+- Footstep audio does not play while stationary -> `src/bootstrap.test.ts` (`keeps walking footstep sound inactive when no horizontal movement occurs`)
+- Footstep controls are safe when browser audio is unavailable -> `src/fpsRuntime.test.ts` (`creates no-op walking footstep player when Audio is unavailable`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Hardener: PASS (`npm run test:mutation:branch` via `npm run lint && npm run test:all && npm run build && npm run test:mutation:branch`)
+
+### Risks / blockers
+
+- None currently.
+
+### Next action
+
+- Proceed to final handoff.
+
+### User review status
+
+- Approved
+
 ## 2026-11-14 — Oil drum explosion visual bug fixes
 
 - Timestamp: 2026-11-14

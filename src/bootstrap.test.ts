@@ -155,6 +155,10 @@ const runtimeMocks = vi.hoisted(() => ({
 	createBulletFireSoundPlayer: vi.fn(() => ({
 		play: vi.fn(),
 	})),
+	createWalkingFootstepSoundPlayer: vi.fn(() => ({
+		play: vi.fn(),
+		stop: vi.fn(),
+	})),
 	handleJumpInput: vi.fn((state, code) => {
 		if (code !== 'Space' || !state.isGrounded) {
 			return state;
@@ -162,6 +166,7 @@ const runtimeMocks = vi.hoisted(() => ({
 		return { isGrounded: false, verticalVelocity: 5.2 };
 	}),
 	setPrimaryFirePressedState: vi.fn((state) => state),
+	setWalkingFootstepSoundActive: vi.fn(),
 	playBulletFireSounds: vi.fn(),
 	advancePrimaryFireState: vi.fn((params: { state: unknown }) => ({
 		state: params.state,
@@ -349,8 +354,11 @@ vi.mock('./runtime/fpsRuntime', () => ({
 	createInitialJumpState: runtimeMocks.createInitialJumpState,
 	createInitialPrimaryFireState: runtimeMocks.createInitialPrimaryFireState,
 	createBulletFireSoundPlayer: runtimeMocks.createBulletFireSoundPlayer,
+	createWalkingFootstepSoundPlayer:
+		runtimeMocks.createWalkingFootstepSoundPlayer,
 	handleJumpInput: runtimeMocks.handleJumpInput,
 	setPrimaryFirePressedState: runtimeMocks.setPrimaryFirePressedState,
+	setWalkingFootstepSoundActive: runtimeMocks.setWalkingFootstepSoundActive,
 	playBulletFireSounds: runtimeMocks.playBulletFireSounds,
 	advancePrimaryFireState: runtimeMocks.advancePrimaryFireState,
 	spawnProjectilesFromLook: runtimeMocks.spawnProjectilesFromLook,
@@ -1015,6 +1023,10 @@ describe('bootstrap runtime wiring', () => {
 				logger: expect.any(Object),
 			}),
 		);
+		expect(runtimeMocks.setWalkingFootstepSoundActive).toHaveBeenCalledWith(
+			expect.any(Object),
+			true,
+		);
 		expect(runtimeMocks.spawnProjectilesFromLook).not.toHaveBeenCalled();
 		expect(runtimeMocks.playBulletFireSounds).not.toHaveBeenCalled();
 		expect(
@@ -1071,6 +1083,15 @@ describe('bootstrap runtime wiring', () => {
 			renderer,
 			1920,
 			1080,
+		);
+	});
+
+	it('keeps walking footstep sound inactive when no horizontal movement occurs', async () => {
+		await import('./app/bootstrap');
+
+		expect(runtimeMocks.setWalkingFootstepSoundActive).toHaveBeenCalledWith(
+			expect.any(Object),
+			false,
 		);
 	});
 
