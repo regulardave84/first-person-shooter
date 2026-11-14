@@ -4,15 +4,15 @@
 
 When a user asks to add, change, or extend a feature, follow this workflow in order:
 
-1. **Run `specifier` skill**
+1. **Run implementation-discovery questions (before specifier)**
+   - Ask targeted questions about implementation preferences before creating any implementation plan or acceptance artifacts.
+   - Cover at least architecture shape, UX expectations (if applicable), and constraints/trade-offs.
+   - Wait for user answers (or explicit permission to use defaults) before creating acceptance criteria files.
+
+2. **Run `specifier` skill**
    - Convert user requirements into Gherkin acceptance criteria.
    - Persist the acceptance criteria in a `.feature` file.
    - Ask for explicit user approval before proceeding.
-
-2. **Run implementation-discovery questions (before planning)**
-   - Ask targeted questions about implementation preferences before creating any implementation plan.
-   - Cover at least architecture shape, UX expectations (if applicable), and constraints/trade-offs.
-   - Wait for user answers (or explicit permission to use defaults) before planning.
 
 3. **Run `implementer` skill**
    - Use only approved Gherkin as the implementation contract.
