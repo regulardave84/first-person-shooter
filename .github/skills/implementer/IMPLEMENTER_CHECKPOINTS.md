@@ -4,6 +4,56 @@ Persistent execution log for the `implementer` skill.
 
 ---
 
+## 2026-11-14 — Player running footsteps sound
+
+- Timestamp: 2026-11-14
+- Feature file: src/acceptance/features/playerRunFootsteps.acceptance.feature
+- Complexity: medium
+- Current phase: P4
+- Checkpoint status: IN_PROGRESS (`SPECIFIER_COMPLETE` -> `IMPLEMENTER_COMPLETE`) with `CLEANER_COMPLETE`; `HARDENER_COMPLETE` pending mutation completion
+
+### Completed work
+
+- Added running-footstep asset support in `src/runtime/audio.ts` with `footsteps_running.wav` defaults and exported running player factory.
+- Switched movement-footstep playback from looped walking audio to step-timed cadence helpers (`resolvePlayerFootstepMode`, `advanceFootstepCadence`) that select walking vs running by sprint-input state.
+- Enforced immediate stop behavior when the player is idle by resetting cadence state and stopping both walking/running players.
+- Integrated cadence logic in `src/app/bootstrap.ts` for player-only movement updates.
+- Added acceptance coverage in `src/acceptance/tests/playerRunFootsteps.acceptance.test.ts` and updated runtime/bootstrap unit coverage.
+
+### Files changed so far
+
+- src/acceptance/features/playerRunFootsteps.acceptance.feature
+- src/acceptance/tests/playerRunFootsteps.acceptance.test.ts
+- src/runtime/audio.ts
+- src/app/bootstrap.ts
+- src/fpsRuntime.test.ts
+- src/bootstrap.test.ts
+
+### Scenario -> test mapping
+
+- Running footsteps use the running asset while sprint input is active -> `src/acceptance/tests/playerRunFootsteps.acceptance.test.ts` (`Running footsteps use the running asset while sprint input is active`) + `src/fpsRuntime.test.ts` (`resolves player footstep mode from grounded movement and sprint state`) + `src/fpsRuntime.test.ts` (`advances footstep cadence with immediate stop on idle and sprint-based step sounds`)
+- Walking footsteps use the walking asset when sprint is not active -> `src/acceptance/tests/playerRunFootsteps.acceptance.test.ts` (`Walking footsteps use the walking asset when sprint is not active`) + `src/fpsRuntime.test.ts` (`creates walking footstep one-shot player and restarts playback per step`) + `src/fpsRuntime.test.ts` (`advances footstep cadence with immediate stop on idle and sprint-based step sounds`)
+- Footsteps stop immediately when movement stops -> `src/acceptance/tests/playerRunFootsteps.acceptance.test.ts` (`Footsteps stop immediately when movement stops`) + `src/fpsRuntime.test.ts` (`advances footstep cadence with immediate stop on idle and sprint-based step sounds`) + `src/bootstrap.test.ts` (`resolves idle footstep mode when no horizontal movement occurs`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Hardener: RUNNING (`npm run test:mutation:branch` in progress)
+
+### Risks / blockers
+
+- Mutation run is long-running due scoped mutation count; final score pending completion.
+
+### Next action
+
+- Finalize hardener report once mutation score is available and proceed to final handoff.
+
+### User review status
+
+- Approved
+
 ## 2026-11-14 — Player walking footstep sound
 
 - Timestamp: 2026-11-14

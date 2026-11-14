@@ -13,9 +13,13 @@ import {
 	createBulletFireSoundPlayer,
 	createJumpSoundPlayer,
 	createWalkingFootstepSoundPlayer,
+	createRunningFootstepSoundPlayer,
 	createRuntimeLogger,
+	createInitialFootstepCadenceState,
 	DEFAULT_WALKING_FOOTSTEP_SOUND_PATH,
+	DEFAULT_RUNNING_FOOTSTEP_SOUND_PATH,
 	DEFAULT_WALKING_FOOTSTEP_VOLUME,
+	DEFAULT_RUNNING_FOOTSTEP_VOLUME,
 	createInitialRunKeys,
 	createInitialMovementKeys,
 	getWorldLayoutSummary,
@@ -28,6 +32,8 @@ import {
 	requestPointerLock,
 	RUN_SPEED_MULTIPLIER,
 	resolveHorizontalMovement,
+	resolvePlayerFootstepMode,
+	advanceFootstepCadence,
 	playBulletFireSounds,
 	setWalkingFootstepSoundActive,
 	setRunKeyState,
@@ -1068,7 +1074,7 @@ describe('fpsRuntime helpers', () => {
 		}
 	});
 
-	it('creates looping walking footstep player and avoids duplicate play calls', () => {
+	it('creates walking footstep one-shot player and restarts playback per step', () => {
 		const sink = vi.fn();
 		const logger = createRuntimeLogger({ enabled: true, sink });
 		const audioCtorSpy = vi.fn();
@@ -1101,12 +1107,13 @@ describe('fpsRuntime helpers', () => {
 		expect(audioCtorSpy).toHaveBeenCalledWith(
 			DEFAULT_WALKING_FOOTSTEP_SOUND_PATH,
 		);
-		expect(audioElement.loop).toBe(true);
+		expect(audioElement.loop).toBe(false);
 		expect(audioElement.volume).toBe(DEFAULT_WALKING_FOOTSTEP_VOLUME);
 
 		player.play();
 		player.play();
-		expect(audioElement.play).toHaveBeenCalledTimes(1);
+		expect(audioElement.play).toHaveBeenCalledTimes(2);
+		expect(audioElement.currentTime).toBe(0);
 
 		player.stop();
 		expect(audioElement.pause).toHaveBeenCalledTimes(1);
@@ -1130,7 +1137,51 @@ describe('fpsRuntime helpers', () => {
 		audioWindow.Audio = originalAudio;
 	});
 
-	it('keeps walking footstep stop as a no-op before playback starts', () => {
+	it('creates running footstep player using running asset defaults', () => {
+		const sink = vi.fn();
+		const logger = createRuntimeLogger({ enabled: true, sink });
+		const audioCtorSpy = vi.fn();
+		const audioElement = {
+			loop: false,
+			volume: 1,
+			currentTime: 0,
+			play: vi.fn(() => Promise.resolve()),
+			pause: vi.fn(),
+		};
+		const audioWindow = globalThis as typeof globalThis & {
+			Audio?: typeof Audio;
+		};
+		const originalAudio = audioWindow.Audio;
+		class AudioMock {
+			constructor(sourceUrl?: string) {
+				audioCtorSpy(sourceUrl);
+				return audioElement as unknown as HTMLAudioElement;
+			}
+		}
+		audioWindow.Audio = AudioMock as unknown as typeof Audio;
+
+		const player = createRunningFootstepSoundPlayer(logger);
+		player.play();
+
+		expect(audioCtorSpy).toHaveBeenCalledWith(
+			DEFAULT_RUNNING_FOOTSTEP_SOUND_PATH,
+		);
+		expect(audioElement.loop).toBe(false);
+		expect(audioElement.volume).toBe(DEFAULT_RUNNING_FOOTSTEP_VOLUME);
+		expect(audioElement.play).toHaveBeenCalledTimes(1);
+		expect(sink).toHaveBeenCalledWith({
+			level: 'debug',
+			event: 'footstep.sound.played',
+			context: expect.objectContaining({
+				sourceUrl: DEFAULT_RUNNING_FOOTSTEP_SOUND_PATH,
+				volume: DEFAULT_RUNNING_FOOTSTEP_VOLUME,
+			}),
+		});
+
+		audioWindow.Audio = originalAudio;
+	});
+
+	it('allows stopping walking footstep player before playback starts', () => {
 		const audioElement = {
 			loop: false,
 			volume: 1,
@@ -1152,7 +1203,8 @@ describe('fpsRuntime helpers', () => {
 		const player = createWalkingFootstepSoundPlayer();
 		player.stop();
 
-		expect(audioElement.pause).not.toHaveBeenCalled();
+		expect(audioElement.pause).toHaveBeenCalledTimes(1);
+		expect(audioElement.currentTime).toBe(0);
 
 		audioWindow.Audio = originalAudio;
 	});
@@ -1251,6 +1303,101 @@ describe('fpsRuntime helpers', () => {
 
 		expect(player.play).toHaveBeenCalledTimes(1);
 		expect(player.stop).toHaveBeenCalledTimes(1);
+	});
+
+	it('resolves player footstep mode from grounded movement and sprint state', () => {
+		expect(
+			resolvePlayerFootstepMode({
+				isGrounded: true,
+				horizontalMovementDelta: 0.02,
+				runActive: true,
+			}),
+		).toBe('running');
+
+		expect(
+			resolvePlayerFootstepMode({
+				isGrounded: true,
+				horizontalMovementDelta: 0.02,
+				runActive: false,
+			}),
+		).toBe('walking');
+
+		expect(
+			resolvePlayerFootstepMode({
+				isGrounded: false,
+				horizontalMovementDelta: 0.02,
+				runActive: true,
+			}),
+		).toBe('idle');
+
+		expect(
+			resolvePlayerFootstepMode({
+				isGrounded: true,
+				horizontalMovementDelta: 0,
+				runActive: false,
+			}),
+		).toBe('idle');
+	});
+
+	it('advances footstep cadence with immediate stop on idle and sprint-based step sounds', () => {
+		const walkingPlayer = { play: vi.fn(), stop: vi.fn() };
+		const runningPlayer = { play: vi.fn(), stop: vi.fn() };
+
+		let cadenceState = createInitialFootstepCadenceState();
+		cadenceState = advanceFootstepCadence({
+			state: cadenceState,
+			dt: 0.016,
+			mode: 'running',
+			walkingPlayer,
+			runningPlayer,
+			runningStepIntervalSeconds: 0.25,
+		});
+
+		expect(runningPlayer.play).toHaveBeenCalledTimes(1);
+		expect(walkingPlayer.play).not.toHaveBeenCalled();
+		expect(cadenceState).toEqual({
+			secondsUntilNextStep: 0.25,
+			lastMode: 'running',
+		});
+
+		cadenceState = advanceFootstepCadence({
+			state: cadenceState,
+			dt: 0.01,
+			mode: 'running',
+			walkingPlayer,
+			runningPlayer,
+			runningStepIntervalSeconds: 0.25,
+		});
+		expect(runningPlayer.play).toHaveBeenCalledTimes(1);
+
+		cadenceState = advanceFootstepCadence({
+			state: cadenceState,
+			dt: 0.3,
+			mode: 'walking',
+			walkingPlayer,
+			runningPlayer,
+			walkingStepIntervalSeconds: 0.4,
+		});
+		expect(walkingPlayer.play).toHaveBeenCalledTimes(1);
+		expect(runningPlayer.stop).toHaveBeenCalled();
+		expect(cadenceState).toEqual({
+			secondsUntilNextStep: 0.4,
+			lastMode: 'walking',
+		});
+
+		cadenceState = advanceFootstepCadence({
+			state: cadenceState,
+			dt: 0.016,
+			mode: 'idle',
+			walkingPlayer,
+			runningPlayer,
+		});
+		expect(walkingPlayer.stop).toHaveBeenCalled();
+		expect(runningPlayer.stop).toHaveBeenCalled();
+		expect(cadenceState).toEqual({
+			secondsUntilNextStep: 0,
+			lastMode: null,
+		});
 	});
 
 	it('plays exactly one firing sound per emitted bullet', () => {
