@@ -48,6 +48,15 @@ describe('dependencyChecker core', () => {
 		expect(discovered).toEqual(['three']);
 	});
 
+	it('ignores whitespace-only module specifiers when extracting dependencies', () => {
+		const discovered = extractDependenciesFromSource(`
+      import '   ';
+      const lazy = import('vitest');
+    `);
+
+		expect(discovered).toEqual(['vitest']);
+	});
+
 	it('scans multiple files and groups dependencies by file', () => {
 		const scan = scanDependenciesInFiles([
 			{

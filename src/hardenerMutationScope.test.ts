@@ -138,4 +138,22 @@ describe('hardenerMutationScope', () => {
 		expect(gate.shouldRunMutation).toBe(false);
 		expect(gate.reason).toContain('Mutation testing was skipped');
 	});
+
+	it('keeps mutation blocked when scope is blocked even if full suite passes', () => {
+		const gate = evaluateMutationExecutionGate({
+			scope: {
+				status: 'blocked',
+				baseBranch: 'origin/main',
+				changedFilesConsidered: ['src/runtime/fpsRuntime.ts'],
+				mutateTargets: ['src/runtime/fpsRuntime.ts'],
+				reason: 'Scope blocked by policy.',
+			},
+			fullTestSuitePassed: true,
+		});
+
+		expect(gate.status).toBe('blocked');
+		expect(gate.shouldRunMutation).toBe(false);
+		expect(gate.reason).toBe('Scope blocked by policy.');
+		expect(gate.fullTestSuiteCommand).toBe(HARDENER_FULL_TEST_SUITE_COMMAND);
+	});
 });

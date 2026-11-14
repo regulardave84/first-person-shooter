@@ -20,3 +20,6 @@ pnpm-debug.log*
 # env files
 .env
 .env.*
+
+# temporary test artifacts
+src/**/__tmp_delete_test__.ts

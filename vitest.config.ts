@@ -18,6 +18,7 @@ export default defineConfig({
       include: ['src/**/*.ts'],
       exclude: [
         'src/**/*.test.ts',
+        'src/**/__tmp_delete_test__.ts',
         'src/main.ts',
         'src/app/**',
         'src/gameLogic.ts',
