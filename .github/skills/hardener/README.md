@@ -11,6 +11,7 @@ The `hardener` skill is designed to:
 - Analyze branch changes
 - Run the full test suite first and stop on failures
 - Run mutation tests after the full suite passes, scoped to implementation files changed on branch
+- Skip mutation testing when no implementation source files changed, with an explicit reason
 - Improve/add tests when mutation score is below `80%`
 - Repeat until mutation score is `>= 80%`
 

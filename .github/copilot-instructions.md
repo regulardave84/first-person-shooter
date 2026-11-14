@@ -9,19 +9,25 @@ When a user asks to add, change, or extend a feature, follow this workflow in or
    - Persist the acceptance criteria in a `.feature` file.
    - Ask for explicit user approval before proceeding.
 
-2. **Run `implementer` skill**
+2. **Run implementation-discovery questions (before planning)**
+   - Ask targeted questions about implementation preferences before creating any implementation plan.
+   - Cover at least architecture shape, UX expectations (if applicable), and constraints/trade-offs.
+   - Wait for user answers (or explicit permission to use defaults) before planning.
+
+3. **Run `implementer` skill**
    - Use only approved Gherkin as the implementation contract.
    - Create/update tests mapped to each scenario.
    - Implement production code to satisfy those tests.
    - Write checkpoints in `.github/skills/implementer/IMPLEMENTER_CHECKPOINTS.md`.
 
-3. **Run `cleaner` skill**
+4. **Run `cleaner` skill**
    - Review and clean up implementation changes.
    - Use CRAP analysis and safe refactors.
    - Preserve behavior and re-verify quality gates.
 
-4. **Run `hardener` skill**
-   - Run mutation testing.
+5. **Run `hardener` skill**
+   - Run mutation testing only when implementation source code changed.
+   - If no implementation source code changed, skip mutation testing and report the skip reason.
    - Improve tests for survivors until mutation score is at least 80% (or report blocked with evidence).
 
 ## Quality gates per feature request
@@ -31,7 +37,7 @@ Before final handoff, ensure these pass unless blocked by user-approved exceptio
 - `npm run lint`
 - `npm run test:all`
 - `npm run build`
-- `npm run test:mutation:branch` (hardener target: >= 80%)
+- `npm run test:mutation:branch` (hardener target: >= 80%, only when implementation source code changed)
 
 ## Change-control rules
 

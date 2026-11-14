@@ -6,7 +6,7 @@ const IGNORED_SOURCE_PATTERNS = [
 	/\.acceptance\.generated\.test\.ts$/,
 ];
 
-export type MutationScopeStatus = 'ready' | 'blocked';
+export type MutationScopeStatus = 'ready' | 'blocked' | 'skipped';
 
 export type MutationScopeReport = {
 	status: MutationScopeStatus;
@@ -55,12 +55,12 @@ export function buildMutationScope(params: {
 
 	if (mutateTargets.length === 0) {
 		return {
-			status: 'blocked',
+			status: 'skipped',
 			baseBranch: params.baseBranch,
 			changedFilesConsidered,
 			mutateTargets,
 			reason:
-				'No changed implementation source files under src were found for mutation scope.',
+				'No changed implementation source files under src were found. Mutation testing was skipped.',
 		};
 	}
 
@@ -122,6 +122,15 @@ export function evaluateMutationExecutionGate(params: {
 	if (params.scope.status === 'blocked') {
 		return {
 			status: 'blocked',
+			shouldRunMutation: false,
+			reason: params.scope.reason,
+			fullTestSuiteCommand: HARDENER_FULL_TEST_SUITE_COMMAND,
+		};
+	}
+
+	if (params.scope.status === 'skipped') {
+		return {
+			status: 'skipped',
 			shouldRunMutation: false,
 			reason: params.scope.reason,
 			fullTestSuiteCommand: HARDENER_FULL_TEST_SUITE_COMMAND,

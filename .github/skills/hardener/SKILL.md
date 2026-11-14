@@ -66,7 +66,7 @@ When relevant tests pass:
 
 - Build mutation scope from current-branch changed implementation files (`src/**/*.ts`, excluding test files).
 - Run mutation tests using branch-scoped mutate targets (`npm run test:mutation:branch`).
-- If no implementation files are changed, report `BLOCKED` with mutation scope details and stop.
+- If no implementation files are changed, report `SKIPPED` with mutation scope details and stop.
 - Capture the overall mutation score for all files.
 - Use threshold: **80% minimum**.
 - Capture survivor list grouped by mutation type and source location.
@@ -115,7 +115,7 @@ When killing surviving mutants:
 Do not consider task complete until all are true:
 
 1. Relevant tests pass.
-2. Mutation test run succeeds.
+2. Mutation test run succeeds, or is explicitly `SKIPPED` because no implementation source files changed.
 3. Overall mutation score is >= 80%.
 4. Any test changes are committed-ready and consistent with existing style.
 5. Documentation is updated when commands/configuration change.
@@ -130,4 +130,4 @@ When done, report:
 - Mutation score per iteration (before/after)
 - What tests were added/updated and why
 - Surviving mutants (if any) and mitigation rationale
-- Final status (`PASS` when >= 80%, otherwise `BLOCKED`)
+- Final status (`PASS` when >= 80%, `SKIPPED` when no implementation source files changed, otherwise `BLOCKED`)

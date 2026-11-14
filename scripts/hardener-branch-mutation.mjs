@@ -104,12 +104,12 @@ function buildScope(baseBranch, changedFiles) {
 
 	if (mutateTargets.length === 0) {
 		return {
-			status: 'blocked',
+			status: 'skipped',
 			baseBranch,
 			changedFilesConsidered,
 			mutateTargets,
 			reason:
-				'No changed implementation source files under src were found for mutation scope.',
+				'No changed implementation source files under src were found. Mutation testing was skipped.',
 		};
 	}
 
@@ -213,6 +213,16 @@ function main() {
 	const scope = buildScope(baseBranch, changedFiles);
 
 	logScope(scope);
+
+	if (scope.status !== 'ready') {
+		writeScopeReportWithGate(scope, {
+			testSuiteStatus: 'skipped',
+			testSuiteCommand: `npm ${FULL_TEST_SUITE_COMMAND.join(' ')}`,
+			blockReason: scope.reason,
+		});
+		return;
+	}
+
 	const testGate = runFullTestSuite();
 
 	if (!testGate.passed) {
@@ -225,15 +235,6 @@ function main() {
 			testSuiteCommand: testGate.command,
 			testSuiteFailureReason: testGate.failureReason,
 			blockReason,
-		});
-		process.exitCode = 1;
-		return;
-	}
-
-	if (scope.status === 'blocked') {
-		writeScopeReportWithGate(scope, {
-			testSuiteStatus: 'passed',
-			testSuiteCommand: testGate.command,
 		});
 		process.exitCode = 1;
 		return;

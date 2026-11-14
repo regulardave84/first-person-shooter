@@ -71,7 +71,7 @@ describe('Acceptance: Hardener gates mutation runs by full test suite', () => {
 		expect(scopedConfig.mutate).toEqual(['src/runtime/fpsRuntime.ts']);
 	});
 
-	it('Mutation stays blocked when no implementation targets exist even after full suite pass', () => {
+	it('Mutation stays skipped when no implementation targets exist even after full suite pass', () => {
 		const report = buildMutationScope({
 			baseBranch: 'origin/main',
 			changedFiles: ['README.md', 'src/fpsRuntime.test.ts'],
@@ -81,8 +81,8 @@ describe('Acceptance: Hardener gates mutation runs by full test suite', () => {
 			fullTestSuitePassed: true,
 		});
 
-		expect(gate.status).toBe('blocked');
+		expect(gate.status).toBe('skipped');
 		expect(gate.shouldRunMutation).toBe(false);
-		expect(gate.reason).toContain('No changed implementation source files');
+		expect(gate.reason).toContain('Mutation testing was skipped');
 	});
 });

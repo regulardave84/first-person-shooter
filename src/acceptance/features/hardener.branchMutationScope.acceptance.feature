@@ -16,7 +16,7 @@ Feature: Hardener scopes mutation testing to current branch changes
   Scenario: Fallback when no implementation files changed
     Given a branch with no changed implementation source files
     When hardener prepares mutation testing
-    Then hardener reports mutation scope as blocked with a clear explanation
+    Then hardener reports mutation scope as skipped with a clear explanation
 
   Scenario: Run mutation command with branch-scoped mutate configuration
     Given a branch with changed implementation source files

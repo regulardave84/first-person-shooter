@@ -42,8 +42,8 @@ describe('Acceptance: Hardener scopes mutation testing to current branch changes
 			changedFiles: ['docs/notes.md', 'src/specifier.test.ts'],
 		});
 
-		expect(report.status).toBe('blocked');
-		expect(report.reason).toContain('No changed implementation source files');
+		expect(report.status).toBe('skipped');
+		expect(report.reason).toContain('Mutation testing was skipped');
 	});
 
 	it('Run mutation command with branch-scoped mutate configuration', () => {

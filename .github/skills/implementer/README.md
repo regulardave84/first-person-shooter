@@ -11,6 +11,7 @@ The `implementer` skill converts approved Gherkin acceptance criteria into real 
 - Writes/updates unit tests mapped to each scenario
 - Implements or updates production code to satisfy tests
 - Enforces SOLID-aligned module boundaries (single reason to change)
+- Asks implementation-discovery questions before creating any implementation plan
 - Uses mandatory phased checkpoints persisted to disk
 
 ## Checkpointing model
@@ -20,9 +21,10 @@ At each critical phase, progress is written to a physical file so work survives 
 Phases:
 
 1. Intake + contract lock
-2. Test design
-3. Implementation
-4. Verification
-5. Handoff
+2. Implementation discovery questions
+3. Test design
+4. Implementation
+5. Verification
+6. Handoff
 
 Complex features include an upfront implementation plan with checkpoint gates and phase exit criteria.

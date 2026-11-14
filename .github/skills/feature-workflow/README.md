@@ -16,9 +16,10 @@ Use this as the default path when a prompt asks to add or change a feature.
 ## Guarantees
 
 - Gherkin approval gate before implementation
+- Mandatory implementation-discovery questions before any implementation planning
 - Scenario-to-test traceability
 - Cleanup/refactor pass after implementation
 - Dependency-policy gate in cleaner after review and before cleanup refactor
 - Full test-suite hardener gate before mutation execution
-- Branch-scoped mutation hardening target of >= 80%
+- Branch-scoped mutation hardening target of >= 80%, or explicit `SKIPPED` when no implementation source files changed
 - Phase-by-phase reporting with blockers

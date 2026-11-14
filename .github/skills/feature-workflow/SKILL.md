@@ -12,9 +12,10 @@ Use this skill when a user requests a new feature or a feature change.
 Run these skills in this exact order:
 
 1. `specifier`
-2. `implementer`
-3. `cleaner`
-4. `hardener`
+2. implementation-discovery questions (mandatory gate)
+3. `implementer`
+4. `cleaner`
+5. `hardener`
 
 ## Required execution steps
 
@@ -30,13 +31,23 @@ Run these skills in this exact order:
 - Request explicit user approval.
 - **Do not proceed until approval is granted.**
 
-### Step 2: implementation gate
+### Step 2: implementation-discovery gate (before planning)
+
+- Ask targeted implementation questions before any implementation plan is created.
+- Include questions for:
+	- architecture/module approach
+	- UX/behavior preferences (when relevant)
+	- constraints, non-goals, and trade-off priorities
+- Wait for user answers or explicit "use defaults" permission.
+- Persist/quote the decisions in the implementation context before moving on.
+
+### Step 3: implementation gate
 
 - Run `implementer` using the approved `.feature` file.
 - Ensure scenario-to-test mapping exists.
 - Ensure required checkpoint entries are appended.
 
-### Step 3: cleanup gate
+### Step 4: cleanup gate
 
 - Run `cleaner` to review and reduce change risk.
 - Ensure cleaner performs directory-structure assessment first within general code review.
@@ -44,11 +55,12 @@ Run these skills in this exact order:
 - Apply safe refactors only (no behavior change).
 - Re-run lint/tests/build after cleanup changes.
 
-### Step 4: hardening gate
+### Step 5: hardening gate
 
 - Run `hardener` mutation workflow.
 - Require full test-suite gate (`npm run test:all`) before mutation execution.
 - Require branch-scoped mutation targeting based on current branch implementation changes.
+- If no implementation source files changed, skip mutation execution and report the skip reason.
 - If mutation score < 80%, improve tests and iterate.
 - Stop as `BLOCKED` only when loop/control rules are exhausted.
 
@@ -57,7 +69,7 @@ Run these skills in this exact order:
 - `npm run lint`
 - `npm run test:all`
 - `npm run build`
-- `npm run test:mutation:branch` with score >= 80%
+- `npm run test:mutation:branch` with score >= 80% when implementation source files changed; otherwise report `SKIPPED`
 
 ## Final report format
 
@@ -67,4 +79,4 @@ Include:
 - Scenario-to-test mapping summary
 - Changed files by phase
 - Mutation score by iteration
-- Final status: `PASS` or `BLOCKED`
+- Final status: `PASS`, `SKIPPED`, or `BLOCKED`
