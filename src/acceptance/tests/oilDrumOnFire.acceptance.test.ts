@@ -36,13 +36,15 @@ describe('Acceptance: Oil drum fire visual below half health', () => {
 		const fireTextures = DEFAULT_OIL_DRUM_ON_FIRE_FRAME_ASSET_PATHS.map(
 			() => new THREE.Texture(),
 		);
-		const load = vi.fn((url: string, onLoad?: (texture: THREE.Texture) => void) => {
-			const textureIndex =
-				DEFAULT_OIL_DRUM_ON_FIRE_FRAME_ASSET_PATHS.indexOf(url);
-			const texture = fireTextures[Math.max(0, textureIndex)];
-			onLoad?.(texture);
-			return texture;
-		});
+		const load = vi.fn(
+			(url: string, onLoad?: (texture: THREE.Texture) => void) => {
+				const textureIndex =
+					DEFAULT_OIL_DRUM_ON_FIRE_FRAME_ASSET_PATHS.indexOf(url);
+				const texture = fireTextures[Math.max(0, textureIndex)];
+				onLoad?.(texture);
+				return texture;
+			},
+		);
 
 		applyOilDrumHit({
 			health: { currentHealth: 65, maxHealth: 100 },
@@ -123,18 +125,18 @@ describe('Acceptance: Oil drum fire visual below half health', () => {
 
 	it('Destroyed visual overrides fire visual at zero health', () => {
 		const sprite = new THREE.Sprite(new THREE.SpriteMaterial());
-			const fireTextures = DEFAULT_OIL_DRUM_ON_FIRE_FRAME_ASSET_PATHS.map(
-				() => new THREE.Texture(),
-			);
+		const fireTextures = DEFAULT_OIL_DRUM_ON_FIRE_FRAME_ASSET_PATHS.map(
+			() => new THREE.Texture(),
+		);
 		const destroyedTexture = new THREE.Texture();
-			const load = vi.fn((url: string) => {
-				if (url.includes('oil_drum_destroyed.png')) {
-					return destroyedTexture;
-				}
-				const textureIndex =
-					DEFAULT_OIL_DRUM_ON_FIRE_FRAME_ASSET_PATHS.indexOf(url);
-				return fireTextures[Math.max(0, textureIndex)];
-			});
+		const load = vi.fn((url: string) => {
+			if (url.includes('oil_drum_destroyed.png')) {
+				return destroyedTexture;
+			}
+			const textureIndex =
+				DEFAULT_OIL_DRUM_ON_FIRE_FRAME_ASSET_PATHS.indexOf(url);
+			return fireTextures[Math.max(0, textureIndex)];
+		});
 
 		const belowHalf = applyOilDrumHit({
 			health: { currentHealth: 65, maxHealth: 100 },

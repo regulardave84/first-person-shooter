@@ -223,18 +223,17 @@ describe('oilDrumEntity', () => {
 			DEFAULT_OIL_DRUM_SPRITE_SCALE.z,
 		);
 		const defaultTexture = new THREE.Texture();
-		(defaultTexture.userData as { oilDrumVisibleCoverageRatio?: number }).oilDrumVisibleCoverageRatio =
-			0.64;
+		(
+			defaultTexture.userData as { oilDrumVisibleCoverageRatio?: number }
+		).oilDrumVisibleCoverageRatio = 0.64;
 		(sprite.material as THREE.SpriteMaterial).map = defaultTexture;
-		const fireTextures = DEFAULT_OIL_DRUM_ON_FIRE_FRAME_ASSET_PATHS.map(
-			() => {
-				const texture = new THREE.Texture();
-				(
-					texture.userData as { oilDrumVisibleCoverageRatio?: number }
-				).oilDrumVisibleCoverageRatio = 0.16;
-				return texture;
-			},
-		);
+		const fireTextures = DEFAULT_OIL_DRUM_ON_FIRE_FRAME_ASSET_PATHS.map(() => {
+			const texture = new THREE.Texture();
+			(
+				texture.userData as { oilDrumVisibleCoverageRatio?: number }
+			).oilDrumVisibleCoverageRatio = 0.16;
+			return texture;
+		});
 		const load = vi.fn((url: string) => {
 			const textureIndex =
 				DEFAULT_OIL_DRUM_ON_FIRE_FRAME_ASSET_PATHS.indexOf(url);
@@ -387,12 +386,14 @@ describe('oilDrumEntity', () => {
 			DEFAULT_OIL_DRUM_SPRITE_SCALE.z,
 		);
 		const originalMap = new THREE.Texture();
-		(originalMap.userData as { oilDrumVisibleCoverageRatio?: number }).oilDrumVisibleCoverageRatio =
-			0.64;
+		(
+			originalMap.userData as { oilDrumVisibleCoverageRatio?: number }
+		).oilDrumVisibleCoverageRatio = 0.64;
 		(sprite.material as THREE.SpriteMaterial).map = originalMap;
 		const fireTexture = new THREE.Texture();
-		(fireTexture.userData as { oilDrumVisibleCoverageRatio?: number }).oilDrumVisibleCoverageRatio =
-			0.16;
+		(
+			fireTexture.userData as { oilDrumVisibleCoverageRatio?: number }
+		).oilDrumVisibleCoverageRatio = 0.16;
 		const destroyedTexture = new THREE.Texture();
 		const load = vi.fn((url: string) => {
 			if (url.includes('oil_drum_destroyed.png')) {
@@ -464,25 +465,26 @@ describe('oilDrumEntity', () => {
 			DEFAULT_OIL_DRUM_SPRITE_SCALE.z,
 		);
 		const defaultTexture = new THREE.Texture();
-		(defaultTexture.userData as { oilDrumVisibleCoverageRatio?: number }).oilDrumVisibleCoverageRatio =
-			0.64;
+		(
+			defaultTexture.userData as { oilDrumVisibleCoverageRatio?: number }
+		).oilDrumVisibleCoverageRatio = 0.64;
 		(sprite.material as THREE.SpriteMaterial).map = defaultTexture;
-		const fireTextures = DEFAULT_OIL_DRUM_ON_FIRE_FRAME_ASSET_PATHS.map(
-			() => {
-				const texture = new THREE.Texture();
-				(
-					texture.userData as { oilDrumVisibleCoverageRatio?: number }
-				).oilDrumVisibleCoverageRatio = 0.16;
+		const fireTextures = DEFAULT_OIL_DRUM_ON_FIRE_FRAME_ASSET_PATHS.map(() => {
+			const texture = new THREE.Texture();
+			(
+				texture.userData as { oilDrumVisibleCoverageRatio?: number }
+			).oilDrumVisibleCoverageRatio = 0.16;
+			return texture;
+		});
+		const load = vi.fn(
+			(url: string, onLoad?: (texture: THREE.Texture) => void) => {
+				const textureIndex =
+					DEFAULT_OIL_DRUM_ON_FIRE_FRAME_ASSET_PATHS.indexOf(url);
+				const texture = fireTextures[Math.max(0, textureIndex)];
+				onLoad?.(texture);
 				return texture;
 			},
 		);
-		const load = vi.fn((url: string, onLoad?: (texture: THREE.Texture) => void) => {
-			const textureIndex =
-				DEFAULT_OIL_DRUM_ON_FIRE_FRAME_ASSET_PATHS.indexOf(url);
-			const texture = fireTextures[Math.max(0, textureIndex)];
-			onLoad?.(texture);
-			return texture;
-		});
 
 		applyOilDrumHit({
 			health: { currentHealth: 65, maxHealth: 100 },

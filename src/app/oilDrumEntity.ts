@@ -232,8 +232,9 @@ function setOilDrumVisualState(
 	sprite: THREE.Sprite,
 	state: OilDrumVisualState,
 ): void {
-	(getOilDrumSpriteState(sprite) as { oilDrumVisualState?: OilDrumVisualState }).oilDrumVisualState =
-		state;
+	(
+		getOilDrumSpriteState(sprite) as { oilDrumVisualState?: OilDrumVisualState }
+	).oilDrumVisualState = state;
 }
 
 function getOilDrumVisualState(sprite: THREE.Sprite): OilDrumVisualState {
@@ -254,12 +255,16 @@ function resetOilDrumFireAnimation(sprite: THREE.Sprite): void {
 	ensureOilDrumBaseTransform(sprite);
 }
 
-function resolveTextureVisibleCoverageRatio(texture: THREE.Texture): number | null {
+function resolveTextureVisibleCoverageRatio(
+	texture: THREE.Texture,
+): number | null {
 	const metadataCoverage = resolveTextureCoverageFromUserData(texture);
 	return metadataCoverage;
 }
 
-function resolveTextureCoverageFromUserData(texture: THREE.Texture): number | null {
+function resolveTextureCoverageFromUserData(
+	texture: THREE.Texture,
+): number | null {
 	const userDataCoverage = (
 		texture.userData as { oilDrumVisibleCoverageRatio?: unknown }
 	).oilDrumVisibleCoverageRatio;
@@ -303,7 +308,11 @@ function applyOilDrumFireScaleCompensation(params: {
 		return;
 	}
 
-	const baseScale = state.oilDrumBaseScale as { x: number; y: number; z: number };
+	const baseScale = state.oilDrumBaseScale as {
+		x: number;
+		y: number;
+		z: number;
+	};
 	const basePosition = state.oilDrumBasePosition as {
 		x: number;
 		y: number;
@@ -315,8 +324,7 @@ function applyOilDrumFireScaleCompensation(params: {
 		nextScaleY,
 		baseScale.z,
 	);
-	params.sprite.position.y =
-		basePosition.y + (nextScaleY - baseScale.y) / 2;
+	params.sprite.position.y = basePosition.y + (nextScaleY - baseScale.y) / 2;
 
 	params.logger?.info?.('oil.drum.fire.scale.compensated', {
 		scaleMultiplier: clampedScaleMultiplier,
@@ -463,7 +471,9 @@ function applyOilDrumFireSprite(params: {
 	const state = getOilDrumSpriteState(params.sprite);
 	state.oilDrumFireFrameTextures = frameTextures;
 
-	const usableFireTextures = resolveOilDrumUsableFireFrameTextures(params.sprite);
+	const usableFireTextures = resolveOilDrumUsableFireFrameTextures(
+		params.sprite,
+	);
 	applyInitialOilDrumFireTexture({
 		sprite: params.sprite,
 		fireTexture: usableFireTextures[0],
