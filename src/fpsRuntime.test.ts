@@ -1214,6 +1214,32 @@ describe('fpsRuntime helpers', () => {
 		audioWindow.Audio = originalAudio;
 	});
 
+	it('clamps walking footstep volume to zero when configured value is not finite', () => {
+		const audioElement = {
+			loop: false,
+			volume: 1,
+			currentTime: 0,
+			play: vi.fn(() => Promise.resolve()),
+			pause: vi.fn(),
+		};
+		const audioWindow = globalThis as typeof globalThis & {
+			Audio?: typeof Audio;
+		};
+		const originalAudio = audioWindow.Audio;
+		class AudioMock {
+			constructor() {
+				return audioElement as unknown as HTMLAudioElement;
+			}
+		}
+		audioWindow.Audio = AudioMock as unknown as typeof Audio;
+
+		createWalkingFootstepSoundPlayer(undefined, { volume: Number.NaN });
+
+		expect(audioElement.volume).toBe(0);
+
+		audioWindow.Audio = originalAudio;
+	});
+
 	it('routes walking footstep activation helper to play and stop', () => {
 		const player = {
 			play: vi.fn(),
