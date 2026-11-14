@@ -231,9 +231,9 @@ describe('oilDrumEntity', () => {
 			expect.any(Function),
 		);
 		expect((sprite.material as THREE.SpriteMaterial).map).toBe(fireTexture);
-		expect((sprite.userData as { oilDrumVisualState?: string }).oilDrumVisualState).toBe(
-			'fire',
-		);
+		expect(
+			(sprite.userData as { oilDrumVisualState?: string }).oilDrumVisualState,
+		).toBe('fire');
 		expect(fireTexture.wrapS).toBe(THREE.RepeatWrapping);
 		expect(fireTexture.repeat.x).toBeCloseTo(
 			1 / DEFAULT_OIL_DRUM_FIRE_ANIMATION_FRAME_COUNT,

@@ -156,14 +156,17 @@ function createNoDamageResult(health: OilDrumHealthState): OilDrumDamageResult {
 	};
 }
 
-function resolveOilDrumVisualState(health: OilDrumHealthState): OilDrumVisualState {
+function resolveOilDrumVisualState(
+	health: OilDrumHealthState,
+): OilDrumVisualState {
 	if (health.currentHealth <= 0) {
 		return 'destroyed';
 	}
 
 	if (
 		health.currentHealth > 0 &&
-		health.currentHealth < health.maxHealth * DEFAULT_OIL_DRUM_FIRE_THRESHOLD_RATIO
+		health.currentHealth <
+			health.maxHealth * DEFAULT_OIL_DRUM_FIRE_THRESHOLD_RATIO
 	) {
 		return 'fire';
 	}
@@ -175,8 +178,9 @@ function setOilDrumVisualState(
 	sprite: THREE.Sprite,
 	state: OilDrumVisualState,
 ): void {
-	(sprite.userData as { oilDrumVisualState?: OilDrumVisualState }).oilDrumVisualState =
-		state;
+	(
+		sprite.userData as { oilDrumVisualState?: OilDrumVisualState }
+	).oilDrumVisualState = state;
 }
 
 function getOilDrumVisualState(sprite: THREE.Sprite): OilDrumVisualState {
@@ -310,7 +314,9 @@ export function applyOilDrumHit(params: {
 
 	if (nextVisualState === 'fire') {
 		applyOilDrumFireSprite({
-			wasOnFire: params.sprite ? getOilDrumVisualState(params.sprite) === 'fire' : false,
+			wasOnFire: params.sprite
+				? getOilDrumVisualState(params.sprite) === 'fire'
+				: false,
 			sprite: params.sprite,
 			textureLoader: params.textureLoader,
 			logger: params.logger,
@@ -391,7 +397,10 @@ function canAdvanceOilDrumFireAnimation(params: {
 	}
 
 	const spriteMaterial = params.sprite.material;
-	return spriteMaterial instanceof THREE.SpriteMaterial && Boolean(spriteMaterial.map);
+	return (
+		spriteMaterial instanceof THREE.SpriteMaterial &&
+		Boolean(spriteMaterial.map)
+	);
 }
 
 export function addDefaultOilDrumEntityToScene(config: {
