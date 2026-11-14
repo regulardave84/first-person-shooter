@@ -4,6 +4,159 @@ Persistent execution log for the `implementer` skill.
 
 ---
 
+## 2026-11-14 — Oil drum fire floor alignment
+
+- Timestamp: 2026-11-14
+- Feature file: src/acceptance/features/oil_drum_fire_floor_alignment.acceptance.feature
+- Complexity: medium
+- Current phase: P4
+- Checkpoint status: COMPLETE (`SPECIFIER_COMPLETE` -> `IMPLEMENTER_COMPLETE`) with `CLEANER_COMPLETE` and `HARDENER_COMPLETE`
+
+### Completed work
+
+- Added baseline transform tracking for oil drum sprites (`base scale` and `base position`) in `src/app/oilDrumEntity.ts`.
+- Updated fire-scale compensation to apply vertical offset so scaled fire visuals keep floor contact.
+- Kept collision and spawn Y behavior unchanged while constraining the fix to fire-state visual transform logic.
+- Restored both scale and position to baseline when destroyed visual state is applied.
+- Added unit and acceptance tests for floor-aligned fire entry, frame-step persistence, and destroyed baseline restoration.
+- Promoted approved Gherkin to acceptance and marked proposed file as superseded.
+
+### Files changed so far
+
+- src/app/oilDrumEntity.ts
+- src/app/oilDrumEntity.test.ts
+- src/acceptance/features/oil_drum_fire_floor_alignment.acceptance.feature
+- src/acceptance/features/oil_drum_fire_floor_alignment.proposed.feature
+- src/acceptance/tests/oilDrumFireFloorAlignment.acceptance.test.ts
+
+### Scenario -> test mapping
+
+- Entering fire state keeps oil drum bottom aligned to floor -> `src/app/oilDrumEntity.test.ts` (`swaps to on-fire sprite when health drops below half but remains above zero`) + `src/acceptance/tests/oilDrumFireFloorAlignment.acceptance.test.ts` (`Entering fire state keeps oil drum bottom aligned to floor`)
+- Fire animation frame changes keep floor alignment -> `src/app/oilDrumEntity.test.ts` (`advances fire animation frames in a loop while oil drum is below half health`) + `src/acceptance/tests/oilDrumFireFloorAlignment.acceptance.test.ts` (`Fire animation frame changes keep floor alignment`)
+- Destroyed visual restores default transform baseline -> `src/app/oilDrumEntity.test.ts` (`swaps to destroyed sprite when bullet damage destroys it`) + `src/acceptance/tests/oilDrumFireFloorAlignment.acceptance.test.ts` (`Destroyed visual restores default transform baseline`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Hardener: PASS (`npm run test:mutation:branch` -> `98.17%`, target `>= 80%`)
+
+### Risks / blockers
+
+- None currently.
+
+### Next action
+
+- Proceed to final handoff.
+
+### User review status
+
+- Approved
+
+## 2026-11-14 — Oil drum fire frame size compensation
+
+- Timestamp: 2026-11-14
+- Feature file: src/acceptance/features/oil_drum_fire_frame_size.acceptance.feature
+- Complexity: medium
+- Current phase: P4
+- Checkpoint status: COMPLETE (`SPECIFIER_COMPLETE` -> `IMPLEMENTER_COMPLETE`) with `CLEANER_COMPLETE` and `HARDENER_COMPLETE`
+
+### Completed work
+
+- Added fire-state visual scale compensation so burning frame visuals match the default oil drum footprint.
+- Added explicit visible-coverage metadata defaults for base and fire textures in `src/app/oilDrumEntity.ts`.
+- Ensured fire animation still loops while compensated scale is active.
+- Added fallback behavior that preserves existing scale when visible-coverage metadata is unavailable.
+- Restored default sprite scale when transitioning from fire to destroyed visual state.
+- Added unit and acceptance coverage for scaling, fallback, animation continuity, and destroyed-state reset.
+- Promoted approved Gherkin to acceptance and marked proposed file as superseded.
+
+### Files changed so far
+
+- src/app/oilDrumEntity.ts
+- src/app/oilDrumEntity.test.ts
+- src/acceptance/features/oil_drum_fire_frame_size.acceptance.feature
+- src/acceptance/features/oil_drum_fire_frame_size.proposed.feature
+- src/acceptance/tests/oilDrumFireFrameSize.acceptance.test.ts
+
+### Scenario -> test mapping
+
+- Fire visual keeps same apparent size as default drum -> `src/app/oilDrumEntity.test.ts` (`swaps to on-fire sprite when health drops below half but remains above zero`) + `src/acceptance/tests/oilDrumFireFrameSize.acceptance.test.ts` (`Fire visual keeps same apparent size as default drum`)
+- Fire animation continues while scale compensation is active -> `src/app/oilDrumEntity.test.ts` (`advances fire animation frames in a loop while oil drum is below half health`) + `src/acceptance/tests/oilDrumFireFrameSize.acceptance.test.ts` (`Fire animation continues while scale compensation is active`)
+- Missing image-data metadata falls back safely -> `src/app/oilDrumEntity.test.ts` (`keeps scale unchanged when fire visible-coverage metadata is unavailable`) + `src/acceptance/tests/oilDrumFireFrameSize.acceptance.test.ts` (`Missing image-data metadata falls back safely`)
+- Destroyed visual removes fire scale compensation -> `src/app/oilDrumEntity.test.ts` (`swaps to destroyed sprite when bullet damage destroys it`) + `src/acceptance/tests/oilDrumFireFrameSize.acceptance.test.ts` (`Destroyed visual removes fire scale compensation`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Hardener: PASS (`npm run test:mutation:branch` -> `100.00%`, target `>= 80%`)
+
+### Risks / blockers
+
+- None currently.
+
+### Next action
+
+- Proceed to final handoff.
+
+### User review status
+
+- Approved
+
+## 2026-11-14 — Oil drum fire animation frame files
+
+- Timestamp: 2026-11-14
+- Feature file: src/acceptance/features/oil_drum_fire_frames.acceptance.feature
+- Complexity: medium
+- Current phase: P4
+- Checkpoint status: COMPLETE (`SPECIFIER_COMPLETE` -> `IMPLEMENTER_COMPLETE`) with `CLEANER_COMPLETE` and `HARDENER_COMPLETE`
+
+### Completed work
+
+- Replaced fire sprite-sheet usage with ordered per-frame PNG paths in `src/app/oilDrumEntity.ts`.
+- Implemented fire-frame loading and looped runtime frame selection at configured FPS.
+- Added failed-frame skipping behavior so animation continues with successfully loaded frames.
+- Added shared-cache optimization for default runtime loading to reduce repeat loading overhead.
+- Updated unit and acceptance tests for frame-sequence behavior and failed-frame skipping.
+- Promoted approved Gherkin to acceptance and marked proposed file as superseded.
+
+### Files changed so far
+
+- src/app/oilDrumEntity.ts
+- src/app/oilDrumEntity.test.ts
+- src/acceptance/tests/oilDrumOnFire.acceptance.test.ts
+- src/acceptance/features/oil_drum_fire_frames.acceptance.feature
+- src/acceptance/features/oil_drum_fire_frames.proposed.feature
+
+### Scenario -> test mapping
+
+- Fire visual switches to frame-sequence animation below half health -> `src/app/oilDrumEntity.test.ts` (`swaps to on-fire sprite when health drops below half but remains above zero`) + `src/acceptance/tests/oilDrumOnFire.acceptance.test.ts` (`Oil drum enters fire visual state below half health`)
+- Frame animation loops across available burning frame files -> `src/app/oilDrumEntity.test.ts` (`advances fire animation frames in a loop while oil drum is below half health`) + `src/acceptance/tests/oilDrumOnFire.acceptance.test.ts` (`Fire animation advances while oil drum remains below half health`)
+- Missing frame files are skipped without breaking the animation -> `src/app/oilDrumEntity.test.ts` (`skips failed fire frame assets while animation continues`) + `src/acceptance/tests/oilDrumOnFire.acceptance.test.ts` (`Fire animation skips failed frame files`)
+- Destroyed visual overrides frame-sequence fire animation at zero health -> `src/acceptance/tests/oilDrumOnFire.acceptance.test.ts` (`Destroyed visual overrides fire visual at zero health`) + `src/app/oilDrumEntity.test.ts` (`swaps to destroyed sprite when bullet damage destroys it`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Hardener: PASS (`npm run test:mutation:branch` -> `100.00%`, target `>= 80%`)
+
+### Risks / blockers
+
+- None currently.
+
+### Next action
+
+- Proceed to final handoff.
+
+### User review status
+
+- Approved
+
 ## 2026-11-14 — Oil drum on-fire visual below half health
 
 - Timestamp: 2026-11-14
