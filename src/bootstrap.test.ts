@@ -22,6 +22,7 @@ type ElementWithId = {
 	removeAttribute: ReturnType<typeof vi.fn>;
 	getAttribute: ReturnType<typeof vi.fn>;
 	children: ElementWithId[];
+	textContent?: string;
 	clientWidth: number;
 	src: string;
 	alt: string;
@@ -83,6 +84,7 @@ function createDocumentStub(documentListeners: ListenerMap): DocumentStub {
 			}),
 			getAttribute: vi.fn((name: string) => attributes.get(name) ?? null),
 			children: [] as ElementWithId[],
+			textContent: '',
 			clientWidth: 320,
 			src: '',
 			alt: '',
@@ -251,6 +253,7 @@ const runtimeMocks = vi.hoisted(() => ({
 const oilDrumEntityMocks = vi.hoisted(() => ({
 	DEFAULT_OIL_DRUM_BURN_DAMAGE_PER_SECOND: 5,
 	DEFAULT_OIL_DRUM_BULLET_DAMAGE: 35,
+	DEFAULT_OIL_DRUM_FIRE_THRESHOLD_RATIO: 0.5,
 	advanceOilDrumBurnDamage: vi.fn(
 		(params: { health: { currentHealth: number; maxHealth: number } }) => ({
 			health: params.health,
@@ -292,7 +295,7 @@ const oilDrumEntityMocks = vi.hoisted(() => ({
 		},
 	),
 	addDefaultOilDrumEntityToScene: vi.fn(() => ({
-		sprite: { name: 'oil-drum-entity' },
+		sprite: { name: 'oil-drum-entity', position: { x: 1.25, y: 1, z: 2.25 } },
 		movementCollider: {
 			x: 1.25,
 			z: 2.25,
@@ -305,6 +308,28 @@ const oilDrumEntityMocks = vi.hoisted(() => ({
 			maxHealth: 100,
 		},
 	})),
+}));
+
+const playerHazardDamageMocks = vi.hoisted(() => ({
+	DEFAULT_BURNING_OIL_DRUM_PROXIMITY_RADIUS_METERS: 1,
+	createPlayerHealthState: vi.fn(() => ({
+		currentHealth: 100,
+		maxHealth: 100,
+	})),
+	createInitialPlayerHazardTickState: vi.fn(() => ({
+		proximityDamageElapsedSeconds: 0,
+	})),
+	advancePlayerBurningOilDrumProximityDamage: vi.fn(
+		(params: {
+			health: { currentHealth: number; maxHealth: number };
+			state: { proximityDamageElapsedSeconds: number };
+		}) => ({
+			health: params.health,
+			state: params.state,
+			didApplyDamage: false,
+			damageApplied: 0,
+		}),
+	),
 }));
 
 const bulletHoleMocks = vi.hoisted(() => ({
@@ -417,6 +442,8 @@ vi.mock('./app/oilDrumEntity', () => ({
 		oilDrumEntityMocks.DEFAULT_OIL_DRUM_BURN_DAMAGE_PER_SECOND,
 	DEFAULT_OIL_DRUM_BULLET_DAMAGE:
 		oilDrumEntityMocks.DEFAULT_OIL_DRUM_BULLET_DAMAGE,
+	DEFAULT_OIL_DRUM_FIRE_THRESHOLD_RATIO:
+		oilDrumEntityMocks.DEFAULT_OIL_DRUM_FIRE_THRESHOLD_RATIO,
 	advanceOilDrumBurnDamage: oilDrumEntityMocks.advanceOilDrumBurnDamage,
 	advanceOilDrumExplosionAnimation:
 		oilDrumEntityMocks.advanceOilDrumExplosionAnimation,
@@ -424,6 +451,16 @@ vi.mock('./app/oilDrumEntity', () => ({
 	applyOilDrumHit: oilDrumEntityMocks.applyOilDrumHit,
 	addDefaultOilDrumEntityToScene:
 		oilDrumEntityMocks.addDefaultOilDrumEntityToScene,
+}));
+
+vi.mock('./app/playerHazardDamage', () => ({
+	DEFAULT_BURNING_OIL_DRUM_PROXIMITY_RADIUS_METERS:
+		playerHazardDamageMocks.DEFAULT_BURNING_OIL_DRUM_PROXIMITY_RADIUS_METERS,
+	createPlayerHealthState: playerHazardDamageMocks.createPlayerHealthState,
+	createInitialPlayerHazardTickState:
+		playerHazardDamageMocks.createInitialPlayerHazardTickState,
+	advancePlayerBurningOilDrumProximityDamage:
+		playerHazardDamageMocks.advancePlayerBurningOilDrumProximityDamage,
 }));
 
 vi.mock('./app/bulletHoles', () => ({
@@ -925,6 +962,92 @@ describe('bootstrap runtime wiring', () => {
 		const healthHudRoot = documentStub.elementsById.get('health-hud');
 		expect(healthHudRoot).toBeDefined();
 		expect(healthHudRoot?.classList.contains('health-hud')).toBe(true);
+	});
+
+	it('initializes health HUD text from player health state', async () => {
+		playerHazardDamageMocks.createPlayerHealthState.mockReturnValueOnce({
+			currentHealth: 73,
+			maxHealth: 100,
+		});
+
+		await import('./app/bootstrap');
+
+		const healthHudRoot = documentStub.elementsById.get('health-hud');
+		expect(healthHudRoot?.textContent).toBe('Health: 73');
+	});
+
+	it('applies burning oil drum proximity damage and updates health HUD text', async () => {
+		oilDrumEntityMocks.addDefaultOilDrumEntityToScene.mockReturnValueOnce({
+			sprite: {
+				name: 'oil-drum-entity',
+				position: { x: 0.2, y: 1, z: 5.9 },
+			},
+			movementCollider: {
+				x: 0.2,
+				z: 5.9,
+				radius: 0.75,
+				minY: -0.1,
+				maxY: 2.1,
+			},
+			health: {
+				currentHealth: 40,
+				maxHealth: 100,
+			},
+		});
+		playerHazardDamageMocks.advancePlayerBurningOilDrumProximityDamage.mockReturnValueOnce(
+			{
+				health: { currentHealth: 85, maxHealth: 100 },
+				state: { proximityDamageElapsedSeconds: 0 },
+				didApplyDamage: true,
+				damageApplied: 15,
+			},
+		);
+
+		await import('./app/bootstrap');
+
+		expect(
+			playerHazardDamageMocks.advancePlayerBurningOilDrumProximityDamage,
+		).toHaveBeenCalledWith(
+			expect.objectContaining({
+				deltaSeconds: 0.016,
+				radiusMeters: 1.75,
+				burningDrumPositions: [
+					{
+						x: 0.2,
+						y: 1,
+						z: 5.9,
+					},
+				],
+			}),
+		);
+
+		const healthHudRoot = documentStub.elementsById.get('health-hud');
+		expect(healthHudRoot?.textContent).toBe('Health: 85');
+	});
+
+	it('does not treat non-burning drum as proximity hazard and does not update HUD when no damage is applied', async () => {
+		playerHazardDamageMocks.advancePlayerBurningOilDrumProximityDamage.mockReturnValueOnce(
+			{
+				health: { currentHealth: 85, maxHealth: 100 },
+				state: { proximityDamageElapsedSeconds: 0.5 },
+				didApplyDamage: false,
+				damageApplied: 0,
+			},
+		);
+
+		await import('./app/bootstrap');
+
+		expect(
+			playerHazardDamageMocks.advancePlayerBurningOilDrumProximityDamage,
+		).toHaveBeenCalledWith(
+			expect.objectContaining({
+				playerPosition: { x: 0, y: 1.6, z: 6 },
+				burningDrumPositions: [],
+			}),
+		);
+
+		const healthHudRoot = documentStub.elementsById.get('health-hud');
+		expect(healthHudRoot?.textContent).toBe('Health: 100');
 	});
 
 	it('keeps current floor and wall colors when texture load fails', async () => {
@@ -1592,6 +1715,58 @@ describe('bootstrap runtime wiring', () => {
 		expect(threeState.vectors[1]?.z).toBeCloseTo(-0.3);
 	});
 
+	it('computes projectile tail from direction and length across x y and z', async () => {
+		runtimeMocks.advancePrimaryFireState.mockReturnValueOnce({
+			state: {
+				isPrimaryHeld: true,
+				hasQueuedImmediateShot: false,
+				secondsUntilNextShot: 0.5,
+				nextProjectileId: 10,
+			},
+			shotsToSpawn: 1,
+		});
+		runtimeMocks.spawnProjectilesFromLook.mockReturnValueOnce({
+			state: {
+				isPrimaryHeld: true,
+				hasQueuedImmediateShot: false,
+				secondsUntilNextShot: 0.5,
+				nextProjectileId: 11,
+			},
+			projectiles: [
+				{
+					id: 9,
+					head: { x: 2, y: 3, z: 4 },
+					direction: { x: 1, y: 0.5, z: -0.5 },
+					speed: 45,
+					length: 0.4,
+					color: 0xffffff,
+				},
+			],
+		});
+		runtimeMocks.stepProjectiles.mockReturnValueOnce({
+			activeProjectiles: [
+				{
+					id: 9,
+					head: { x: 2, y: 3, z: 4 },
+					direction: { x: 1, y: 0.5, z: -0.5 },
+					speed: 45,
+					length: 0.4,
+					color: 0xffffff,
+				},
+			],
+			impacts: [],
+		});
+
+		await import('./app/bootstrap');
+
+		expect(threeState.vectors[0]?.x).toBeCloseTo(1.6);
+		expect(threeState.vectors[0]?.y).toBeCloseTo(2.8);
+		expect(threeState.vectors[0]?.z).toBeCloseTo(4.2);
+		expect(threeState.vectors[1]?.x).toBeCloseTo(2);
+		expect(threeState.vectors[1]?.y).toBeCloseTo(3);
+		expect(threeState.vectors[1]?.z).toBeCloseTo(4);
+	});
+
 	it('plays each oil drum sound only once per state transition and resets when the state exits', async () => {
 		const fireSoundPlayer = { play: vi.fn(), stop: vi.fn() };
 		const explosionSoundPlayer = { play: vi.fn() };
@@ -1600,7 +1775,10 @@ describe('bootstrap runtime wiring', () => {
 			explosionSoundPlayer,
 		);
 		oilDrumEntityMocks.addDefaultOilDrumEntityToScene.mockReturnValueOnce({
-			sprite: { name: 'oil-drum-entity' },
+			sprite: {
+				name: 'oil-drum-entity',
+				position: { x: 1.25, y: 1, z: 2.25 },
+			},
 			movementCollider: {
 				x: 1.25,
 				z: 2.25,

@@ -19,6 +19,7 @@ import { createBulletHoleManager } from './bulletHoles';
 import {
 	DEFAULT_OIL_DRUM_BURN_DAMAGE_PER_SECOND,
 	DEFAULT_OIL_DRUM_BULLET_DAMAGE,
+	DEFAULT_OIL_DRUM_FIRE_THRESHOLD_RATIO,
 	advanceOilDrumBurnDamage,
 	advanceOilDrumExplosionAnimation,
 	advanceOilDrumFireAnimation,
@@ -27,6 +28,12 @@ import {
 } from './oilDrumEntity';
 import { initializeHealthHud } from './healthHud';
 import { initializeWeaponHud, triggerWeaponHudRecoil } from './weaponHud';
+import {
+	advancePlayerBurningOilDrumProximityDamage,
+	createInitialPlayerHazardTickState,
+	createPlayerHealthState,
+	DEFAULT_BURNING_OIL_DRUM_PROXIMITY_RADIUS_METERS,
+} from './playerHazardDamage';
 import { DEFAULT_MOVE_SPEED, PLAYER_HEIGHT } from '../core/gameLogic';
 import {
 	PROJECTILE_COLOR,
@@ -203,7 +210,19 @@ const weaponHud = initializeWeaponHud({
 		warn: (event, context) => runtimeLogger.warn(event, context),
 	},
 });
-initializeHealthHud();
+let playerHealth = createPlayerHealthState();
+let playerHazardTickState = createInitialPlayerHazardTickState();
+const healthHud = initializeHealthHud({
+	text: `Health: ${playerHealth.currentHealth}`,
+});
+
+function syncPlayerHealthHud(): void {
+	if (!healthHud?.root) {
+		return;
+	}
+
+	healthHud.root.textContent = `Health: ${playerHealth.currentHealth}`;
+}
 
 let yaw = 0;
 let pitch = 0;
@@ -520,6 +539,39 @@ function animate() {
 		isOilDrumActive = false;
 	}
 	syncOilDrumAudioState();
+
+	const isOilDrumBurning =
+		oilDrumHealth.currentHealth > 0 &&
+		oilDrumHealth.currentHealth <
+			oilDrumHealth.maxHealth * DEFAULT_OIL_DRUM_FIRE_THRESHOLD_RATIO;
+	const burningDrumPositions = isOilDrumBurning
+		? [
+				{
+					x: oilDrumEntity.sprite.position.x,
+					y: oilDrumEntity.sprite.position.y,
+					z: oilDrumEntity.sprite.position.z,
+				},
+			]
+		: [];
+	const playerBurnDamageResult = advancePlayerBurningOilDrumProximityDamage({
+		health: playerHealth,
+		state: playerHazardTickState,
+		playerPosition: {
+			x: camera.position.x,
+			y: camera.position.y,
+			z: camera.position.z,
+		},
+		burningDrumPositions,
+		deltaSeconds: dt,
+		radiusMeters:
+			DEFAULT_BURNING_OIL_DRUM_PROXIMITY_RADIUS_METERS +
+			oilDrumEntity.movementCollider.radius,
+	});
+	playerHealth = playerBurnDamageResult.health;
+	playerHazardTickState = playerBurnDamageResult.state;
+	if (playerBurnDamageResult.didApplyDamage) {
+		syncPlayerHealthHud();
+	}
 
 	const projectileStep = stepProjectiles({
 		projectiles: activeProjectiles,
