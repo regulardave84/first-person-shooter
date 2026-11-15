@@ -4,6 +4,59 @@ Persistent execution log for the `implementer` skill.
 
 ---
 
+## 2026-11-15 — Player burning oil-drum proximity damage
+
+- Timestamp: 2026-11-15
+- Feature file: src/acceptance/features/playerBurningOilDrumProximityDamage.acceptance.feature
+- Complexity: low
+- Current phase: P4
+- Checkpoint status: COMPLETE (`SPECIFIER_COMPLETE` -> `IMPLEMENTER_COMPLETE`) with `CLEANER_COMPLETE` and `HARDENER_COMPLETE`
+
+### Completed work
+
+- Approved acceptance contract recorded for player proximity hazard from burning oil drums.
+- Wired gameplay integration in `src/app/bootstrap.ts` to:
+	- track player health state and hazard tick state,
+	- detect burning oil-drum state (`0 < health < 50%`),
+	- apply per-second proximity hazard ticks while within `1m`,
+	- update health HUD text when damage is applied.
+- Added acceptance coverage in `src/acceptance/tests/playerBurningOilDrumProximityDamage.acceptance.test.ts` for all approved scenarios.
+- Extended bootstrap integration coverage in `src/bootstrap.test.ts` for proximity-hazard invocation and HUD update behavior.
+
+### Files changed so far
+
+- src/acceptance/features/playerBurningOilDrumProximityDamage.acceptance.feature
+- src/acceptance/tests/playerBurningOilDrumProximityDamage.acceptance.test.ts
+- src/app/bootstrap.ts
+- src/bootstrap.test.ts
+- .github/skills/implementer/IMPLEMENTER_CHECKPOINTS.md
+
+### Scenario -> test mapping
+
+- Player takes 15 damage after one second within one meter of a burning oil drum -> `src/acceptance/tests/playerBurningOilDrumProximityDamage.acceptance.test.ts` (`Player takes 15 damage after one second within one meter of a burning oil drum`) + `src/bootstrap.test.ts` (`applies burning oil drum proximity damage and updates health HUD text`)
+- Player does not take proximity damage while outside one meter -> `src/acceptance/tests/playerBurningOilDrumProximityDamage.acceptance.test.ts` (`Player does not take proximity damage while outside one meter`)
+- Proximity damage stops immediately after leaving range -> `src/acceptance/tests/playerBurningOilDrumProximityDamage.acceptance.test.ts` (`Proximity damage stops immediately after leaving range`)
+- Proximity damage can reduce health to zero but not below -> `src/acceptance/tests/playerBurningOilDrumProximityDamage.acceptance.test.ts` (`Proximity damage can reduce health to zero but not below`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Hardener: PASS (`npm run test:mutation:branch` -> overall mutation score `80.11%`, target `>= 80%`)
+
+### Risks / blockers
+
+- None currently.
+
+### Next action
+
+- Proceed to manual in-game QA handoff.
+
+### User review status
+
+- Approved
+
 ## 2026-11-15 — Bullet hole impacts: remove oil-drum decals
 
 - Timestamp: 2026-11-15
