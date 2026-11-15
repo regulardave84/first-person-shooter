@@ -227,10 +227,32 @@ function syncPlayerHealthHud(): void {
 let yaw = 0;
 let pitch = 0;
 let airborneRunSpeedMultiplier = 1;
-const projectileVisuals = new Map<number, THREE.Line>();
+type ProjectileVisualEntry = {
+	line: THREE.Line;
+	geometry: THREE.BufferGeometry;
+	points: [THREE.Vector3, THREE.Vector3];
+};
+const projectileVisuals = new Map<number, ProjectileVisualEntry>();
 const projectileMaterial = new THREE.LineBasicMaterial({
 	color: PROJECTILE_COLOR,
 });
+const burningDrumPosition = {
+	x: oilDrumEntity.sprite.position.x,
+	y: oilDrumEntity.sprite.position.y,
+	z: oilDrumEntity.sprite.position.z,
+};
+const burningDrumPositions = [burningDrumPosition];
+const noBurningDrumPositions: Position3D[] = [];
+const oilDrumProjectileCollider = createEntityCollider({
+	x: oilDrumEntity.movementCollider.x,
+	y: (oilDrumEntity.movementCollider.minY + oilDrumEntity.movementCollider.maxY) / 2,
+	z: oilDrumEntity.movementCollider.z,
+	w: oilDrumEntity.movementCollider.radius * 2,
+	h: oilDrumEntity.movementCollider.maxY - oilDrumEntity.movementCollider.minY,
+	d: oilDrumEntity.movementCollider.radius * 2,
+});
+const activeOilDrumProjectileColliders = [oilDrumProjectileCollider];
+const noEntityProjectileColliders: ReturnType<typeof createEntityCollider>[] = [];
 const bulletHoleManager = createBulletHoleManager({
 	scene,
 	logger: {
@@ -257,7 +279,9 @@ function processPrimaryFireShots(shotCount: number): void {
 		pitch,
 	});
 	primaryFireState = spawned.state;
-	activeProjectiles = [...activeProjectiles, ...spawned.projectiles];
+	if (spawned.projectiles.length > 0) {
+		activeProjectiles.push(...spawned.projectiles);
+	}
 }
 
 function isPointerLockActive(): boolean {
@@ -280,20 +304,25 @@ function toProjectileSegmentEndpoints(projectile: Projectile): {
 
 function upsertProjectileVisual(projectile: Projectile): void {
 	const segment = toProjectileSegmentEndpoints(projectile);
-	const points = [
-		new THREE.Vector3(segment.tail.x, segment.tail.y, segment.tail.z),
-		new THREE.Vector3(segment.head.x, segment.head.y, segment.head.z),
-	];
-
 	const existing = projectileVisuals.get(projectile.id);
 	if (existing) {
-		(existing.geometry as THREE.BufferGeometry).setFromPoints(points);
+		existing.points[0].x = segment.tail.x;
+		existing.points[0].y = segment.tail.y;
+		existing.points[0].z = segment.tail.z;
+		existing.points[1].x = segment.head.x;
+		existing.points[1].y = segment.head.y;
+		existing.points[1].z = segment.head.z;
+		existing.geometry.setFromPoints(existing.points);
 		return;
 	}
 
+	const points: [THREE.Vector3, THREE.Vector3] = [
+		new THREE.Vector3(segment.tail.x, segment.tail.y, segment.tail.z),
+		new THREE.Vector3(segment.head.x, segment.head.y, segment.head.z),
+	];
 	const geometry = new THREE.BufferGeometry().setFromPoints(points);
 	const line = new THREE.Line(geometry, projectileMaterial);
-	projectileVisuals.set(projectile.id, line);
+	projectileVisuals.set(projectile.id, { line, geometry, points });
 	scene.add(line);
 }
 
@@ -303,20 +332,8 @@ function removeProjectileVisual(projectileId: number): void {
 		return;
 	}
 	projectileVisuals.delete(projectileId);
-	scene.remove(visual);
-	(visual.geometry as THREE.BufferGeometry).dispose();
-}
-
-function toOilDrumProjectileCollider() {
-	const collider = oilDrumEntity.movementCollider;
-	return createEntityCollider({
-		x: collider.x,
-		y: (collider.minY + collider.maxY) / 2,
-		z: collider.z,
-		w: collider.radius * 2,
-		h: collider.maxY - collider.minY,
-		d: collider.radius * 2,
-	});
+	scene.remove(visual.line);
+	visual.geometry.dispose();
 }
 
 function handleProjectileImpacts(
@@ -476,6 +493,17 @@ function resolveMoveSpeedMultiplier(): number {
 	return isRunActive(runKeys) ? RUN_SPEED_MULTIPLIER : 1;
 }
 
+function resolveBurningDrumPositions(isOilDrumBurning: boolean): Position3D[] {
+	if (!isOilDrumBurning) {
+		return noBurningDrumPositions;
+	}
+
+	burningDrumPosition.x = oilDrumEntity.sprite.position.x;
+	burningDrumPosition.y = oilDrumEntity.sprite.position.y;
+	burningDrumPosition.z = oilDrumEntity.sprite.position.z;
+	return burningDrumPositions;
+}
+
 function animate() {
 	requestAnimationFrame(animate);
 
@@ -544,15 +572,6 @@ function animate() {
 		oilDrumHealth.currentHealth > 0 &&
 		oilDrumHealth.currentHealth <
 			oilDrumHealth.maxHealth * DEFAULT_OIL_DRUM_FIRE_THRESHOLD_RATIO;
-	const burningDrumPositions = isOilDrumBurning
-		? [
-				{
-					x: oilDrumEntity.sprite.position.x,
-					y: oilDrumEntity.sprite.position.y,
-					z: oilDrumEntity.sprite.position.z,
-				},
-			]
-		: [];
 	const playerBurnDamageResult = advancePlayerBurningOilDrumProximityDamage({
 		health: playerHealth,
 		state: playerHazardTickState,
@@ -561,7 +580,7 @@ function animate() {
 			y: camera.position.y,
 			z: camera.position.z,
 		},
-		burningDrumPositions,
+		burningDrumPositions: resolveBurningDrumPositions(isOilDrumBurning),
 		deltaSeconds: dt,
 		radiusMeters:
 			DEFAULT_BURNING_OIL_DRUM_PROXIMITY_RADIUS_METERS +
@@ -577,7 +596,9 @@ function animate() {
 		projectiles: activeProjectiles,
 		dt,
 		worldColliders: WORLD_PROJECTILE_COLLIDERS,
-		entityColliders: isOilDrumActive ? [toOilDrumProjectileCollider()] : [],
+		entityColliders: isOilDrumActive
+			? activeOilDrumProjectileColliders
+			: noEntityProjectileColliders,
 	});
 	activeProjectiles = projectileStep.activeProjectiles;
 	handleProjectileImpacts(projectileStep.impacts);
