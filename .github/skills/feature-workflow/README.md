@@ -7,6 +7,8 @@ The `feature-workflow` skill orchestrates full feature delivery through the proj
 3. `cleaner`
 4. `hardener`
 
+Default execution is agentized: each phase runs in a separate dedicated agent and hands off artifacts to the next phase.
+
 - Skill definition: [SKILL.md](SKILL.md)
 - Early runtime QA checklist: [EARLY_QA_CHECKLIST.md](EARLY_QA_CHECKLIST.md)
 
@@ -18,6 +20,8 @@ Use this as the default path when a prompt asks to add or change a feature.
 
 - Gherkin approval gate before implementation
 - Mandatory implementation-discovery questions before any implementation planning
+- Dedicated per-phase agents with explicit handoff artifacts
+- Hard-stop orchestration on `failed`/`blocked` phase status unless user explicitly overrides
 - Scenario-to-test traceability
 - Fast local validation path (`validate:fast`) during active iteration
 - Full pre-merge quality path (`quality:pr` + branch mutation gate)

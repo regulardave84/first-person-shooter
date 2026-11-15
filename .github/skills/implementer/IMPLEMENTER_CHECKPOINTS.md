@@ -4,6 +4,75 @@ Persistent execution log for the `implementer` skill.
 
 ---
 
+## 2026-11-15 — Agentized skill handoff workflow
+
+- Timestamp: 2026-11-15
+- Feature file: src/acceptance/features/featureWorkflow.agentHandoffs.acceptance.feature
+- Complexity: complex
+- Current phase: P4
+- Checkpoint status: COMPLETE (`P0_COMPLETE` -> `P4_COMPLETE`) with `CLEANER_COMPLETE` and `HARDENER_COMPLETE`
+
+### Implementation discovery decisions (defaults)
+
+- Orchestration shape: executable orchestration helper added as typed workflow module (`src/tools/featureWorkflowAgentHandoffs.ts`).
+- Handoff contract: explicit typed handoff payload per phase (specifier, implementer, cleaner, hardener).
+- Gate strictness: hard-stop downstream phases on `failed`/`blocked` unless explicitly overridden by user.
+- Scope: workflow docs + implementation module + unit/acceptance/generated acceptance tests.
+
+### Completed work
+
+- Added approved acceptance contract for dedicated per-phase agents and explicit handoffs.
+- Implemented `featureWorkflowAgentHandoffs` orchestration logic with:
+	- fixed phase order (`specifier` -> `implementer` -> `cleaner` -> `hardener`),
+	- typed handoff contracts between phases,
+	- strict handoff validation (approved artifacts, changed-files + verification summary, mutation-scope inputs),
+	- hard-stop blocking semantics and final chained reporting.
+- Added unit coverage for pass path, failure path, default blocking-reason behavior, and handoff validation edge cases.
+- Added acceptance coverage that verifies per-phase handoff chaining behavior and downstream blocking behavior.
+- Added generated acceptance scaffold for scenario traceability.
+- Updated workflow skill docs to codify dedicated-agent execution model and mandatory handoff artifacts.
+
+### Files changed so far
+
+- .github/skills/feature-workflow/README.md
+- .github/skills/feature-workflow/SKILL.md
+- src/acceptance/features/featureWorkflow.agentHandoffs.acceptance.feature
+- src/acceptance/tests/featureWorkflowAgentHandoffs.acceptance.test.ts
+- src/acceptance/tests/generated/featureWorkflow.agentHandoffs.acceptance.generated.test.ts
+- src/featureWorkflowAgentHandoffs.test.ts
+- src/tools/featureWorkflowAgentHandoffs.ts
+- .github/skills/implementer/IMPLEMENTER_CHECKPOINTS.md
+
+### Scenario -> test mapping
+
+- Run specifier in a dedicated agent first -> `src/acceptance/tests/featureWorkflowAgentHandoffs.acceptance.test.ts` (`Run specifier in a dedicated agent first`) + `src/featureWorkflowAgentHandoffs.test.ts` (`returns specifier -> implementer -> cleaner -> hardener phase order`)
+- Handoff from specifier to implementer with required artifacts -> `src/acceptance/tests/featureWorkflowAgentHandoffs.acceptance.test.ts` (`Handoff from specifier to implementer with required artifacts`) + `src/featureWorkflowAgentHandoffs.test.ts` (`requires approved acceptance artifacts in specifier handoff`)
+- Run implementer then hand off to cleaner -> `src/acceptance/tests/featureWorkflowAgentHandoffs.acceptance.test.ts` (`Run implementer then hand off to cleaner`) + `src/featureWorkflowAgentHandoffs.test.ts` (`requires changed-files and verification summary in implementer handoff`)
+- Run cleaner then hand off to hardener -> `src/acceptance/tests/featureWorkflowAgentHandoffs.acceptance.test.ts` (`Run cleaner then hand off to hardener`) + `src/featureWorkflowAgentHandoffs.test.ts` (`requires mutation-scope inputs in cleaner handoff`)
+- Block downstream phases on failed handoff status -> `src/acceptance/tests/featureWorkflowAgentHandoffs.acceptance.test.ts` (`Block downstream phases on failed handoff status`) + `src/featureWorkflowAgentHandoffs.test.ts` (`blocks downstream phases when a phase reports blocked status`)
+- Produce final chained workflow report -> `src/acceptance/tests/featureWorkflowAgentHandoffs.acceptance.test.ts` (`Produce final chained workflow report`) + `src/featureWorkflowAgentHandoffs.test.ts` (`runs each phase in order and returns a chained final report when all phases pass`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Hardener: PASS (`npm run test:mutation:branch` -> mutation score `95.92%`, target `>= 80%`)
+
+### Risks / blockers
+
+- No blockers. Remaining surviving mutants in the orchestration helper appear equivalent/noise and do not block policy threshold.
+
+### Next action
+
+- Manual in-game QA handoff per repository workflow.
+
+### User review status
+
+- Pending
+
+---
+
 ## 2026-11-15 — Runtime allocation optimizations (top 3)
 
 - Timestamp: 2026-11-15

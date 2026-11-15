@@ -17,6 +17,12 @@ Run these skills in this exact order:
 4. `cleaner`
 5. `hardener`
 
+Execution model defaults:
+
+- Each phase runs in a dedicated agent (`specifier-agent` -> `implementer-agent` -> `cleaner-agent` -> `hardener-agent`).
+- Every phase must emit a handoff artifact consumed by the next phase.
+- Orchestration hard-stops when a phase reports `failed` or `blocked` (manual override only by explicit user instruction).
+
 ## Required execution steps
 
 ### Step 1: specification gate
@@ -44,12 +50,14 @@ Run these skills in this exact order:
 ### Step 3: implementation gate
 
 - Run `implementer` using the approved `.feature` file.
+- Consume specifier handoff artifacts as implementation contract inputs.
 - Ensure scenario-to-test mapping exists.
 - Ensure required checkpoint entries are appended.
 
 ### Step 4: cleanup gate
 
 - Run `cleaner` to review and reduce change risk.
+- Consume implementer handoff (including changed files + verification summary).
 - Ensure cleaner performs directory-structure assessment first within general code review.
 - Run dependency checker during cleaner after review and before cleanup refactors.
 - Apply safe refactors only (no behavior change).
@@ -58,6 +66,7 @@ Run these skills in this exact order:
 ### Step 5: hardening gate
 
 - Run `hardener` mutation workflow.
+- Consume cleaner handoff (including mutation-scope inputs).
 - Require full test-suite gate (`npm run test:all`) before mutation execution.
 - Require branch-scoped mutation targeting based on current branch implementation changes.
 - If no implementation source files changed, skip mutation execution and report the skip reason.
