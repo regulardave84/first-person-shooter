@@ -95,6 +95,14 @@ npm run test:acceptance
 npm run test:all
 ```
 
+### 10b) Run quick runtime/hazard verification suite
+
+```bash
+npm run test:runtime:quick
+```
+
+This focused suite is intended for rapid gameplay-loop feedback during active feature work.
+
 ### 11) Run acceptance tests in watch mode
 
 ```bash
@@ -134,6 +142,30 @@ npm run architecture:check
 ```
 
 This enforces source-file size limits and import-boundary rules and writes `reports/cleaner/ARCHITECTURE_GUARDRAILS_REPORT.md`.
+
+### 17) Run acceptance artifact collision checks
+
+```bash
+npm run acceptance:artifacts:check
+```
+
+This catches duplicate/ambiguous acceptance artifact naming and duplicate accepted feature titles early, and writes `reports/cleaner/ACCEPTANCE_ARTIFACT_REPORT.md`.
+
+### 18) Run fast local validation
+
+```bash
+npm run validate:fast
+```
+
+Fast path runs lint + focused runtime tests + build.
+
+### 19) Run full quality + mutation validation
+
+```bash
+npm run validate:full
+```
+
+Full path runs lint + full tests + build + branch-scoped mutation gate.
 
 ## Controls
 
@@ -194,7 +226,23 @@ npm run build
 npm run test:mutation:branch
 ```
 
+For day-to-day iteration speed, use `npm run validate:fast` locally and keep `npm run validate:full` for pre-merge hardening.
+
 Mutation testing target is at least 80% unless explicitly approved as blocked.
+
+## Development Speed Workflow
+
+- **Local fast path:** `npm run validate:fast`
+- **PR/full path:** `npm run quality:pr` plus `npm run test:mutation:branch`
+- **Pre-push hook behavior:**
+   - `main`: runs `npm run quality:pr`
+   - feature branches: runs `npm run validate:fast`
+
+This preserves full pre-merge quality while reducing local feedback latency.
+
+## Early Manual QA Checkpoint
+
+After first runtime integration is working, run a short in-game manual QA pass before cleaner/hardener. This catches gameplay-meaning mismatches early (for example, distance semantics around physical collider size) before expensive mutation and hardening cycles.
 
 ## Mutation Testing
 

@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+	createLoopingPlayerMock,
+	createOneShotPlayerMock,
+} from './test/mockPlayers';
+import {
 	PROJECTILE_COLOR,
 	PROJECTILE_FIRE_RATE,
 	PLAYER_MAX_JUMP_OVER_ENTITY_HEIGHT,
@@ -1407,10 +1411,7 @@ describe('fpsRuntime helpers', () => {
 	});
 
 	it('routes walking footstep activation helper to play and stop', () => {
-		const player = {
-			play: vi.fn(),
-			stop: vi.fn(),
-		};
+		const player = createLoopingPlayerMock(vi.fn(), vi.fn());
 
 		setWalkingFootstepSoundActive(player, true);
 		setWalkingFootstepSoundActive(player, false);
@@ -1454,8 +1455,8 @@ describe('fpsRuntime helpers', () => {
 	});
 
 	it('advances footstep cadence with immediate stop on idle and sprint-based step sounds', () => {
-		const walkingPlayer = { play: vi.fn(), stop: vi.fn() };
-		const runningPlayer = { play: vi.fn(), stop: vi.fn() };
+		const walkingPlayer = createLoopingPlayerMock(vi.fn(), vi.fn());
+		const runningPlayer = createLoopingPlayerMock(vi.fn(), vi.fn());
 
 		let cadenceState = createInitialFootstepCadenceState();
 		cadenceState = advanceFootstepCadence({
@@ -1515,7 +1516,7 @@ describe('fpsRuntime helpers', () => {
 	});
 
 	it('plays exactly one firing sound per emitted bullet', () => {
-		const player = { play: vi.fn() };
+		const player = createOneShotPlayerMock(vi.fn());
 
 		playBulletFireSounds(player, 0);
 		playBulletFireSounds(player, 1);
@@ -1992,8 +1993,8 @@ describe('fpsRuntime helpers', () => {
 	});
 
 	it('resets cadence when movement mode changes and idle state clears both footstep loops', () => {
-		const walkingPlayer = { play: vi.fn(), stop: vi.fn() };
-		const runningPlayer = { play: vi.fn(), stop: vi.fn() };
+		const walkingPlayer = createLoopingPlayerMock(vi.fn(), vi.fn());
+		const runningPlayer = createLoopingPlayerMock(vi.fn(), vi.fn());
 		let state = createInitialFootstepCadenceState();
 
 		state = advanceFootstepCadence({
@@ -2100,7 +2101,7 @@ describe('fpsRuntime helpers', () => {
 	});
 
 	it('ignores non-positive or non-finite shot counts while still allowing valid positive values', () => {
-		const player = { play: vi.fn() };
+		const player = createOneShotPlayerMock(vi.fn());
 		playBulletFireSounds(player, -2);
 		playBulletFireSounds(player, 0);
 		playBulletFireSounds(player, Number.NaN);
@@ -2112,8 +2113,8 @@ describe('fpsRuntime helpers', () => {
 	});
 
 	it('counts down footstep cadence with subtraction and resets cleanly on idle mode', () => {
-		const walkingPlayer = { play: vi.fn(), stop: vi.fn() };
-		const runningPlayer = { play: vi.fn(), stop: vi.fn() };
+		const walkingPlayer = createLoopingPlayerMock(vi.fn(), vi.fn());
+		const runningPlayer = createLoopingPlayerMock(vi.fn(), vi.fn());
 		let state: ReturnType<typeof createInitialFootstepCadenceState> = {
 			secondsUntilNextStep: 0.4,
 			lastMode: 'walking',
