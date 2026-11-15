@@ -307,6 +307,15 @@ const oilDrumEntityMocks = vi.hoisted(() => ({
 	})),
 }));
 
+const bulletHoleMocks = vi.hoisted(() => ({
+	recordImpact: vi.fn(),
+	getActiveBulletHoleCount: vi.fn(() => 0),
+	createBulletHoleManager: vi.fn(() => ({
+		recordImpact: bulletHoleMocks.recordImpact,
+		getActiveBulletHoleCount: bulletHoleMocks.getActiveBulletHoleCount,
+	})),
+}));
+
 const threeState = vi.hoisted(() => ({
 	scenes: [] as Array<{
 		add: ReturnType<typeof vi.fn>;
@@ -415,6 +424,10 @@ vi.mock('./app/oilDrumEntity', () => ({
 	applyOilDrumHit: oilDrumEntityMocks.applyOilDrumHit,
 	addDefaultOilDrumEntityToScene:
 		oilDrumEntityMocks.addDefaultOilDrumEntityToScene,
+}));
+
+vi.mock('./app/bulletHoles', () => ({
+	createBulletHoleManager: bulletHoleMocks.createBulletHoleManager,
 }));
 
 vi.mock('three', () => {
@@ -1289,6 +1302,10 @@ describe('bootstrap runtime wiring', () => {
 			w: 1.5,
 			h: 2.2,
 			d: 1.5,
+		});
+		expect(bulletHoleMocks.recordImpact).toHaveBeenCalledWith({
+			colliderKind: 'wall',
+			point: { x: 0, y: 1.6, z: -1 },
 		});
 	});
 

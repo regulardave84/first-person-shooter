@@ -15,6 +15,7 @@ import {
 	DEFAULT_WORLD_FLOOR_COLOR,
 	applyDefaultWorldFloorTexture,
 } from './floorTexture';
+import { createBulletHoleManager } from './bulletHoles';
 import {
 	DEFAULT_OIL_DRUM_BURN_DAMAGE_PER_SECOND,
 	DEFAULT_OIL_DRUM_BULLET_DAMAGE,
@@ -211,6 +212,12 @@ const projectileVisuals = new Map<number, THREE.Line>();
 const projectileMaterial = new THREE.LineBasicMaterial({
 	color: PROJECTILE_COLOR,
 });
+const bulletHoleManager = createBulletHoleManager({
+	scene,
+	logger: {
+		warn: (event, context) => runtimeLogger.warn(event, context),
+	},
+});
 
 function processPrimaryFireShots(shotCount: number): void {
 	if (shotCount <= 0) {
@@ -294,10 +301,18 @@ function toOilDrumProjectileCollider() {
 }
 
 function handleProjectileImpacts(
-	impacts: ReadonlyArray<{ projectileId: number; colliderKind: string }>,
+	impacts: ReadonlyArray<{
+		projectileId: number;
+		point: Position3D;
+		colliderKind: 'wall' | 'floor' | 'ceiling' | 'entity';
+	}>,
 ): void {
 	for (const impact of impacts) {
 		removeProjectileVisual(impact.projectileId);
+		bulletHoleManager.recordImpact({
+			colliderKind: impact.colliderKind,
+			point: impact.point,
+		});
 
 		if (!isOilDrumActive || impact.colliderKind !== 'entity') {
 			continue;
