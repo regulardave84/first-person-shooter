@@ -4,31 +4,46 @@
 
 When a user asks to add, change, or extend a feature, follow this workflow in order:
 
-1. **Run implementation-discovery questions (before specifier)**
+1. **Create a feature branch for the work**
+   - Create and switch to a new branch before making any implementation or acceptance-artifact changes.
+   - Use a clear branch name derived from the feature intent.
+
+2. **Run implementation-discovery questions (before specifier)**
    - Ask targeted questions about implementation preferences before creating any implementation plan or acceptance artifacts.
    - Cover at least architecture shape, UX expectations (if applicable), and constraints/trade-offs.
    - Wait for user answers (or explicit permission to use defaults) before creating acceptance criteria files.
 
-2. **Run `specifier` skill**
+3. **Run `specifier` skill**
    - Convert user requirements into Gherkin acceptance criteria.
    - Persist the acceptance criteria in a `.feature` file.
    - Ask for explicit user approval before proceeding.
 
-3. **Run `implementer` skill**
+4. **Run `implementer` skill**
    - Use only approved Gherkin as the implementation contract.
    - Create/update tests mapped to each scenario.
    - Implement production code to satisfy those tests.
    - Write checkpoints in `.github/skills/implementer/IMPLEMENTER_CHECKPOINTS.md`.
 
-4. **Run `cleaner` skill**
+5. **Run `cleaner` skill**
    - Review and clean up implementation changes.
    - Use CRAP analysis and safe refactors.
    - Preserve behavior and re-verify quality gates.
 
-5. **Run `hardener` skill**
+6. **Run `hardener` skill**
    - Run mutation testing only when implementation source code changed.
    - If no implementation source code changed, skip mutation testing and report the skip reason.
    - Improve tests for survivors until mutation score is at least 80% (or report blocked with evidence).
+
+7. **Run manual QA handoff in-game**
+   - When implementation is considered complete, run the game for the user so they can manually test behavior.
+   - Wait for explicit user approval after manual testing before any final git/PR actions.
+
+8. **After approval, perform git/PR completion automatically**
+   - Commit the branch with a clear conventional commit message.
+   - Push the feature branch to origin.
+   - Create a pull request targeting `main`.
+   - Merge the pull request into `main` after required checks pass.
+   - Update local `main` and push `main` to origin.
 
 ## Quality gates per feature request
 
