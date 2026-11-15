@@ -4,6 +4,64 @@ Persistent execution log for the `implementer` skill.
 
 ---
 
+## 2026-11-15 — Development workflow fast-path quality improvements
+
+- Timestamp: 2026-11-15
+- Feature file: N/A (workflow/tooling improvement)
+- Complexity: medium
+- Current phase: P4
+- Checkpoint status: COMPLETE (`IMPLEMENTER_COMPLETE`) with `CLEANER_COMPLETE` and `HARDENER_COMPLETE`
+
+### Completed work
+
+- Added two-tier validation scripts in `package.json`:
+	- `validate:fast` (lint + focused runtime/hazard tests + build)
+	- `validate:full` (lint + full tests + build + branch mutation)
+	- `quality:pr` (lint + full tests + build)
+- Added focused runtime/hazard quick test profile: `test:runtime:quick`.
+- Added acceptance artifact collision/title checker (`scripts/acceptance-artifact-checker.mjs`) and wired it into lint.
+- Added branch-aware pre-push gate script (`scripts/pre-push-gate.mjs`) and wired `.husky/pre-push` to use it.
+- Added CI quality workflow (`.github/workflows/quality-gates.yml`) with parallel core-quality jobs and mutation gate.
+- Added coverage workflow concurrency cancellation to avoid redundant CI runs.
+- Added shared test mock helpers (`src/test/mockPlayers.ts`) and adopted them in `src/fpsRuntime.test.ts`.
+- Added early runtime QA checklist (`.github/skills/feature-workflow/EARLY_QA_CHECKLIST.md`) and documented workflow updates.
+
+### Files changed so far
+
+- package.json
+- .husky/pre-push
+- scripts/acceptance-artifact-checker.mjs
+- scripts/pre-push-gate.mjs
+- .github/workflows/quality-gates.yml
+- .github/workflows/coverage-gate.yml
+- src/tools/acceptanceArtifactChecker.ts
+- src/acceptanceArtifactChecker.test.ts
+- src/test/mockPlayers.ts
+- src/fpsRuntime.test.ts
+- README.md
+- .github/skills/feature-workflow/README.md
+- .github/skills/feature-workflow/EARLY_QA_CHECKLIST.md
+- .github/skills/implementer/IMPLEMENTER_CHECKPOINTS.md
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Hardener: PASS (`npm run test:mutation:branch` -> overall mutation score `86.96%`, target `>= 80%`)
+
+### Risks / blockers
+
+- Branch protection may still require additional required-check configuration in repository settings for new CI jobs.
+
+### Next action
+
+- Proceed to user review and optional git/PR completion.
+
+### User review status
+
+- Pending
+
 ## 2026-11-15 — Player burning oil-drum proximity damage
 
 - Timestamp: 2026-11-15

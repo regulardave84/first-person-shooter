@@ -1,1 +1,1 @@
-npm run test:coverage
+node scripts/pre-push-gate.mjs
