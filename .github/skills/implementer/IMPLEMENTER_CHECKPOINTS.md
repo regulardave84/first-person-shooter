@@ -4,6 +4,116 @@ Persistent execution log for the `implementer` skill.
 
 ---
 
+## 2026-11-15 — Bullet hole impacts: remove oil-drum decals
+
+- Timestamp: 2026-11-15
+- Feature file: src/acceptance/features/bullet_hole_impacts.acceptance.feature
+- Complexity: low
+- Current phase: P4
+- Checkpoint status: COMPLETE (`SPECIFIER_COMPLETE` -> `IMPLEMENTER_COMPLETE`) with `CLEANER_COMPLETE` and `HARDENER_COMPLETE`
+
+### Completed work
+
+- Updated approved acceptance contract to remove oil-drum bullet-hole behavior while preserving wall/floor bullet holes.
+- Updated runtime bullet-hole manager in `src/app/bulletHoles.ts` to create decals only for `wall` and `floor` impacts.
+- Updated bootstrap impact wiring in `src/app/bootstrap.ts` to pass only impact kind and point into bullet-hole recording.
+- Updated unit, acceptance, generated acceptance scaffold, and QA procedure artifacts to reflect no oil-drum bullet holes.
+
+### Files changed so far
+
+- src/acceptance/features/bullet_hole_impacts.acceptance.feature
+- src/acceptance/features/bullet_hole_impacts.proposed.feature
+- src/acceptance/tests/bulletHoleImpacts.acceptance.test.ts
+- src/acceptance/tests/generated/bullet_hole_impacts.acceptance.generated.test.ts
+- src/acceptance/qa/bullet_hole_impacts.qa-procedure.md
+- src/app/bulletHoles.ts
+- src/app/bulletHoles.test.ts
+- src/app/bootstrap.ts
+- src/bootstrap.test.ts
+
+### Scenario -> test mapping
+
+- Wall impact spawns a bullet hole decal -> `src/acceptance/tests/bulletHoleImpacts.acceptance.test.ts` (`Wall impact spawns a bullet hole decal`) + `src/app/bulletHoles.test.ts` (`creates wall and floor bullet hole sprites with the bullet_hole asset`)
+- Floor impact spawns a bullet hole decal -> `src/acceptance/tests/bulletHoleImpacts.acceptance.test.ts` (`Floor impact spawns a bullet hole decal`) + `src/app/bulletHoles.test.ts` (`creates wall and floor bullet hole sprites with the bullet_hole asset`)
+- Oil drum impact does not spawn a bullet hole mark -> `src/acceptance/tests/bulletHoleImpacts.acceptance.test.ts` (`Oil drum impact does not spawn a bullet hole mark`) + `src/app/bulletHoles.test.ts` (`does not create bullet holes on oil drum or entity impacts`)
+- Repeated wall and floor hits accumulate bullet holes up to a safe cap -> `src/acceptance/tests/bulletHoleImpacts.acceptance.test.ts` (`Repeated wall and floor hits accumulate bullet holes up to a safe cap`) + `src/app/bulletHoles.test.ts` (`removes oldest bullet holes first when max count is exceeded`)
+- Non-hit shots do not create bullet holes -> `src/acceptance/tests/bulletHoleImpacts.acceptance.test.ts` (`Non-hit shots do not create bullet holes`) + `src/app/bulletHoles.test.ts` (`does not create bullet holes for misses or unsupported collisions`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Hardener: PASS (`npm run test:mutation:branch` -> `82.33%`, target `>= 80%`)
+
+### Risks / blockers
+
+- None currently.
+
+### Next action
+
+- Proceed to final handoff.
+
+### User review status
+
+- Approved
+
+## 2026-11-15 — Bullet hole impacts on floor, walls, and oil drum
+
+- Timestamp: 2026-11-15
+- Feature file: src/acceptance/features/bullet_hole_impacts.acceptance.feature
+- Complexity: medium
+- Current phase: P4
+- Checkpoint status: COMPLETE (`SPECIFIER_COMPLETE` -> `IMPLEMENTER_COMPLETE`) with `CLEANER_COMPLETE` and `HARDENER_COMPLETE`
+
+### Completed work
+
+- Added a new bullet-hole impact helper module in `src/app/bulletHoles.ts` with default asset path (`bullet_hole.png`), floor/wall/entity placement logic, and FIFO capped retention.
+- Wired projectile-impact integration in `src/app/bootstrap.ts` so wall/floor impacts create decals and active oil drum impacts attach marks to the oil drum sprite.
+- Added dedicated acceptance coverage for all approved scenarios in `src/acceptance/tests/bulletHoleImpacts.acceptance.test.ts`.
+- Added focused unit coverage for bullet-hole manager behavior in `src/app/bulletHoles.test.ts`.
+- Updated bootstrap integration coverage in `src/bootstrap.test.ts` to assert impact forwarding into bullet-hole handling.
+
+### Files changed so far
+
+- src/app/bulletHoles.ts
+- src/app/bulletHoles.test.ts
+- src/app/bootstrap.ts
+- src/bootstrap.test.ts
+- src/acceptance/tests/bulletHoleImpacts.acceptance.test.ts
+- src/acceptance/features/bullet_hole_impacts.acceptance.feature
+- src/acceptance/features/bullet_hole_impacts.proposed.feature
+- src/acceptance/qa/bullet_hole_impacts.qa-procedure.md
+- src/acceptance/tests/generated/bullet_hole_impacts.acceptance.generated.test.ts
+- .github/skills/implementer/IMPLEMENTER_CHECKPOINTS.md
+
+### Scenario -> test mapping
+
+- Wall impact spawns a bullet hole decal -> `src/acceptance/tests/bulletHoleImpacts.acceptance.test.ts` (`Wall impact spawns a bullet hole decal`) + `src/app/bulletHoles.test.ts` (`creates wall and floor bullet hole sprites with the bullet_hole asset`)
+- Floor impact spawns a bullet hole decal -> `src/acceptance/tests/bulletHoleImpacts.acceptance.test.ts` (`Floor impact spawns a bullet hole decal`) + `src/app/bulletHoles.test.ts` (`creates wall and floor bullet hole sprites with the bullet_hole asset`)
+- Oil drum impact spawns a bullet hole mark on the drum -> `src/acceptance/tests/bulletHoleImpacts.acceptance.test.ts` (`Oil drum impact spawns a bullet hole mark on the drum`) + `src/app/bulletHoles.test.ts` (`attaches oil drum bullet holes to the oil drum sprite while active`) + `src/bootstrap.test.ts` (`handles primary fire input, pointer-lock gating, and projectile frame updates`)
+- Repeated hits accumulate bullet holes up to a safe cap -> `src/acceptance/tests/bulletHoleImpacts.acceptance.test.ts` (`Repeated hits accumulate bullet holes up to a safe cap`) + `src/app/bulletHoles.test.ts` (`removes oldest bullet holes first when max count is exceeded`)
+- Non-hit shots do not create bullet holes -> `src/acceptance/tests/bulletHoleImpacts.acceptance.test.ts` (`Non-hit shots do not create bullet holes`) + `src/app/bulletHoles.test.ts` (`does not create bullet holes for misses or unsupported collisions`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Hardener: PASS (`npm run test:mutation:branch` -> overall mutation score `82.46%`, target `>= 80%`)
+
+### Risks / blockers
+
+- None currently.
+
+### Next action
+
+- Proceed to final handoff.
+
+### User review status
+
+- Approved
+
 ## 2026-11-14 — Player jump_grunt sound replacement
 
 - Timestamp: 2026-11-14
