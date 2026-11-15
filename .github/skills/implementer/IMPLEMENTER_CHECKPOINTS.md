@@ -4,6 +4,60 @@ Persistent execution log for the `implementer` skill.
 
 ---
 
+## 2026-11-15 — Runtime allocation optimizations (top 3)
+
+- Timestamp: 2026-11-15
+- Feature file: src/acceptance/features/runtime_allocation_optimizations.acceptance.feature
+- Complexity: medium
+- Current phase: P4
+- Checkpoint status: COMPLETE (`IMPLEMENTER_COMPLETE`) with `CLEANER_COMPLETE` and `HARDENER_COMPLETE`
+
+### Completed work
+
+- Optimized projectile visual updates in `src/app/bootstrap.ts` by reusing per-projectile `Vector3` point instances and geometry objects instead of creating new points each frame.
+- Optimized oil-drum runtime wiring in `src/app/bootstrap.ts` by:
+	- creating projectile entity collider once and reusing collider arrays per frame,
+	- reusing a mutable burning-drum position container for player hazard checks.
+- Optimized projectile spawn integration in `src/app/bootstrap.ts` by appending spawned projectiles to the active container (`push`) instead of replacing via spread copy.
+- Added acceptance coverage in `src/acceptance/tests/runtimeAllocationOptimizations.acceptance.test.ts`.
+- Extended bootstrap integration coverage in `src/bootstrap.test.ts` for:
+	- reusable collider container identity across frames,
+	- reusable burning-drum proximity container identity across frames,
+	- append-in-place projectile container behavior across frames.
+
+### Files changed so far
+
+- src/acceptance/features/runtime_allocation_optimizations.acceptance.feature
+- src/acceptance/tests/runtimeAllocationOptimizations.acceptance.test.ts
+- src/app/bootstrap.ts
+- src/bootstrap.test.ts
+- .github/skills/implementer/IMPLEMENTER_CHECKPOINTS.md
+
+### Scenario -> test mapping
+
+- Projectile visuals are updated in place across frames -> `src/bootstrap.test.ts` (`reuses existing projectile visual and updates points from tail-to-head math`) + `src/acceptance/tests/runtimeAllocationOptimizations.acceptance.test.ts` (`Projectile visuals are updated in place across frames`)
+- Oil-drum projectile collider and proximity hazard inputs are reused -> `src/bootstrap.test.ts` (`reuses projectile entity-collider containers across frames while drum is active`) + `src/bootstrap.test.ts` (`reuses burning-drum proximity container across frames while drum is burning`) + `src/acceptance/tests/runtimeAllocationOptimizations.acceptance.test.ts` (`Oil-drum projectile collider and proximity hazard inputs are reused with unchanged burn outcomes`)
+- Projectile spawning appends without replacing active projectile state containers -> `src/bootstrap.test.ts` (`appends spawned projectiles to the existing active container between frames`) + `src/acceptance/tests/runtimeAllocationOptimizations.acceptance.test.ts` (`Projectile spawning appends without replacing active projectile state containers`)
+
+### Verification status
+
+- Lint: PASS (`npm run lint`)
+- Build: PASS (`npm run build`)
+- Tests: PASS (`npm run test:all`)
+- Hardener: PASS (`npm run test:mutation:branch` -> overall mutation score `81.29%`, target `>= 80%`)
+
+### Risks / blockers
+
+- None currently.
+
+### Next action
+
+- Proceed to manual in-game QA handoff.
+
+### User review status
+
+- Approved
+
 ## 2026-11-15 — Development workflow fast-path quality improvements
 
 - Timestamp: 2026-11-15

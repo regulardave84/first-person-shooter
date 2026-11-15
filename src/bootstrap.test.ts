@@ -803,6 +803,39 @@ describe('bootstrap runtime wiring', () => {
 	let windowListeners: ListenerMap;
 	let documentStub: DocumentStub;
 
+	function runScheduledFrame(frameIndex = 0): void {
+		const scheduledFrame = (
+			globalThis.requestAnimationFrame as ReturnType<typeof vi.fn>
+		).mock.calls[frameIndex]?.[0] as (() => void) | undefined;
+		scheduledFrame?.();
+	}
+
+	function getStepProjectilesCallArg(callIndex: number): {
+		entityColliders: unknown[];
+		projectiles: unknown[];
+	} {
+		const calls = (runtimeMocks.stepProjectiles as unknown as {
+			mock: { calls: Array<[unknown]> };
+		}).mock.calls;
+		return calls[callIndex]?.[0] as {
+			entityColliders: unknown[];
+			projectiles: unknown[];
+		};
+	}
+
+	function getBurnHazardCallArg(callIndex: number): {
+		burningDrumPositions: unknown[];
+	} {
+		const calls = (
+			playerHazardDamageMocks.advancePlayerBurningOilDrumProximityDamage as unknown as {
+				mock: { calls: Array<[unknown]> };
+			}
+		).mock.calls;
+		return calls[callIndex]?.[0] as {
+			burningDrumPositions: unknown[];
+		};
+	}
+
 	beforeEach(() => {
 		vi.resetModules();
 		vi.clearAllMocks();
@@ -1048,6 +1081,53 @@ describe('bootstrap runtime wiring', () => {
 
 		const healthHudRoot = documentStub.elementsById.get('health-hud');
 		expect(healthHudRoot?.textContent).toBe('Health: 100');
+	});
+
+	it('reuses projectile entity-collider containers across frames while drum is active', async () => {
+		runtimeMocks.stepProjectiles
+			.mockReturnValueOnce({
+				activeProjectiles: [],
+				impacts: [],
+			})
+			.mockReturnValueOnce({
+				activeProjectiles: [],
+				impacts: [],
+			});
+
+		await import('./app/bootstrap');
+		runScheduledFrame();
+
+		const firstCall = getStepProjectilesCallArg(0);
+		const secondCall = getStepProjectilesCallArg(1);
+		expect(secondCall.entityColliders).toBe(firstCall.entityColliders);
+		expect(secondCall.entityColliders[0]).toBe(firstCall.entityColliders[0]);
+	});
+
+	it('reuses burning-drum proximity container across frames while drum is burning', async () => {
+		oilDrumEntityMocks.addDefaultOilDrumEntityToScene.mockReturnValueOnce({
+			sprite: {
+				name: 'oil-drum-entity',
+				position: { x: 0.2, y: 1, z: 5.9 },
+			},
+			movementCollider: {
+				x: 0.2,
+				z: 5.9,
+				radius: 0.75,
+				minY: -0.1,
+				maxY: 2.1,
+			},
+			health: {
+				currentHealth: 40,
+				maxHealth: 100,
+			},
+		});
+
+		await import('./app/bootstrap');
+		runScheduledFrame();
+
+		const firstCall = getBurnHazardCallArg(0);
+		const secondCall = getBurnHazardCallArg(1);
+		expect(secondCall.burningDrumPositions).toBe(firstCall.burningDrumPositions);
 	});
 
 	it('keeps current floor and wall colors when texture load fails', async () => {
@@ -1711,8 +1791,91 @@ describe('bootstrap runtime wiring', () => {
 		expect(threeState.bufferGeometries[0].setFromPoints).toHaveBeenCalledTimes(
 			2,
 		);
+		expect(threeState.vectors).toHaveLength(2);
 		expect(threeState.vectors[0]?.z).toBeCloseTo(0.05);
 		expect(threeState.vectors[1]?.z).toBeCloseTo(-0.3);
+	});
+
+	it('appends spawned projectiles to the existing active container between frames', async () => {
+		const carriedProjectileContainer = [
+			{
+				id: 1,
+				head: { x: 0, y: 1.6, z: -0.3 },
+				direction: { x: 0, y: 0, z: -1 },
+				speed: 45,
+				length: 0.35,
+				color: 0xffffff,
+			},
+		];
+
+		runtimeMocks.advancePrimaryFireState
+			.mockReturnValueOnce({
+				state: {
+					isPrimaryHeld: true,
+					hasQueuedImmediateShot: false,
+					secondsUntilNextShot: 0.5,
+					nextProjectileId: 2,
+				},
+				shotsToSpawn: 1,
+			})
+			.mockReturnValueOnce({
+				state: {
+					isPrimaryHeld: true,
+					hasQueuedImmediateShot: false,
+					secondsUntilNextShot: 0.5,
+					nextProjectileId: 3,
+				},
+				shotsToSpawn: 1,
+			});
+
+		runtimeMocks.spawnProjectilesFromLook
+			.mockReturnValueOnce({
+				state: {
+					isPrimaryHeld: true,
+					hasQueuedImmediateShot: false,
+					secondsUntilNextShot: 0.5,
+					nextProjectileId: 2,
+				},
+				projectiles: [...carriedProjectileContainer],
+			})
+			.mockReturnValueOnce({
+				state: {
+					isPrimaryHeld: true,
+					hasQueuedImmediateShot: false,
+					secondsUntilNextShot: 0.5,
+					nextProjectileId: 3,
+				},
+				projectiles: [
+					{
+						id: 2,
+						head: { x: 0, y: 1.6, z: -0.6 },
+						direction: { x: 0, y: 0, z: -1 },
+						speed: 45,
+						length: 0.35,
+						color: 0xffffff,
+					},
+				],
+			});
+
+		runtimeMocks.stepProjectiles
+			.mockReturnValueOnce({
+				activeProjectiles: carriedProjectileContainer,
+				impacts: [],
+			})
+			.mockReturnValueOnce({
+				activeProjectiles: [],
+				impacts: [],
+			});
+
+		await import('./app/bootstrap');
+		runScheduledFrame();
+
+		const secondProjectileStepCall = getStepProjectilesCallArg(1);
+		expect(secondProjectileStepCall.projectiles).toBe(carriedProjectileContainer);
+		expect(secondProjectileStepCall.projectiles).toHaveLength(2);
+		expect(secondProjectileStepCall.projectiles[1]).toEqual(
+			expect.objectContaining({ id: 2 }),
+		);
 	});
 
 	it('computes projectile tail from direction and length across x y and z', async () => {
